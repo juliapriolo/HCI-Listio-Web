@@ -1,0 +1,68 @@
+<template>
+  <v-app-bar
+    color="success"
+    dark
+    elevation="2"
+    height="80"
+  >
+    <v-container class="d-flex align-center">
+      <!-- Logo -->
+      <v-card
+        class="d-flex align-center px-4 py-2 mr-8"
+        color="white"
+        rounded="pill"
+        elevation="0"
+      >
+        <v-icon color="success" size="24" class="mr-2">
+          mdi-check-circle
+        </v-icon>
+        <span class="text-h6 font-weight-bold" style="color: #4caf50;">
+          Listio
+        </span>
+      </v-card>
+
+      <!-- Navigation Buttons -->
+      <div class="d-flex gap-2">
+        <v-btn
+          v-for="item in navigationItems"
+          :key="item.name"
+          :to="item.route"
+          color="success"
+          variant="elevated"
+          class="text-none"
+          min-width="100"
+        >
+          {{ item.name }}
+        </v-btn>
+      </div>
+
+      <v-spacer />
+
+      <!-- User Avatar -->
+      <v-btn
+        icon
+        size="large"
+        color="white"
+        variant="elevated"
+      >
+        <v-avatar>
+          <v-icon size="32">mdi-account</v-icon>
+        </v-avatar>
+      </v-btn>
+    </v-container>
+  </v-app-bar>
+</template>
+
+<script setup>
+const navigationItems = [
+  { name: 'Listas', route: '/listas' },
+  { name: 'Productos', route: '/productos' },
+  { name: 'Despensa', route: '/despensa' }
+]
+</script>
+
+<style scoped>
+.gap-2 > * + * {
+  margin-left: 8px;
+}
+</style>
