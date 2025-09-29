@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- Esta página redirige automáticamente a listas -->
+    <!-- Esta página redirige automáticamente a login -->
   </div>
 </template>
 
@@ -11,7 +11,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 onMounted(() => {
-  // Redirigir a la página de listas
-  router.replace('/listas')
+  // Redirigir a la página de login
+  router.replace('/login')
 })
 </script>
