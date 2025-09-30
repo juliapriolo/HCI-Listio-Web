@@ -25,6 +25,7 @@ declare module 'vue-router/auto-routes' {
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/perfil': RouteRecordInfo<'/perfil', '/perfil', Record<never, never>, Record<never, never>>,
     '/productos': RouteRecordInfo<'/productos', '/productos', Record<never, never>, Record<never, never>>,
+    '/registro': RouteRecordInfo<'/registro', '/registro', Record<never, never>, Record<never, never>>,
   }
 
   /**
@@ -64,6 +65,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/productos.vue': {
       routes: '/productos'
+      views: never
+    }
+    'src/pages/registro.vue': {
+      routes: '/registro'
       views: never
     }
   }

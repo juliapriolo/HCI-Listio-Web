@@ -8,7 +8,7 @@
           <router-link class="landing__btn landing__btn--light" to="/login">
             Inicia Sesion
           </router-link>
-          <router-link class="landing__btn landing__btn--dark" to="/register">
+          <router-link class="landing__btn landing__btn--dark" to="/registro">
             Registrate
           </router-link>
         </div>
