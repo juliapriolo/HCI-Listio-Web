@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <AppHeader v-if="!isLoginPage" />
+    <AppHeader v-if="!shouldHideHeader" />
     <v-main>
       <router-view />
     </v-main>
@@ -14,7 +14,7 @@ import AppHeader from '@/components/AppHeader.vue'
 
 const route = useRoute()
 
-const isLoginPage = computed(() => {
-  return route.path === '/login'
-})
+const routesWithoutHeader = ['/', '/login', '/register']
+
+const shouldHideHeader = computed(() => routesWithoutHeader.includes(route.path))
 </script>

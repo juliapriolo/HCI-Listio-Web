@@ -44,6 +44,7 @@
         size="large"
         color="white"
         variant="elevated"
+        to="/perfil"
       >
         <v-avatar>
           <v-icon size="32">mdi-account</v-icon>
