@@ -1,0 +1,122 @@
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+
+function normalizeHeaders(headers) {
+  if (headers instanceof Headers) {
+    return Object.fromEntries(headers.entries());
+  }
+
+  return { ...(headers ?? {}) };
+}
+
+function resolveUrl(path) {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+
+  if (!API_BASE_URL) {
+    return path;
+  }
+
+  const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
+  return API_BASE_URL + '/' + normalizedPath;
+}
+
+function prepareInit(method, payload, options = {}) {
+  const init = { ...options, method };
+
+  if (payload === undefined) {
+    return init;
+  }
+
+  if (
+    payload instanceof FormData ||
+    payload instanceof Blob ||
+    payload instanceof ArrayBuffer ||
+    payload instanceof URLSearchParams ||
+    typeof payload === 'string'
+  ) {
+    init.body = payload;
+    return init;
+  }
+
+  init.body = JSON.stringify(payload);
+  const existingHeaders = normalizeHeaders(options.headers);
+
+  init.headers = {
+    'Content-Type': 'application/json',
+    ...existingHeaders,
+  };
+
+  return init;
+}
+
+async function request(path, init) {
+  const response = await fetch(resolveUrl(path), init);
+  const contentType = response.headers.get('content-type') ?? '';
+
+  if (!response.ok) {
+    let errorPayload = null;
+
+    if (contentType.includes('application/json')) {
+      try {
+        errorPayload = await response.json();
+      } catch (error) {
+        errorPayload = null;
+      }
+    } else {
+      try {
+        errorPayload = await response.text();
+      } catch (error) {
+        errorPayload = null;
+      }
+    }
+
+    const message =
+      typeof errorPayload === 'object' && errorPayload !== null && 'message' in errorPayload
+        ? errorPayload.message
+        : 'Request failed with status ' + response.status;
+
+    const apiError = new Error(message);
+    apiError.status = response.status;
+    apiError.data = errorPayload;
+    throw apiError;
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  if (contentType.includes('application/json')) {
+    try {
+      return await response.json();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  try {
+    return await response.text();
+  } catch (error) {
+    return null;
+  }
+}
+
+const api = {
+  get(path, options) {
+    return request(path, prepareInit('GET', undefined, options));
+  },
+  post(path, payload, options) {
+    return request(path, prepareInit('POST', payload, options));
+  },
+  put(path, payload, options) {
+    return request(path, prepareInit('PUT', payload, options));
+  },
+  patch(path, payload, options) {
+    return request(path, prepareInit('PATCH', payload, options));
+  },
+  delete(path, payload, options) {
+    return request(path, prepareInit('DELETE', payload, options));
+  },
+};
+
+export default api;

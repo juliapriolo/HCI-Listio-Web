@@ -1,3 +1,9 @@
+<script setup>
+import { useProfileStore } from "@/composables/useProfileStore";
+
+const { profile } = useProfileStore();
+</script>
+
 <template>
   <main class="profile">
     <section class="profile__layout">
@@ -7,27 +13,39 @@
 
       <article class="profile__card">
         <div class="profile__avatar">
-          <svg class="profile__avatar-icon" viewBox="0 0 64 64" aria-hidden="true">
+          <img
+            v-if="profile.avatar"
+            :src="profile.avatar"
+            :alt="`Foto de ${profile.name}`"
+            class="profile__avatar-image"
+          />
+          <svg v-else class="profile__avatar-icon" viewBox="0 0 64 64" aria-hidden="true">
             <circle cx="32" cy="24" r="16" fill="none" stroke="currentColor" stroke-width="4" />
-            <path d="M14 52c0-9.941 8.059-18 18-18s18 8.059 18 18" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+            <path
+              d="M14 52c0-9.941 8.059-18 18-18s18 8.059 18 18"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="4"
+              stroke-linecap="round"
+            />
           </svg>
         </div>
         <div class="profile__identity">
-          <h2 class="profile__name">Pedro</h2>
-          <p class="profile__email">pedro@gmail.com</p>
+          <h2 class="profile__name">{{ profile.name }}</h2>
+          <p class="profile__email">{{ profile.email }}</p>
         </div>
       </article>
 
       <nav class="profile__actions" aria-label="Acciones de la cuenta">
-        <button class="profile__action">
+        <RouterLink class="profile__action" to="/editar-perfil">
           <span>Editar Perfil</span>
           <span aria-hidden="true">&rsaquo;</span>
-        </button>
-        <button class="profile__action">
+        </RouterLink>
+        <button class="profile__action" type="button">
           <span>Cambiar Idioma</span>
           <span aria-hidden="true">&rsaquo;</span>
         </button>
-        <button class="profile__action profile__action--warning">
+        <button class="profile__action profile__action--warning" type="button">
           <span>Cerrar Sesion</span>
           <span aria-hidden="true">&rsaquo;</span>
         </button>
@@ -86,6 +104,13 @@
   display: grid;
   place-items: center;
   color: #3cb660;
+  overflow: hidden;
+}
+
+.profile__avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .profile__avatar-icon {
@@ -128,7 +153,6 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 18px;
-  border: none;
   border-radius: 14px;
   background: transparent;
   font-size: 15px;
@@ -136,6 +160,8 @@
   color: #2f3f30;
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  border: none;
+  text-decoration: none;
 }
 
 .profile__action:hover {

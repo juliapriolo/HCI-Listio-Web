@@ -1,6 +1,6 @@
 <template>
   <v-app-bar
-    color="success"
+    color="#6DCB5A"
     dark
     elevation="2"
     height="80"
@@ -27,7 +27,7 @@
           v-for="item in navigationItems"
           :key="item.name"
           :to="item.route"
-          color="success"
+          color="#009951"
           variant="elevated"
           class="text-none"
           min-width="100"

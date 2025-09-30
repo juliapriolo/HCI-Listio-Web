@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <main class="landing">
     <section class="landing__container">
       <div class="landing__content">
@@ -113,7 +113,7 @@
 .landing__image {
   position: relative;
   z-index: 1;
-  width: clamp(240px, 40vw, 360px);
+  width: clamp(320px, 48vw, 480px);
   max-width: 100%;
   filter: drop-shadow(0 16px 36px rgba(0, 0, 0, 0.18));
 }
