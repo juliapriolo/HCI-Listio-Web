@@ -157,7 +157,8 @@ const totalPages = computed(() => {
 // Methods
 const openList = (list) => {
   // Navigate to list detail (to be implemented)
-  console.log('Opening list:', list.name)
+  // console.log('Opening list:', list.name)
+  router.push("/mi-lista")
 }
 
 const editList = (list) => {
