@@ -29,7 +29,8 @@
                   </div>
 
                   <div class="item-buttons">
-                    <v-icon color="black">mdi-checkbox-blank-outline</v-icon>
+                    <v-icon v-if="!item.checked" color="black">mdi-checkbox-blank-outline</v-icon>
+                    <v-icon v-if="item.checked" color="black">mdi-checkbox-marked</v-icon>
                     <v-icon color="black">mdi-dots-horizontal</v-icon>
                   </div>
                 </div>
@@ -50,15 +51,15 @@
 <script setup>
 
 const items = [
-  { name: "Manzanas", category: "Frutas" },
-  { name: "Pan", category: "Despensa" },
-  { name: "Leche", category: "Lácteos" },
-  { name: "Manzanas", category: "Frutas" },
-  { name: "Pan", category: "Despensa" },
-  { name: "Leche", category: "Lácteos" },
-  { name: "Manzanas", category: "Frutas" },
-  { name: "Pan", category: "Despensa" },
-  { name: "Leche", category: "Lácteos" },
+  { name: "Manzanas", category: "Frutas", checked: true },
+  { name: "Pan", category: "Despensa", checked: true },
+  { name: "Leche", category: "Lácteos", checked: true },
+  { name: "Banana", category: "Frutas", checked: true },
+  { name: "Aceite", category: "Despensa", checked: !true },
+  { name: "Yogur", category: "Lácteos", checked: !true },
+  { name: "Melon", category: "Frutas", checked: false },
+  { name: "Dulce de leche", category: "Despensa", checked: false },
+  { name: "Manteca", category: "Lácteos", checked: false },
 ];
 
 function handleFiltrar (){
