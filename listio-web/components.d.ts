@@ -10,6 +10,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     AppHeader: typeof import('./src/components/AppHeader.vue')['default']
+    DebugPanel: typeof import('./src/components/DebugPanel.vue')['default']
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
     ListCard: typeof import('./src/components/ListCard.vue')['default']
     NewItemDialog: typeof import('./src/components/NewItemDialog.vue')['default']

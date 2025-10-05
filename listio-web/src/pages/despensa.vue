@@ -71,7 +71,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { usePantryStore } from '@/stores/pantry'
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
@@ -126,8 +127,10 @@ const itemForm = ref({
   expiryDate: ''
 })
 
-// Sample pantry data
-const pantryItems = ref([
+// Use pantry store
+const pantryStore = usePantryStore()
+
+const samplePantry = [
   {
     id: 1,
     name: 'Arroz',
@@ -158,13 +161,14 @@ const pantryItems = ref([
     status: 'expired',
     image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=100&h=100&fit=crop'
   }
-])
+]
 
 // Computed properties
 const filteredPantryItems = computed(() => {
-  if (selectedCategory.value === 'all') return pantryItems.value
+  const items = pantryStore.items
+  if (selectedCategory.value === 'all') return items
   
-  return pantryItems.value.filter(item => item.status === selectedCategory.value)
+  return items.filter(item => item.status === selectedCategory.value)
 })
 
 // Methods
@@ -187,25 +191,22 @@ const editItem = (item) => {
 }
 
 const deleteItem = (item) => {
-  const index = pantryItems.value.findIndex(i => i.id === item.id)
-  if (index > -1) {
-    pantryItems.value.splice(index, 1)
-  }
+  pantryStore.deleteItem(item.id)
 }
 
 const addQuantity = (item) => {
-  const index = pantryItems.value.findIndex(i => i.id === item.id)
-  if (index > -1) {
-    pantryItems.value[index].quantity += 1
-    updateItemStatus(pantryItems.value[index])
+  const existing = pantryStore.byId(item.id)
+  if (existing) {
+    pantryStore.updateItem(item.id, { quantity: existing.quantity + 1 })
+    updateItemStatus(pantryStore.byId(item.id))
   }
 }
 
 const removeQuantity = (item) => {
-  const index = pantryItems.value.findIndex(i => i.id === item.id)
-  if (index > -1 && pantryItems.value[index].quantity > 0) {
-    pantryItems.value[index].quantity -= 1
-    updateItemStatus(pantryItems.value[index])
+  const existing = pantryStore.byId(item.id)
+  if (existing && existing.quantity > 0) {
+    pantryStore.updateItem(item.id, { quantity: existing.quantity - 1 })
+    updateItemStatus(pantryStore.byId(item.id))
   }
 }
 
@@ -215,14 +216,31 @@ const updateItemStatus = (item) => {
   const expiry = item.expiryDate ? new Date(item.expiryDate) : null
   const daysUntilExpiry = expiry ? Math.ceil((expiry - today) / (1000 * 60 * 60 * 24)) : null
   
+  let newStatus = 'available'
   if (daysUntilExpiry !== null && daysUntilExpiry < 0) {
-    item.status = 'expired'
+    newStatus = 'expired'
   } else if (item.quantity <= 1) {
-    item.status = 'low'
+    newStatus = 'low'
   } else {
-    item.status = 'available'
+    newStatus = 'available'
+  }
+
+  // Persist status change if the item exists in the store
+  if (item && item.id && pantryStore.byId(item.id)) {
+    pantryStore.updateItem(item.id, { status: newStatus })
+  } else if (item) {
+    // for transient/new objects, just set the property so callers can add it
+    item.status = newStatus
   }
 }
+
+// Load persisted pantry and seed sample data on first run
+onMounted(() => {
+  pantryStore.load()
+  if (!pantryStore.items || pantryStore.items.length === 0) {
+    pantryStore.seed(samplePantry)
+  }
+})
 
 const saveItem = (formData) => {
   const itemData = {
@@ -234,16 +252,13 @@ const saveItem = (formData) => {
   
   if (editingItem.value) {
     // Update existing item
-    const index = pantryItems.value.findIndex(i => i.id === editingItem.value.id)
-    if (index > -1) {
-      pantryItems.value[index] = { ...pantryItems.value[index], ...itemData }
-      updateItemStatus(pantryItems.value[index])
-    }
+    pantryStore.updateItem(editingItem.value.id, itemData)
+    updateItemStatus(pantryStore.byId(editingItem.value.id))
   } else {
     // Add new item
     itemData.id = Date.now()
     updateItemStatus(itemData)
-    pantryItems.value.push(itemData)
+    pantryStore.addItem(itemData)
   }
   
   itemDialog.value = false

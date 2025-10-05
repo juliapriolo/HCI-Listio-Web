@@ -60,7 +60,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useProductsStore } from '@/stores/products'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -70,8 +71,11 @@ const searchQuery = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
 
+// Use Pinia products store
+const productsStore = useProductsStore()
+
 // Sample products data with enhanced information
-const products = ref([
+const sampleProducts = [
   {
     id: 1,
     name: 'Leche Entera',
@@ -132,16 +136,17 @@ const products = ref([
     description: 'Yogurt natural cremoso',
     image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop'
   }
-])
+]
 
 // Computed properties
 const filteredProducts = computed(() => {
-  if (!searchQuery.value) return products.value
+  const list = productsStore.products
+  if (!searchQuery.value) return list
   
-  return products.value.filter(product =>
+  return list.filter(product =>
     product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
     product.category.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchQuery.value.toLowerCase())
+    (product.description || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
@@ -155,8 +160,15 @@ const addToList = (product) => {
   snackbarText.value = `${product.name} agregado a la lista`
   snackbar.value = true
   console.log('Added to list:', product.name)
-  // Implement add to list logic
+  // Could call a list store to add to active list
 }
+
+onMounted(() => {
+  productsStore.load()
+  if (!productsStore.products || productsStore.products.length === 0) {
+    productsStore.seed(sampleProducts)
+  }
+})
 </script>
 
 <style scoped>
