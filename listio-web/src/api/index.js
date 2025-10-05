@@ -51,6 +51,44 @@ function prepareInit(method, payload, options = {}) {
 }
 
 async function request(path, init) {
+  // Attach Authorization Bearer token if available in the user store (dynamic import to avoid cycles)
+  try {
+    const existingHeaders = normalizeHeaders(init.headers)
+    if (!existingHeaders.Authorization && !existingHeaders.authorization) {
+      // dynamic import the user store so we avoid circular imports during module init
+      try {
+        const { useUserStore } = await import('@/stores/user')
+        const userStore = useUserStore()
+        const token = userStore?.profile?.token || userStore?.profile?.accessToken
+        if (token) {
+          init.headers = { ...existingHeaders, Authorization: `Bearer ${token}` }
+        } else {
+          // fallback to localStorage in case token is persisted there
+          try {
+            const raw = localStorage.getItem('listio:user')
+            const parsed = raw ? JSON.parse(raw) : null
+            const fallbackToken = parsed?.profile?.token || parsed?.profile?.accessToken
+            if (fallbackToken) init.headers = { ...existingHeaders, Authorization: `Bearer ${fallbackToken}` }
+          } catch (e) {
+            // ignore localStorage parse errors
+          }
+        }
+      } catch (e) {
+        // dynamic import failed (e.g. in non-Vite contexts); try localStorage fallback
+        try {
+          const raw = localStorage.getItem('listio:user')
+          const parsed = raw ? JSON.parse(raw) : null
+          const fallbackToken = parsed?.profile?.token || parsed?.profile?.accessToken
+          if (fallbackToken) init.headers = { ...(normalizeHeaders(init.headers) || {}), Authorization: `Bearer ${fallbackToken}` }
+        } catch (er) {
+          // ignore
+        }
+      }
+    }
+  } catch (e) {
+    // best-effort only; don't block request on auth resolution
+  }
+
   const response = await fetch(resolveUrl(path), init);
   const contentType = response.headers.get('content-type') ?? '';
 
