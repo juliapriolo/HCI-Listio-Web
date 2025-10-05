@@ -79,6 +79,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useListsStore } from '@/stores/lists'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -113,8 +114,11 @@ const newListForm = ref({
   description: ''
 })
 
-// Sample data
-const shoppingLists = ref([
+// Use Pinia store for lists
+const listsStore = useListsStore()
+
+// If empty on first run, seed with sample data
+const sampleData = [
   {
     id: 1,
     name: 'Supermercado',
@@ -139,13 +143,13 @@ const shoppingLists = ref([
     completedItems: 1,
     lastUpdated: new Date('2025-09-25')
   }
-])
+]
 
 // Computed properties
 const filteredLists = computed(() => {
-  if (!searchQuery.value) return shoppingLists.value
+  if (!searchQuery.value) return listsStore.lists
   
-  return shoppingLists.value.filter(list =>
+  return listsStore.lists.filter(list =>
     list.name.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
@@ -172,10 +176,7 @@ const shareList = (list) => {
 }
 
 const deleteList = (list) => {
-  const index = shoppingLists.value.findIndex(l => l.id === list.id)
-  if (index > -1) {
-    shoppingLists.value.splice(index, 1)
-  }
+  listsStore.deleteList(list.id)
 }
 
 const openNewListDialog = () => {
@@ -192,14 +193,18 @@ const createNewList = (formData) => {
     completedItems: 0,
     lastUpdated: new Date()
   }
-  
-  shoppingLists.value.unshift(newList)
+
+  listsStore.addList(newList)
   newListDialog.value = false
   console.log('Created new list:', newList.name)
 }
 
 onMounted(() => {
-  // Initialize component
+  // Initialize component: load lists from localStorage, seed if empty
+  listsStore.load()
+  if (!listsStore.lists || listsStore.lists.length === 0) {
+    listsStore.seed(sampleData)
+  }
 })
 </script>
 
