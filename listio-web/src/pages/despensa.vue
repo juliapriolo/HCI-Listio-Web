@@ -3,17 +3,34 @@
     <v-container>
       <!-- Page Header -->
       <div class="d-flex align-center justify-space-between mb-6">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Despensa
-        </h1>
+        <div>
+          <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+            Despensa
+          </h1>
+        </div>
         
-        <v-btn
-          icon="mdi-plus"
-          variant="elevated"
-          color="success"
-          @click="openAddItemDialog"
-        />
+        <div class="d-flex align-center gap-2">
+          <v-btn
+            icon="mdi-plus"
+            variant="elevated"
+            color="success"
+            @click="openAddItemDialog"
+          />
+        </div>
       </div>
+
+
+      <!-- Error Alert -->
+      <v-alert
+        v-if="pantryStore.error"
+        type="warning"
+        variant="tonal"
+        closable
+        @click:close="pantryStore.error = null"
+        class="mb-4"
+      >
+        {{ pantryStore.error }}
+      </v-alert>
 
       <!-- Categories Tabs -->
       <v-tabs
@@ -67,6 +84,7 @@
       @submit="saveItem"
       @cancel="itemDialog = false"
     />
+
   </div>
 </template>
 
@@ -130,6 +148,23 @@ const itemForm = ref({
 // Use pantry store
 const pantryStore = usePantryStore()
 
+const samplePantries = [
+  {
+    id: 1,
+    name: 'Despensa Principal',
+    description: 'Mi despensa principal de casa',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    id: 2,
+    name: 'Despensa de Emergencia',
+    description: 'Productos para emergencias',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+]
+
 const samplePantry = [
   {
     id: 1,
@@ -190,23 +225,59 @@ const editItem = (item) => {
   itemDialog.value = true
 }
 
-const deleteItem = (item) => {
-  pantryStore.deleteItem(item.id)
-}
-
-const addQuantity = (item) => {
-  const existing = pantryStore.byId(item.id)
-  if (existing) {
-    pantryStore.updateItem(item.id, { quantity: existing.quantity + 1 })
-    updateItemStatus(pantryStore.byId(item.id))
+const deleteItem = async (item) => {
+  try {
+    // Use first pantry ID or fallback to local delete
+    const pantryId = pantryStore.pantries.length > 0 ? pantryStore.pantries[0].id : null
+    if (pantryId) {
+      await pantryStore.deleteItemRemote(pantryId, item.id)
+    } else {
+      pantryStore.deleteItem(item.id)
+    }
+  } catch (error) {
+    console.error('Error deleting item:', error)
+    // Fallback to local delete if API fails
+    pantryStore.deleteItem(item.id)
   }
 }
 
-const removeQuantity = (item) => {
+const addQuantity = async (item) => {
+  const existing = pantryStore.byId(item.id)
+  if (existing) {
+    try {
+      const pantryId = pantryStore.pantries.length > 0 ? pantryStore.pantries[0].id : null
+      if (pantryId) {
+        await pantryStore.updateItemRemote(pantryId, item.id, { quantity: existing.quantity + 1 })
+      } else {
+        pantryStore.updateItem(item.id, { quantity: existing.quantity + 1 })
+      }
+      updateItemStatus(pantryStore.byId(item.id))
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+      // Fallback to local update if API fails
+      pantryStore.updateItem(item.id, { quantity: existing.quantity + 1 })
+      updateItemStatus(pantryStore.byId(item.id))
+    }
+  }
+}
+
+const removeQuantity = async (item) => {
   const existing = pantryStore.byId(item.id)
   if (existing && existing.quantity > 0) {
-    pantryStore.updateItem(item.id, { quantity: existing.quantity - 1 })
-    updateItemStatus(pantryStore.byId(item.id))
+    try {
+      const pantryId = pantryStore.pantries.length > 0 ? pantryStore.pantries[0].id : null
+      if (pantryId) {
+        await pantryStore.updateItemRemote(pantryId, item.id, { quantity: existing.quantity - 1 })
+      } else {
+        pantryStore.updateItem(item.id, { quantity: existing.quantity - 1 })
+      }
+      updateItemStatus(pantryStore.byId(item.id))
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+      // Fallback to local update if API fails
+      pantryStore.updateItem(item.id, { quantity: existing.quantity - 1 })
+      updateItemStatus(pantryStore.byId(item.id))
+    }
   }
 }
 
@@ -235,14 +306,31 @@ const updateItemStatus = (item) => {
 }
 
 // Load persisted pantry and seed sample data on first run
-onMounted(() => {
-  pantryStore.load()
-  if (!pantryStore.items || pantryStore.items.length === 0) {
-    pantryStore.seed(samplePantry)
+onMounted(async () => {
+  try {
+    // Try to fetch pantries from API first
+    await pantryStore.fetchPantriesRemote()
+  } catch (error) {
+    console.log('API not available, loading from localStorage')
+    pantryStore.load()
+  }
+  
+  // Seed sample data if no pantries exist
+  if (!pantryStore.pantries || pantryStore.pantries.length === 0) {
+    pantryStore.seed(samplePantries, samplePantry)
+  }
+  
+  // Load items for the first pantry (if any)
+  if (pantryStore.pantries.length > 0) {
+    try {
+      await pantryStore.fetchPantryItemsRemote(pantryStore.pantries[0].id)
+    } catch (error) {
+      console.log('API not available for items, using local data')
+    }
   }
 })
 
-const saveItem = (formData) => {
+const saveItem = async (formData) => {
   const itemData = {
     ...formData,
     quantity: parseFloat(formData.quantity) || 0,
@@ -250,19 +338,44 @@ const saveItem = (formData) => {
     image: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=100&h=100&fit=crop'
   }
   
-  if (editingItem.value) {
-    // Update existing item
-    pantryStore.updateItem(editingItem.value.id, itemData)
-    updateItemStatus(pantryStore.byId(editingItem.value.id))
-  } else {
-    // Add new item
-    itemData.id = Date.now()
-    updateItemStatus(itemData)
-    pantryStore.addItem(itemData)
+  try {
+    const pantryId = pantryStore.pantries.length > 0 ? pantryStore.pantries[0].id : null
+    
+    if (editingItem.value) {
+      // Update existing item
+      if (pantryId) {
+        await pantryStore.updateItemRemote(pantryId, editingItem.value.id, itemData)
+      } else {
+        pantryStore.updateItem(editingItem.value.id, itemData)
+      }
+      updateItemStatus(pantryStore.byId(editingItem.value.id))
+    } else {
+      // Add new item
+      itemData.id = Date.now()
+      updateItemStatus(itemData)
+      if (pantryId) {
+        await pantryStore.createItemRemote(pantryId, itemData)
+      } else {
+        pantryStore.addItem(itemData)
+      }
+    }
+  } catch (error) {
+    console.error('Error saving item:', error)
+    // Fallback to local operations if API fails
+    if (editingItem.value) {
+      pantryStore.updateItem(editingItem.value.id, itemData)
+      updateItemStatus(pantryStore.byId(editingItem.value.id))
+    } else {
+      itemData.id = Date.now()
+      updateItemStatus(itemData)
+      pantryStore.addItem(itemData)
+    }
   }
   
   itemDialog.value = false
 }
+
+
 </script>
 
 <style scoped>
