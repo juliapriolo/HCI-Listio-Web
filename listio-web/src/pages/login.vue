@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="login-container">
     <!-- Lado izquierdo con fondo verde -->
     <div class="login-left">
@@ -66,20 +66,26 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
 
 const form = ref({
   email: '',
   password: ''
 })
 
-const handleLogin = () => {
-  // Por ahora simplemente redirigimos sin validación
-  // TODO: Implementar validación cuando esté lista la API
-  console.log('Login attempt:', form.value)
-  router.push('/listas')
+const handleLogin = async () => {
+  try {
+    await userStore.login(form.value.email, form.value.password)
+    const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/listas'
+    router.push(redirectPath)
+  } catch (error) {
+    alert(error?.message || 'Error al iniciar sesión')
+  }
 }
 </script>
 
@@ -142,7 +148,6 @@ const handleLogin = () => {
   z-index: 1;
 }
 
-/* Lado derecho - Formulario */
 .login-right {
   flex: 1;
   background-color: #4CAF50;

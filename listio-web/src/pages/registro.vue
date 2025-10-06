@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="register-container">
     <div class="register-left">
       <div class="logo">
@@ -69,8 +69,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const form = ref({
   name: '',
@@ -78,10 +80,18 @@ const form = ref({
   password: '',
 })
 
-function handleRegister() {
-  const payload = { ...form.value }
-  console.log('Register attempt:', payload)
-  router.push('/listas')
+const handleRegister = async () => {
+  try {
+    await userStore.register({
+      name: form.value.name,
+      email: form.value.email,
+      password: form.value.password,
+    })
+    alert('Registro completado. Inicia sesión para continuar.')
+    router.push({ path: '/login', query: { registered: '1' } })
+  } catch (error) {
+    alert(error?.message || 'No se pudo registrar.')
+  }
 }
 </script>
 

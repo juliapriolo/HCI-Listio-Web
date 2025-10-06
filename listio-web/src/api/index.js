@@ -1,5 +1,15 @@
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 
+let authToken = null;
+
+export function setAuthToken(token) {
+  authToken = token || null;
+}
+
+export function getAuthToken() {
+  return authToken;
+}
+
 function normalizeHeaders(headers) {
   if (headers instanceof Headers) {
     return Object.fromEntries(headers.entries());
@@ -21,10 +31,24 @@ function resolveUrl(path) {
   return API_BASE_URL + '/' + normalizedPath;
 }
 
+function buildHeaders(optionsHeaders) {
+  const headers = normalizeHeaders(optionsHeaders);
+
+  if (authToken && !('Authorization' in headers)) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  return headers;
+}
+
 function prepareInit(method, payload, options = {}) {
   const init = { ...options, method };
+  const headers = buildHeaders(options.headers);
 
   if (payload === undefined) {
+    if (Object.keys(headers).length > 0) {
+      init.headers = headers;
+    }
     return init;
   }
 
@@ -35,16 +59,17 @@ function prepareInit(method, payload, options = {}) {
     payload instanceof URLSearchParams ||
     typeof payload === 'string'
   ) {
+    if (Object.keys(headers).length > 0) {
+      init.headers = headers;
+    }
     init.body = payload;
     return init;
   }
 
   init.body = JSON.stringify(payload);
-  const existingHeaders = normalizeHeaders(options.headers);
-
   init.headers = {
     'Content-Type': 'application/json',
-    ...existingHeaders,
+    ...headers,
   };
 
   return init;

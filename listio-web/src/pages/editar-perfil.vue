@@ -1,64 +1,98 @@
-<script setup>
-import { computed, reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { useProfileStore } from "@/composables/useProfileStore";
-import api from "@/api";
+﻿<script setup>
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
-const router = useRouter();
-const { profile, updateProfile: persistProfile } = useProfileStore();
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+const { profile } = storeToRefs(userStore)
+
+const redirectToLogin = () => {
+  const target = route.fullPath || '/editar-perfil'
+  router.replace({ path: '/login', query: { redirect: target } })
+}
 
 const form = reactive({
-  name: profile.name,
-  email: profile.email,
-  avatar: profile.avatar,
-});
+  name: '',
+  email: '',
+  avatar: null,
+})
 
-const avatarPreview = computed(() => form.avatar);
+const avatarPreview = computed(() => form.avatar)
 
-function handleFileUpload(event) {
-  const [file] = event?.target?.files ?? [];
+watch(
+  profile,
+  (value) => {
+    if (!value) {
+      return
+    }
+
+    form.name = value.name || ''
+    form.email = value.email || ''
+    form.avatar = value.avatar || null
+  },
+  { immediate: true }
+)
+
+const showPasswordModal = ref(false)
+const passwordForm = reactive({ current: '', new: '' })
+
+const handleFileUpload = (event) => {
+  const [file] = event?.target?.files ?? []
   if (!file) {
-    form.avatar = profile.avatar;
-    return;
+    form.avatar = profile.value?.avatar || null
+    return
   }
 
-  const reader = new FileReader();
+  const reader = new FileReader()
   reader.onload = () => {
-    form.avatar = reader.result;
-  };
-  reader.readAsDataURL(file);
+    form.avatar = reader.result
+  }
+  reader.readAsDataURL(file)
 }
 
-function submitForm() {
-  persistProfile({
-    name: form.name,
-    email: form.email,
-    avatar: form.avatar,
-  });
-
-  form.password = "";
-  alert("Perfil actualizado con exito");
-  router.push("/perfil");
-}
-
-// Nueva funcionalidad para el cambio de contraseña
-const showPasswordModal = ref(false);
-const passwordForm = ref({ current: '', new: '' });
-
-async function changePassword() {
+const submitForm = async () => {
   try {
-    await api.put("/user/change-password", {
-      currentPassword: passwordForm.value.current,
-      newPassword: passwordForm.value.new,
-    });
-    alert("Contraseña cambiada con éxito");
-    showPasswordModal.value = false;
-    passwordForm.value.current = '';
-    passwordForm.value.new = '';
+    await userStore.updateProfile({
+      name: form.name,
+      email: form.email,
+      avatar: form.avatar,
+    })
+    alert('Perfil actualizado con exito')
+    router.push('/perfil')
   } catch (error) {
-    alert("Error al cambiar la contraseña");
+    alert(error?.message || 'No se pudo actualizar el perfil')
   }
 }
+
+const changePassword = async () => {
+  try {
+    await userStore.changePassword({
+      currentPassword: passwordForm.current,
+      newPassword: passwordForm.new,
+    })
+    showPasswordModal.value = false
+    passwordForm.current = ''
+    passwordForm.new = ''
+  } catch (error) {
+    alert(error?.message || 'Error al cambiar la contrasena')
+  }
+}
+
+onMounted(() => {
+  if (!userStore.token) {
+    redirectToLogin()
+    return
+  }
+
+  if (!profile.value) {
+    userStore.fetchProfile().catch(() => {
+      redirectToLogin()
+    })
+  }
+})
 </script>
 
 <template>
@@ -76,14 +110,11 @@ async function changePassword() {
         <input v-model="form.email" id="email" type="email" required />
       </div>
 
-      <!-- Botón para abrir modal de cambio de contraseña -->
       <div class="form-group">
         <button type="button" class="btn btn--secondary" @click="showPasswordModal = true">
-          Cambiar contraseña
         </button>
       </div>
 
-      <!-- Opcional: Imagen de perfil -->
       <div class="form-group">
         <label for="avatar">Foto de Perfil</label>
         <input type="file" id="avatar" @change="handleFileUpload" />
@@ -98,7 +129,6 @@ async function changePassword() {
       </div>
     </form>
 
-    <!-- Modal de cambio de contraseña -->
     <div v-if="showPasswordModal" class="modal-overlay">
       <div class="modal">
         <h2>Cambiar contraseña</h2>
@@ -235,4 +265,3 @@ async function changePassword() {
   margin-bottom: 8px;
 }
 </style>
-

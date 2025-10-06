@@ -1,7 +1,41 @@
-<script setup>
-import { useProfileStore } from "@/composables/useProfileStore";
+﻿<script setup>
+import { computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
-const { profile } = useProfileStore();
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+const { profile: storedProfile } = storeToRefs(userStore)
+
+const redirectToLogin = () => {
+  const target = route.fullPath || '/perfil'
+  router.replace({ path: '/login', query: { redirect: target } })
+}
+
+const profile = computed(() => storedProfile.value || { name: '', email: '', avatar: null })
+
+const handleLogout = async () => {
+  try {
+    await userStore.logout()
+  } finally {
+    router.push('/login')
+  }
+}
+
+onMounted(() => {
+  if (!userStore.token) {
+    redirectToLogin()
+    return
+  }
+
+  if (!storedProfile.value) {
+    userStore.fetchProfile().catch(() => {
+      redirectToLogin()
+    })
+  }
+})
 </script>
 
 <template>
@@ -45,7 +79,7 @@ const { profile } = useProfileStore();
           <span>Cambiar Idioma</span>
           <span aria-hidden="true">&rsaquo;</span>
         </button>
-        <button class="profile__action profile__action--warning" type="button">
+        <button class="profile__action profile__action--warning" type="button" @click="handleLogout">
           <span>Cerrar Sesion</span>
           <span aria-hidden="true">&rsaquo;</span>
         </button>
