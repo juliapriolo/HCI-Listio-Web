@@ -21,6 +21,7 @@ declare module 'vue-router/auto-routes' {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
     '/despensa': RouteRecordInfo<'/despensa', '/despensa', Record<never, never>, Record<never, never>>,
     '/editar-perfil': RouteRecordInfo<'/editar-perfil', '/editar-perfil', Record<never, never>, Record<never, never>>,
+    '/list': RouteRecordInfo<'/list', '/list', Record<never, never>, Record<never, never>>,
     '/listas': RouteRecordInfo<'/listas', '/listas', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
     '/mi-lista': RouteRecordInfo<'/mi-lista', '/mi-lista', Record<never, never>, Record<never, never>>,
@@ -50,6 +51,10 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/editar-perfil.vue': {
       routes: '/editar-perfil'
+      views: never
+    }
+    'src/pages/list.vue': {
+      routes: '/list'
       views: never
     }
     'src/pages/listas.vue': {

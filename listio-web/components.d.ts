@@ -12,6 +12,7 @@ declare module 'vue' {
     AppHeader: typeof import('./src/components/AppHeader.vue')['default']
     DebugPanel: typeof import('./src/components/DebugPanel.vue')['default']
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
+    ItemMenuDialog: typeof import('./src/components/ItemMenuDialog.vue')['default']
     ListCard: typeof import('./src/components/ListCard.vue')['default']
     NewItemDialog: typeof import('./src/components/NewItemDialog.vue')['default']
     PantryItemCard: typeof import('./src/components/PantryItemCard.vue')['default']
