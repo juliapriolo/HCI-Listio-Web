@@ -42,7 +42,7 @@
       <v-btn
         icon
         size="large"
-        color="white"
+        color="#d9dadb"
         variant="elevated"
         to="/perfil"
       >
