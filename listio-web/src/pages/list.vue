@@ -7,10 +7,34 @@
           Mi Lista: Supermercado
         </h1>
         
-        <SearchBar
-          v-model="searchQuery"
-          placeholder="Buscar productos..."
-        />
+        <div class="header-actions">
+          <v-btn
+            icon
+            variant="text"
+            class="action-btn"
+            size="large"
+            @click="openFilterDialog"
+          >
+            <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
+          </v-btn>
+
+          <v-btn
+            icon
+            variant="text"
+            class="action-btn"
+            size="large"
+            @click="openShareListDialog"
+          >
+            <v-icon color="grey-darken-2">mdi-export-variant</v-icon>
+          </v-btn>
+
+          <div class="search-wrapper">
+            <SearchBar
+              v-model="searchQuery"
+              placeholder="Buscar productos..."
+            />
+          </div>
+        </div>
       </div>
 
       <!-- Shopping List -->
@@ -101,6 +125,23 @@
       @delete="deleteItem"
       @cancel="itemMenuDialog = false"
     />
+
+    <NewItemDialog
+      v-model="shareListDialog"
+      v-model:form-data="newItemForm"
+      title="Compartir Lista"
+      submit-text="Confirmar"
+      :fields="shareListFields"
+      @submit="shareList"
+      @cancel="shareListDialog = false"
+    />
+
+    <FilterList
+      v-model="filterDialog"
+      :filters="filters"
+      :categories="categories"
+      @apply="applyFilters"
+    />
   </div>
 </template>
 
@@ -120,50 +161,44 @@ const items = ref([
   { id: 5, name: "Yogur", category: "Lácteos", checked: false }
 ])
 
-const categories = ["Frutas", "Despensa", "Lácteos", "Verduras"]
-
-// Mapa de categorías → color + ícono
-const categoryMap = {
-  Frutas: {
-    color: '#FFCDD2', // rojo suave
-    icon: '/icons8-apple-64.png'
-  },
-  Despensa: {
-    color: '#FFF9C4', // amarillo suave
-    icon: '/icons8-bread-64.png'
-  },
-  Lácteos: {
-    color: '#BBDEFB', // azul suave
-    icon: '/icons8-milk-64.png'
-  },
-  Verduras: {
-    color: '#C8E6C9', // verde suave
-    icon: '/icons8-broccoli-64.png'
-  },
-  'Sin categoría': {
-    color: '#E0E0E0',
-    icon: '/icons8-question-mark-64.png'
-  }
-}
-
-const getCategoryStyle = (category) => {
-  return categoryMap[category] || categoryMap['Sin categoría']
-}
-
 const searchQuery = ref('')
 const newItemDialog = ref(false)
 const itemMenuDialog = ref(false)
 const selectedItem = ref(null)
+const shareListDialog = ref(false)
+const filterDialog = ref(false)
 
 const newItemForm = ref({
   name: '',
   description: ''
 })
 
+const filters = ref({
+  name: '',
+  category: ''
+})
+
+
 const addItemFields = [
   {
     key: 'name',
     label: 'Producto',
+    type: 'text',
+    required: true,
+    autofocus: true
+  },
+  {
+    key: 'description',
+    label: 'Descripción (opcional)',
+    type: 'textarea',
+    required: false
+  }
+]
+
+const shareListFields = [
+  {
+    key: 'name',
+    label: 'Destinatario',
     type: 'text',
     required: true,
     autofocus: true
@@ -190,6 +225,19 @@ const openNewItemDialog = () => {
   newItemDialog.value = true
 }
 
+const openEditDialog = (item) => {
+  selectedItem.value = { ...item }
+  itemMenuDialog.value = true
+}
+
+const openShareListDialog = () => {
+  shareListDialog.value = true
+}
+
+const openFilterDialog = () => {
+  filterDialog.value = true
+}
+
 const addItem = (formData) => {
   if (!formData.name) return
   items.value.push({
@@ -199,11 +247,6 @@ const addItem = (formData) => {
     checked: false
   })
   newItemDialog.value = false
-}
-
-const openEditDialog = (item) => {
-  selectedItem.value = { ...item }
-  itemMenuDialog.value = true
 }
 
 const updateItem = (updated) => {
@@ -218,13 +261,22 @@ const deleteItem = (item) => {
   items.value = items.value.filter(i => i.id !== item.id)
   itemMenuDialog.value = false
 }
+
+const shareList = (list) => {
+  //TODO
+  console.log("Shared")
+}
+
+const applyFilters = (appliedFilters) => {
+  filters.value = { ...appliedFilters }
+}
 </script>
 
 <style scoped>
 .lists-page {
   padding-top: 2rem;
   padding-bottom: 6rem;
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 80px);
   background-color: #fafafa;
 }
 
@@ -293,5 +345,33 @@ const deleteItem = (item) => {
 .category-logo {
   width: 26px;
   height: auto;
+}
+
+.header-actions {
+  display: flex;
+  align-items:center;
+}
+
+.action-btn {
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content:center;
+  transition: background-color 0.2s ease;
+}
+
+.action-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.search-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .search-wrapper {
+    width: 160px;
+  }
 }
 </style>
