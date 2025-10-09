@@ -28,6 +28,18 @@
           </div>
 
           <div class="form-group">
+            <label for="surname" class="form-label">Apellido</label>
+            <input
+              id="surname"
+              v-model="form.surname"
+              type="text"
+              class="form-input"
+              placeholder="Ingrese su apellido"
+              required
+            />
+          </div>
+
+          <div class="form-group">
             <label for="email" class="form-label">Mail</label>
             <input
               id="email"
@@ -76,17 +88,21 @@ const userStore = useUserStore()
 
 const form = ref({
   name: '',
+  surname: '',
   email: '',
   password: '',
 })
 
 const handleRegister = async () => {
+  const payload = {
+    name: form.value.name.trim(),
+    surname: form.value.surname.trim(),
+    email: form.value.email.trim(),
+    password: form.value.password,
+  }
+
   try {
-    await userStore.register({
-      name: form.value.name,
-      email: form.value.email,
-      password: form.value.password,
-    })
+    await userStore.register(payload)
     alert('Registro completado. Inicia sesión para continuar.')
     router.push({ path: '/login', query: { registered: '1' } })
   } catch (error) {
