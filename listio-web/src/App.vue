@@ -14,7 +14,7 @@ import AppHeader from '@/components/AppHeader.vue'
 
 const route = useRoute()
 
-const routesWithoutHeader = ['/', '/login', '/registro']
+const routesWithoutHeader = ['/', '/login', '/registro', '/editar-perfil']
 
 const shouldHideHeader = computed(() => routesWithoutHeader.includes(route.path))
 </script>

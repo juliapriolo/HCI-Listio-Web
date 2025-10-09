@@ -47,7 +47,13 @@
         to="/perfil"
       >
         <v-avatar>
-          <v-icon size="32">mdi-account</v-icon>
+          <img 
+            v-if="userProfile?.avatar" 
+            :src="userProfile.avatar" 
+            :alt="userProfile.name || 'Avatar'"
+            style="width: 100%; height: 100%; object-fit: cover;"
+          />
+          <v-icon v-else size="32">mdi-account</v-icon>
         </v-avatar>
       </v-btn>
     </v-container>
@@ -55,6 +61,12 @@
 </template>
 
 <script setup>
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const { profile: userProfile } = storeToRefs(userStore)
+
 const navigationItems = [
   { name: 'Listas', route: '/listas' },
   { name: 'Productos', route: '/productos' },
