@@ -8,6 +8,12 @@
         </h1>
         
         <div class="header-actions">
+          <div class="search-wrapper">
+            <SearchBar
+              v-model="searchQuery"
+              placeholder="Buscar productos..."
+            />
+          </div>
           <v-btn
             icon
             variant="text"
@@ -28,12 +34,6 @@
             <v-icon color="grey-darken-2">mdi-export-variant</v-icon>
           </v-btn>
 
-          <div class="search-wrapper">
-            <SearchBar
-              v-model="searchQuery"
-              placeholder="Buscar productos..."
-            />
-          </div>
         </div>
       </div>
 
@@ -349,9 +349,11 @@ const applyFilters = (appliedFilters) => {
 
 .header-actions {
   display: flex;
-  align-items:center;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1; /* Ocupar todo el espacio restante */
+  gap: 8px;
 }
-
 .action-btn {
   padding: 6px;
   display: flex;
@@ -365,6 +367,10 @@ const applyFilters = (appliedFilters) => {
 }
 
 .search-wrapper {
+  flex: 1;
+  max-width: 100%;
+  min-width: 250px;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
 }

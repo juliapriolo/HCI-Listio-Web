@@ -4,7 +4,7 @@
       <!-- Page Header with Search -->
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Productos
+          Mis Listas
         </h1>
         
         <SearchBar

@@ -7,10 +7,12 @@
           Mis Listas
         </h1>
         
-        <SearchBar
-          v-model="searchQuery"
-          placeholder="Buscar listas..."
-        />
+        <div class="search-wrapper">
+            <SearchBar
+              v-model="searchQuery"
+              placeholder="Buscar productos..."
+            />
+          </div>
       </div>
 
       <!-- Shopping Lists Grid -->
@@ -235,5 +237,14 @@ onMounted(() => {
   bottom: 24px;
   right: 24px;
   z-index: 1000;
+}
+
+.search-wrapper {
+  flex: 1;
+  max-width: 100%;
+  min-width: 250px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
 }
 </style>
