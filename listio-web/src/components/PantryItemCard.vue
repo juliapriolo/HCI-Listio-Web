@@ -1,25 +1,51 @@
 <template>
   <v-card
-    class="pantry-item-card"
-    :class="getStatusClass()"
+    class="product-card"
+    hover
+    color="grey-darken-3"
   >
-    <v-card-text>
-      <!-- Header with image and basic info -->
-      <div class="d-flex align-center mb-3">
-        <v-avatar
-          size="48"
-          class="mr-3"
-        >
-          <v-img :src="item.image" :alt="item.name" />
-        </v-avatar>
-        
-        <div class="flex-grow-1">
-          <h4 class="text-h6 mb-1">{{ item.name }}</h4>
-          <p class="text-body-2 text-grey-darken-1 mb-0">
-            {{ item.category }}
-          </p>
+    <v-img
+      :src="imageSrc"
+      :alt="item.name || 'Producto'"
+      height="150"
+      cover
+    >
+      <template v-slot:placeholder>
+        <div class="d-flex align-center justify-center fill-height">
+          <v-progress-circular
+            color="grey-lighten-4"
+            indeterminate
+          ></v-progress-circular>
         </div>
+      </template>
 
+      <!-- Quantity Chip -->
+      <v-chip
+        class="info-chip quantity-chip"
+        color="success"
+        size="small"
+        variant="elevated"
+      >
+        {{ item.quantity }} {{ item.unit }}
+      </v-chip>
+
+      <!-- Expiry Date Chip -->
+      <v-chip
+        v-if="item.expiryDate"
+        class="info-chip expiry-chip"
+        color="success"
+        size="small"
+        variant="elevated"
+      >
+        {{ formatDate(item.expiryDate) }}
+      </v-chip>
+    </v-img>
+
+    <v-card-text>
+      <!-- Header with title and menu -->
+      <div class="d-flex align-center justify-space-between mb-2">
+        <h4 class="text-h6 mb-0">{{ item.name }}</h4>
+        
         <!-- Actions Menu -->
         <v-menu>
           <template v-slot:activator="{ props }">
@@ -28,89 +54,39 @@
               variant="text"
               size="small"
               v-bind="props"
+              @click.stop
             />
           </template>
           <v-list>
-            <v-list-item @click="$emit('edit', item)">
+            <v-list-item @click="$emit('edit', item.id)">
               <v-list-item-title>Editar</v-list-item-title>
               <template v-slot:prepend>
                 <v-icon>mdi-pencil</v-icon>
               </template>
             </v-list-item>
-            <v-list-item @click="$emit('delete', item)">
+            <v-list-item @click="$emit('delete', item.id)">
               <v-list-item-title>Eliminar</v-list-item-title>
               <template v-slot:prepend>
-                <v-icon>mdi-delete</v-icon>
+                <v-icon color="error">mdi-delete</v-icon>
               </template>
             </v-list-item>
           </v-list>
         </v-menu>
       </div>
 
-      <!-- Quantity Info -->
-      <div class="d-flex align-center justify-space-between mb-2">
-        <span class="text-body-2 text-grey-darken-1">
-          Cantidad:
-        </span>
-        <v-chip
-          :color="getQuantityColor(item.quantity)"
-          size="small"
-        >
-          {{ item.quantity }} {{ item.unit }}
-        </v-chip>
-      </div>
-
-      <!-- Expiry Date -->
-      <div class="d-flex align-center justify-space-between mb-2" v-if="item.expiryDate">
-        <span class="text-body-2 text-grey-darken-1">
-          Vence:
-        </span>
-        <span class="text-body-2" :class="getExpiryDateClass(item.expiryDate)">
-          {{ formatDate(item.expiryDate) }}
-        </span>
-      </div>
-
-      <!-- Status Indicator -->
-      <div class="d-flex align-center justify-space-between" v-if="item.status">
-        <span class="text-body-2 text-grey-darken-1">
-          Estado:
-        </span>
-        <v-chip
-          :color="getStatusColor(item.status)"
-          size="small"
-          variant="tonal"
-        >
-          {{ getStatusText(item.status) }}
-        </v-chip>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="d-flex gap-2 mt-3">
-        <v-btn
-          size="small"
-          variant="outlined"
-          color="primary"
-          prepend-icon="mdi-plus"
-          @click="$emit('add-quantity', item)"
-        >
-          Agregar
-        </v-btn>
-        <v-btn
-          size="small"
-          variant="outlined"
-          color="warning"
-          prepend-icon="mdi-minus"
-          @click="$emit('remove-quantity', item)"
-          :disabled="item.quantity <= 0"
-        >
-          Usar
-        </v-btn>
+      <!-- Additional Info -->
+      <div class="mt-2" v-if="item.metadata?.description">
+        <p class="text-body-2 text-grey-darken-1 mb-0">
+          {{ item.metadata.description }}
+        </p>
       </div>
     </v-card-text>
   </v-card>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   item: {
     type: Object,
@@ -121,33 +97,19 @@ const props = defineProps({
   }
 })
 
-defineEmits(['edit', 'delete', 'add-quantity', 'remove-quantity'])
+defineEmits(['edit', 'delete'])
 
-const getStatusClass = () => {
-  if (!props.item.status) return ''
-  
-  switch (props.item.status) {
-    case 'low': return 'border-warning'
-    case 'expired': return 'border-error'
-    default: return ''
-  }
-}
+const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='%23eeeeee' width='100%' height='100%'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial, Helvetica, sans-serif' font-size='24'>Sin imagen</text></svg>"
 
-const getQuantityColor = (quantity) => {
-  if (quantity <= 0) return 'error'
-  if (quantity <= 1) return 'warning'
-  return 'success'
-}
-
-const getExpiryDateClass = (expiryDate) => {
-  const today = new Date()
-  const expiry = new Date(expiryDate)
-  const daysUntilExpiry = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24))
-  
-  if (daysUntilExpiry < 0) return 'text-error'
-  if (daysUntilExpiry <= 7) return 'text-warning'
-  return 'text-success'
-}
+const imageSrc = computed(() => {
+  const item = props.item || {}
+  return (
+    item.image ||
+    item.metadata?.image ||
+    item.metadata?.imageUrl ||
+    defaultImage
+  )
+})
 
 const getStatusColor = (status) => {
   switch (status) {
@@ -174,20 +136,35 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-.pantry-item-card {
-  transition: transform 0.2s ease-in-out;
+.product-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  cursor: pointer;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.pantry-item-card:hover {
-  transform: translateY(-2px);
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
 }
 
-.border-warning {
-  border-left: 4px solid #ff9800;
+.category-chip {
+  position: absolute;
+  top: 8px;
+  left: 8px;
 }
 
-.border-error {
-  border-left: 4px solid #f44336;
+.info-chip {
+  position: absolute;
+  top: 8px;
+}
+
+.quantity-chip {
+  left: 8px;
+}
+
+.expiry-chip {
+  right: 8px;
 }
 </style>

@@ -67,7 +67,9 @@ function prepareInit(method, payload, options = {}) {
     return init;
   }
 
+  console.log('API: prepareInit - payload before JSON.stringify:', payload)
   init.body = JSON.stringify(payload);
+  console.log('API: prepareInit - body after JSON.stringify:', init.body)
   init.headers = {
     'Content-Type': 'application/json',
     ...headers,

@@ -31,6 +31,8 @@
             :product="product"
             @click="openProductDialog(product)"
             @add-to-list="addToList(product)"
+            @edit="editProduct(product)"
+            @delete="confirmDeleteProduct(product)"
           />
         </v-col>
       </v-row>
@@ -62,7 +64,7 @@
     </v-btn>
 
     <!-- Snackbar -->
-    <v-snackbar v-model="snackbar" :timeout="3000" color="success">
+    <v-snackbar v-model="snackbar" :timeout="4000" :color="snackbarColor">
       {{ snackbarText }}
       <template v-slot:actions>
         <v-btn variant="text" @click="snackbar = false">Cerrar</v-btn>
@@ -83,19 +85,45 @@
     <ProductInfoDialog
       v-model="productInfoDialog"
       :item="selectedProduct"
-      :categories="categories"
       @update="updateProduct"
       @delete="deleteProduct"
       @add-to-list="addToList"
       @cancel="productInfoDialog = false"
     />
+
+    <!-- Diálogo de confirmación de eliminación -->
+    <v-dialog v-model="deleteConfirmDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">
+          Confirmar eliminación
+        </v-card-title>
+        
+        <v-card-text>
+          <p>¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>?</p>
+          <p class="text-caption text-grey">Esta acción no se puede deshacer.</p>
+        </v-card-text>
+        
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="deleteConfirmDialog = false">
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="elevated"
+            @click="executeDelete"
+          >
+            Eliminar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/products'
-import { useCategoryStore } from '@/stores/category'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -105,22 +133,22 @@ import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
 const searchQuery = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
+const snackbarColor = ref('success')
 const loading = ref(true)
 
 const productInfoDialog = ref(false)
 const newProductDialog = ref(false)
+const deleteConfirmDialog = ref(false)
 const selectedProduct = ref(null)
+const productToDelete = ref(null)
 
 const newProductForm = ref({
   name: '',
   description: '',
-  price: '',
-  category_id: null,
+  image: null,
 })
 
 const productStore = useProductStore()
-const categoryStore = useCategoryStore()
-const categories = ref([])
 
 const addProductFields = computed(() => [
   {
@@ -137,20 +165,11 @@ const addProductFields = computed(() => [
     required: false,
   },
   {
-    key: 'price',
-    label: 'Precio',
-    type: 'number',
+    key: 'image',
+    label: 'Imagen del producto',
+    type: 'file',
     required: false,
-  },
-  {
-    key: 'category_id',
-    label: 'Categoría',
-    type: 'select',
-    required: false,
-    options: categories.value.map((c) => ({
-      title: c.name,
-      value: c.id,
-    })),
+    accept: 'image/*',
   },
 ])
 
@@ -158,17 +177,12 @@ const filteredProducts = computed(() => {
   const list = productStore.products
   if (!searchQuery.value) return list
 
-  const q = searchQuery.value.toLowerCase()
-  return list.filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) ||
-      (p.category?.name || '').toLowerCase().includes(q) ||
-      (p.description || '').toLowerCase().includes(q)
-  )
+  // Usar búsqueda local del store
+  return productStore.searchLocal(searchQuery.value)
 })
 
 const openNewProductDialog = () => {
-  newProductForm.value = { name: '', description: '', price: '', category_id: null }
+  newProductForm.value = { name: '', description: '', image: null }
   newProductDialog.value = true
 }
 
@@ -177,19 +191,46 @@ const openProductDialog = (product) => {
   productInfoDialog.value = true
 }
 
+// --- Helper Functions ---
+const convertImageToBase64 = (file) => {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve(null)
+      return
+    }
+    
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 // --- CRUD Actions ---
 const addProduct = async (formData) => {
   if (!formData.name) return
+  
   try {
-    await productStore.createRemote({
+    // Convertir imagen a base64 si existe
+    const imageBase64 = await convertImageToBase64(formData.image)
+    
+    const payload = {
       name: formData.name,
-      metadata: {},
-      category_id: formData.category_id,
-    })
+      metadata: {
+        description: formData.description || '',
+        image: imageBase64,
+      },
+    }
+    
+    await productStore.createRemote(payload)
     snackbarText.value = `${formData.name} agregado correctamente`
+    snackbarColor.value = 'success'
     snackbar.value = true
   } catch (error) {
     console.error('Error al agregar producto:', error)
+    snackbarText.value = `Error al agregar ${formData.name}: ${error.message || 'Error desconocido'}`
+    snackbarColor.value = 'error'
+    snackbar.value = true
   } finally {
     newProductDialog.value = false
   }
@@ -197,11 +238,26 @@ const addProduct = async (formData) => {
 
 const updateProduct = async (updatedData) => {
   try {
-    await productStore.updateRemote(updatedData.id, updatedData)
+    // Convertir imagen a base64 si existe
+    const imageBase64 = await convertImageToBase64(updatedData.image)
+    
+    const payload = {
+      name: updatedData.name,
+      metadata: {
+        description: updatedData.description || '',
+        image: imageBase64 || updatedData.metadata?.image, // Mantener imagen existente si no se sube nueva
+      },
+    }
+    
+    await productStore.updateRemote(updatedData.id, payload)
     snackbarText.value = `Producto actualizado correctamente`
+    snackbarColor.value = 'success'
     snackbar.value = true
-  } catch (e) {
-    console.error('Error al actualizar producto:', e)
+  } catch (error) {
+    console.error('Error al actualizar producto:', error)
+    snackbarText.value = `Error al actualizar producto: ${error.message || 'Error desconocido'}`
+    snackbarColor.value = 'error'
+    snackbar.value = true
   } finally {
     productInfoDialog.value = false
   }
@@ -211,9 +267,13 @@ const deleteProduct = async (product) => {
   try {
     await productStore.deleteRemote(product.id)
     snackbarText.value = `Producto eliminado correctamente`
+    snackbarColor.value = 'success'
     snackbar.value = true
-  } catch (e) {
-    console.error('Error al eliminar producto:', e)
+  } catch (error) {
+    console.error('Error al eliminar producto:', error)
+    snackbarText.value = `Error al eliminar producto: ${error.message || 'Error desconocido'}`
+    snackbarColor.value = 'error'
+    snackbar.value = true
   } finally {
     productInfoDialog.value = false
   }
@@ -221,17 +281,46 @@ const deleteProduct = async (product) => {
 
 const addToList = (product) => {
   snackbarText.value = `${product.name} añadido a la lista`
+  snackbarColor.value = 'success'
   snackbar.value = true
+}
+
+// --- Menu Actions ---
+const editProduct = (product) => {
+  selectedProduct.value = { ...product }
+  productInfoDialog.value = true
+}
+
+const confirmDeleteProduct = (product) => {
+  productToDelete.value = product
+  deleteConfirmDialog.value = true
+}
+
+const executeDelete = () => {
+  if (productToDelete.value) {
+    deleteProduct(productToDelete.value)
+    deleteConfirmDialog.value = false
+    productToDelete.value = null
+  }
 }
 
 onMounted(async () => {
   try {
     loading.value = true
-    await categoryStore.init()
+    
+    // Cargar productos
     await productStore.init()
-    categories.value = categoryStore.categories
+    
+    // Mostrar mensaje si no hay productos
+    if (productStore.products.length === 0) {
+      console.log('No hay productos disponibles')
+    }
+    
   } catch (err) {
-    console.error('Error cargando productos o categorías:', err)
+    console.error('Error cargando datos:', err)
+    snackbarText.value = 'Error al cargar los datos. Verificando conexión...'
+    snackbarColor.value = 'warning'
+    snackbar.value = true
   } finally {
     loading.value = false
   }

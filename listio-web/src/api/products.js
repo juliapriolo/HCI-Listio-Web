@@ -8,13 +8,12 @@ export const productsApi = {
     const payload = {
       name: data.name,
       metadata: data.metadata || {},
-      category: data.category_id ? { id: data.category_id } : undefined,
     }
     return api.post(PRODUCTS_BASE, payload)
   },
 
   // Obtener todos los productos
-  getAll(params) {
+  getAll(params = {}) {
     if (params && Object.keys(params).length > 0) {
       const qs = new URLSearchParams()
       Object.keys(params).forEach((k) => {
@@ -38,7 +37,6 @@ export const productsApi = {
     const payload = {
       name: data.name,
       metadata: data.metadata || {},
-      category: data.category_id ? { id: data.category_id } : undefined,
     }
     return api.put(`${PRODUCTS_BASE}/${id}`, payload)
   },
@@ -46,5 +44,14 @@ export const productsApi = {
   // Eliminar producto
   remove(id) {
     return api.delete(`${PRODUCTS_BASE}/${id}`)
+  },
+
+  // Buscar productos
+  search(query, params = {}) {
+    const searchParams = {
+      ...params,
+      search: query
+    }
+    return this.getAll(searchParams)
   },
 }

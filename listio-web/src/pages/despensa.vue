@@ -12,9 +12,9 @@
             <SearchBar
               v-model="searchQuery"
               :placeholder="currentView === 'categories' ? 'Buscar categorías...' : 'Buscar productos...'"
-            />
-          </div>
-          
+        />
+      </div>
+
           <!-- Filter and Share buttons (only in products view) -->
           <template v-if="currentView === 'products'">
             <v-btn
@@ -150,17 +150,22 @@
         </div>
 
         <!-- Products Grid -->
-        <div v-else-if="filteredProducts.length > 0" class="products-grid">
-          <PantryItemCard
+        <v-row v-else-if="filteredProducts.length > 0">
+        <v-col
             v-for="item in filteredProducts"
-            :key="item.id"
+          :key="item.id"
+          cols="12"
+          sm="6"
+          md="4"
+            lg="3"
+        >
+          <PantryItemCard
             :item="item"
-            @delete="deleteItem"
-            @add-quantity="addQuantity"
-            @remove-quantity="removeQuantity"
-            @save="saveItem"
+            @delete="confirmDeleteProduct"
+            @edit="editItem"
           />
-        </div>
+        </v-col>
+      </v-row>
 
       <!-- Empty State -->
       <EmptyState
@@ -190,16 +195,114 @@
       @cancel="categoryDialog = false"
     />
 
-    <!-- Add/Edit Product Dialog -->
-    <NewItemDialog
-      v-model="productDialog"
-      v-model:form-data="productForm"
-      :title="editingProduct ? 'Editar Producto' : 'Agregar Producto'"
-      :submit-text="editingProduct ? 'Actualizar' : 'Agregar'"
-      :fields="productFields"
-      @submit="saveProduct"
-      @cancel="productDialog = false"
-    />
+    <!-- Product Selection Dialog -->
+    <v-dialog v-model="productSelectionDialog" max-width="800">
+      <v-card>
+        <v-card-title class="text-h6">
+          Seleccionar Producto
+        </v-card-title>
+        <v-card-text>
+          <div v-if="availableProducts.length === 0" class="text-center py-8">
+            <v-icon size="64" color="grey-lighten-1">mdi-package-variant</v-icon>
+            <p class="mt-2 text-grey">No hay productos disponibles</p>
+            <p class="text-caption text-grey">Ve a la sección "Productos" para agregar productos primero</p>
+          </div>
+          <div v-else>
+            <div class="products-grid mb-4">
+              <v-card
+                v-for="product in availableProducts"
+                :key="product.id"
+                class="product-card"
+                :class="{ 'selected': selectedProduct?.id === product.id }"
+                @click="selectProduct(product)"
+              >
+                <v-card-text class="pa-3">
+                  <div class="d-flex align-center">
+                    <div class="product-image mr-3">
+                      <img 
+                        v-if="product.metadata?.image" 
+                        :src="product.metadata.image" 
+                        :alt="product.name"
+                        class="product-img"
+                      />
+                      <div v-else class="image-placeholder">
+                        <v-icon size="24" color="grey-lighten-1">mdi-image</v-icon>
+                      </div>
+                    </div>
+                    <div class="flex-grow-1">
+                      <h4 class="text-h6">{{ product.name }}</h4>
+                      <p v-if="product.metadata?.description" class="text-caption text-grey">
+                        {{ product.metadata.description }}
+                      </p>
+                    </div>
+                    <v-icon v-if="selectedProduct?.id === product.id" color="primary">
+                      mdi-check-circle
+                    </v-icon>
+                  </div>
+                </v-card-text>
+              </v-card>
+            </div>
+            
+            <div v-if="selectedProduct" class="mt-4">
+              <v-divider class="mb-4" />
+              <h4 class="text-h6 mb-3">Detalles del producto</h4>
+              <v-row>
+                <v-col cols="4">
+                  <v-text-field
+                    v-model="productQuantity"
+                    label="Cantidad"
+                    type="number"
+                    min="1"
+                    variant="outlined"
+                    density="compact"
+                  />
+                </v-col>
+                <v-col cols="4">
+                  <v-select
+                    v-model="productUnit"
+                    :items="['unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'caja']"
+                    label="Unidad"
+                    variant="outlined"
+                    density="compact"
+                  />
+                </v-col>
+                <v-col cols="4">
+                  <v-text-field
+                    v-model="productExpiryDate"
+                    label="Fecha de vencimiento"
+                    type="date"
+                    variant="outlined"
+                    density="compact"
+                  />
+                </v-col>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="productCategory"
+                    label="Categoría (opcional)"
+                    variant="outlined"
+                    density="compact"
+                  />
+                </v-col>
+              </v-row>
+            </div>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="productSelectionDialog = false">
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="elevated"
+            :disabled="!selectedProduct"
+            @click="addSelectedProductToPantry"
+          >
+            Agregar a la despensa
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="400">
@@ -222,6 +325,104 @@
             @click="deleteCategory"
           >
             Eliminar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Product Delete Confirmation Dialog -->
+    <v-dialog v-model="productDeleteDialog" max-width="400">
+      <v-card>
+        <v-card-title class="text-h6">
+          Confirmar eliminación
+        </v-card-title>
+        <v-card-text>
+          ¿Estás seguro de que quieres eliminar el producto "{{ productToDelete?.name }}"? 
+          Esta acción no se puede deshacer.
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="productDeleteDialog = false">
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="elevated"
+            @click="confirmDeleteProductAction"
+          >
+            Eliminar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Product Edit Dialog -->
+    <v-dialog v-model="productEditDialog" max-width="600">
+      <v-card>
+        <v-card-title class="text-h6">
+          Editar producto
+        </v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="editQuantity"
+                label="Cantidad"
+                type="number"
+                min="1"
+                variant="outlined"
+                density="compact"
+              />
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="editUnit"
+                :items="['unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'caja']"
+                label="Unidad"
+                variant="outlined"
+                density="compact"
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-text-field
+                v-model="editExpiryDate"
+                label="Fecha de vencimiento"
+                type="date"
+                variant="outlined"
+                density="compact"
+              />
+            </v-col>
+            <v-col cols="12">
+              <v-file-input
+                v-model="editImageFile"
+                label="Cambiar imagen"
+                accept="image/*"
+                variant="outlined"
+                density="compact"
+                prepend-icon=""
+                @change="handleEditImageChange"
+              />
+              <div v-if="editImagePreview" class="mt-3">
+                <img
+                  :src="editImagePreview"
+                  alt="Vista previa"
+                  style="max-width: 200px; max-height: 150px; border-radius: 8px;"
+                />
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="productEditDialog = false">
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="elevated"
+            @click="saveProductEdit"
+          >
+            Guardar
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -314,6 +515,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { usePantryStore } from '@/stores/pantry'
+import { useProductStore } from '@/stores/products'
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
@@ -326,6 +528,21 @@ const productDialog = ref(false)
 const editingProduct = ref(null)
 const deleteDialog = ref(false)
 const categoryToDelete = ref(null)
+const productDeleteDialog = ref(false)
+const productToDelete = ref(null)
+const productEditDialog = ref(false)
+const productToEdit = ref(null)
+const editQuantity = ref(1)
+const editUnit = ref('unidad')
+const editExpiryDate = ref('')
+const editImageFile = ref(null)
+const editImagePreview = ref('')
+const productSelectionDialog = ref(false)
+const selectedProduct = ref(null)
+const productQuantity = ref(1)
+const productExpiryDate = ref('')
+const productCategory = ref('')
+const productUnit = ref('unidad')
 const filterDialog = ref(false)
 const shareDialog = ref(false)
 const currentView = ref('categories') // 'categories' or 'products'
@@ -427,8 +644,13 @@ const categoryOptions = computed(() => {
   return categories.map(cat => ({ title: cat, value: cat }))
 })
 
-// Use pantry store
+const availableProducts = computed(() => {
+  return productStore.products || []
+})
+
+// Use stores
 const pantryStore = usePantryStore()
+const productStore = useProductStore()
 
 // Computed properties for filtering
 const filteredCategories = computed(() => {
@@ -476,14 +698,12 @@ const openAddCategoryDialog = () => {
 }
 
 const openAddProductDialog = () => {
-  editingProduct.value = null
-  productForm.value = {
-    name: '',
-    quantity: 1,
-    expiryDate: '',
-    category: ''
-  }
-  productDialog.value = true
+  productSelectionDialog.value = true
+  selectedProduct.value = null
+  productQuantity.value = 1
+  productExpiryDate.value = ''
+  productCategory.value = ''
+  productUnit.value = 'unidad'
 }
 
 const editCategory = (category) => {
@@ -615,12 +835,48 @@ const saveCategory = async (formData) => {
   categoryDialog.value = false
 }
 
-const saveProduct = async (formData) => {
-  if (!selectedCategory.value) return
+const addSelectedProductToPantry = async () => {
+  if (!selectedCategory.value || !selectedProduct.value) return
+  
+  const productData = {
+    product: {
+      id: selectedProduct.value.id
+    },
+    quantity: parseInt(productQuantity.value), // Convert to number
+    unit: productUnit.value,
+    metadata: {}
+  }
+  
+  console.log('Sending payload:', JSON.stringify(productData, null, 2))
+  console.log('Selected product:', selectedProduct.value)
+  console.log('Selected category:', selectedCategory.value)
   
   try {
-    const newProduct = await pantryStore.createItemRemote(selectedCategory.value.id, formData)
-    pantryItems.value.unshift(newProduct)
+    const newProduct = await pantryStore.createItemRemote(selectedCategory.value.id, productData)
+    
+    // Process the API response to ensure it has the correct structure for display
+    const processedItem = {
+      id: newProduct.id,
+      name: newProduct.product?.name || selectedProduct.value.name,
+      quantity: newProduct.quantity,
+      unit: newProduct.unit,
+      category: newProduct.product?.category?.name || productCategory.value,
+      expiryDate: newProduct.metadata?.expiryDate || productExpiryDate.value,
+      image: newProduct.product?.metadata?.image || selectedProduct.value.metadata?.image || '',
+      description: newProduct.product?.metadata?.description || selectedProduct.value.metadata?.description || '',
+      stock: newProduct.quantity, // Use quantity as stock for display
+      createdAt: newProduct.createdAt || new Date().toISOString()
+    }
+    
+    // Update the item in the store with the processed data
+    const itemIndex = pantryStore.items.findIndex(item => item.id === newProduct.id)
+    if (itemIndex > -1) {
+      pantryStore.items[itemIndex] = processedItem
+      pantryStore.save()
+    }
+    
+    // Refresh our local view
+    pantryItems.value = pantryStore.items
     
     // Update category item count
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
@@ -630,15 +886,33 @@ const saveProduct = async (formData) => {
     }
     
   } catch (error) {
-    console.error('Failed to create product via API, using local fallback:', error)
+    console.error('Failed to create product:', error)
     
-    // Fallback: Add locally
+    // Check if it's a 400 error (bad request)
+    if (error.response && error.response.status === 400) {
+      // Show error message to user
+      alert('Error: No se pudo agregar el producto. Verifica que la cantidad y unidad sean válidas.')
+      return
+    }
+    
+    // Fallback: Add locally only for network/server errors
     const newProduct = {
       id: Date.now(),
-      ...formData,
+      name: selectedProduct.value.name,
+      quantity: parseInt(productQuantity.value), // Convert to number
+      unit: productUnit.value,
+      category: productCategory.value,
+      expiryDate: productExpiryDate.value,
+      image: selectedProduct.value.metadata?.image || '',
       createdAt: new Date().toISOString()
     }
-    pantryItems.value.unshift(newProduct)
+    
+    // Add to store's local items
+    pantryStore.items.unshift(newProduct)
+    pantryStore.save()
+    
+    // Refresh our local view
+    pantryItems.value = pantryStore.items
     
     // Update category item count
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
@@ -648,7 +922,11 @@ const saveProduct = async (formData) => {
     }
   }
   
-  productDialog.value = false
+  productSelectionDialog.value = false
+}
+
+const selectProduct = (product) => {
+  selectedProduct.value = product
 }
 
 // Helper function to convert file to base64
@@ -665,12 +943,32 @@ const openCategory = async (category) => {
   console.log('Opening category:', category.name)
   selectedCategory.value = category
   currentView.value = 'products'
-  
+
   // Load items for this pantry/category
   loadingItems.value = true
   try {
     await pantryStore.fetchPantryItemsRemote(category.id)
-    pantryItems.value = pantryStore.items
+
+    // Clean up local items that might have been created as fallbacks
+    // Keep only items that exist in the API response
+    const apiItems = pantryStore.items.filter(item => item.id < 1000000000000) // API items have smaller IDs
+    pantryStore.items = apiItems
+    pantryStore.save()
+
+    // Process the items to ensure they have the correct structure for display
+    pantryItems.value = pantryStore.items.map(item => ({
+      id: item.id,
+      name: item.product?.name || item.metadata?.name || item.name || 'Producto sin nombre',
+      quantity: item.quantity || 0,
+      unit: item.unit || 'unidad',
+      category: item.product?.category?.name || item.metadata?.category || item.category || 'Sin categoría',
+      expiryDate: item.metadata?.expiryDate || item.expiryDate || '',
+      image: item.product?.metadata?.image || item.metadata?.image || item.image || '',
+      description: item.product?.metadata?.description || item.metadata?.description || '',
+      stock: item.quantity || 0, // Use quantity as stock for display
+      status: item.status || 'available',
+      createdAt: item.createdAt || new Date().toISOString()
+    }))
   } catch (error) {
     console.error('Failed to load pantry items:', error)
     pantryItems.value = []
@@ -689,14 +987,124 @@ const goBackToCategories = () => {
 const deleteItem = async (itemId) => {
   if (!selectedCategory.value) return
   
+  // Check if this is a local item (created with Date.now())
+  const isLocalItem = itemId > 1000000000000 // Date.now() generates large numbers
+  
   try {
-    await pantryStore.deleteItemRemote(selectedCategory.value.id, itemId)
+    if (!isLocalItem) {
+      // Only try to delete from API if it's not a local item
+      await pantryStore.deleteItemRemote(selectedCategory.value.id, itemId)
+    }
+    
+    // Update local items after deletion
     pantryItems.value = pantryItems.value.filter(item => item.id !== itemId)
+    
+    // Update category item count
+    const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
+    if (categoryIndex > -1) {
+      categories.value[categoryIndex].itemCount = Math.max(0, categories.value[categoryIndex].itemCount - 1)
+      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+    }
   } catch (error) {
     console.error('Failed to delete item:', error)
     // Fallback: delete locally
     pantryItems.value = pantryItems.value.filter(item => item.id !== itemId)
+    
+    // Update category item count
+    const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
+    if (categoryIndex > -1) {
+      categories.value[categoryIndex].itemCount = Math.max(0, categories.value[categoryIndex].itemCount - 1)
+      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+    }
   }
+}
+
+const editItem = (itemId) => {
+  const item = pantryItems.value.find(i => i.id === itemId)
+  if (item) {
+    productToEdit.value = item
+    editQuantity.value = item.quantity || 1
+    editUnit.value = item.unit || 'unidad'
+    editExpiryDate.value = item.expiryDate || ''
+    editImageFile.value = null
+    editImagePreview.value = item.image || item.metadata?.image || ''
+    productEditDialog.value = true
+  }
+}
+
+const handleEditImageChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    editImageFile.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      editImagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const saveProductEdit = async () => {
+  if (!productToEdit.value || !selectedCategory.value) return
+  
+  try {
+    // Prepare the update data
+    const updateData = {
+      quantity: parseInt(editQuantity.value),
+      unit: editUnit.value,
+      metadata: {
+        ...productToEdit.value.metadata,
+        expiryDate: editExpiryDate.value
+      }
+    }
+    
+    // If a new image was selected, convert it to base64
+    if (editImageFile.value) {
+      const base64Image = await convertFileToBase64(editImageFile.value)
+      updateData.metadata.image = base64Image
+    }
+    
+    // Update via API
+    await pantryStore.updateItemRemote(selectedCategory.value.id, productToEdit.value.id, updateData)
+    
+    // Update local view
+    const itemIndex = pantryItems.value.findIndex(item => item.id === productToEdit.value.id)
+    if (itemIndex > -1) {
+      pantryItems.value[itemIndex] = {
+        ...pantryItems.value[itemIndex],
+        quantity: updateData.quantity,
+        unit: updateData.unit,
+        expiryDate: updateData.metadata.expiryDate,
+        image: updateData.metadata.image || pantryItems.value[itemIndex].image,
+        metadata: updateData.metadata
+      }
+    }
+    
+    console.log('Product updated successfully')
+  } catch (error) {
+    console.error('Failed to update product:', error)
+    alert('Error al actualizar el producto. Inténtalo de nuevo.')
+  } finally {
+    productEditDialog.value = false
+    productToEdit.value = null
+  }
+}
+
+const confirmDeleteProduct = (itemId) => {
+  const item = pantryItems.value.find(i => i.id === itemId)
+  if (item) {
+    productToDelete.value = item
+    productDeleteDialog.value = true
+  }
+}
+
+const confirmDeleteProductAction = async () => {
+  if (!productToDelete.value) return
+  
+  await deleteItem(productToDelete.value.id)
+  
+  productDeleteDialog.value = false
+  productToDelete.value = null
 }
 
 const addQuantity = async (itemId) => {
@@ -822,6 +1230,13 @@ onMounted(async () => {
   } catch (error) {
     console.log('API not available, loading from localStorage')
   pantryStore.load()
+  }
+  
+  try {
+    // Initialize product store
+    await productStore.init()
+  } catch (error) {
+    console.log('Failed to initialize product store:', error)
   }
   
   // Initialize empty pantry if none exist
@@ -999,5 +1414,36 @@ onMounted(() => {
   .search-wrapper {
     width: 160px;
   }
+}
+
+/* Product Selection Dialog Styles */
+.product-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+}
+
+.product-card:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+}
+
+.product-card.selected {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.product-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>

@@ -11,15 +11,6 @@ function mapProduct(data) {
     metadata: data.metadata || {},
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
-    category: data.category
-      ? {
-          id: data.category.id,
-          name: data.category.name,
-          metadata: data.category.metadata || {},
-          createdAt: data.category.createdAt,
-          updatedAt: data.category.updatedAt,
-        }
-      : null,
   }
 }
 
@@ -74,7 +65,7 @@ export const useProductStore = defineStore('product', {
     },
 
     // --- REMOTO ---
-    async fetchRemote(params) {
+    async fetchRemote(params = {}) {
       try {
         const data = await productsApi.getAll(params)
 
@@ -90,6 +81,10 @@ export const useProductStore = defineStore('product', {
         return { items: this.products }
       } catch (e) {
         console.error('Error al obtener productos del backend:', e)
+        // Si hay error, mantener productos locales si existen
+        if (this.products.length === 0) {
+          this.load()
+        }
         throw e
       }
     },
@@ -130,11 +125,47 @@ export const useProductStore = defineStore('product', {
       }
     },
 
+    // Buscar productos
+    async searchRemote(query, params = {}) {
+      try {
+        const data = await productsApi.search(query, params)
+        
+        if (Array.isArray(data)) {
+          return data.map(mapProduct)
+        }
+        
+        const items = data?.data || data?.items || []
+        return Array.isArray(items) ? items.map(mapProduct) : []
+      } catch (e) {
+        console.error('Error al buscar productos:', e)
+        // Fallback a búsqueda local
+        return this.searchLocal(query)
+      }
+    },
+
+    // Búsqueda local
+    searchLocal(query) {
+      if (!query) return this.products
+      
+      const q = query.toLowerCase()
+      return this.products.filter(product => 
+        product.name.toLowerCase().includes(q) ||
+        (product.metadata?.description || '').toLowerCase().includes(q)
+      )
+    },
+
     // --- INIT ---
     async init() {
       this.load()
-      if (!this.products || this.products.length === 0) {
+      try {
+        // Intentar cargar desde el servidor
         await this.fetchRemote()
+      } catch (e) {
+        console.warn('No se pudo conectar con el servidor, usando datos locales')
+        // Si no hay productos locales, crear algunos de ejemplo
+        if (this.products.length === 0) {
+          this.products = []
+        }
       }
     },
   },

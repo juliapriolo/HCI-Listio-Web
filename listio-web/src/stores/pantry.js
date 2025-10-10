@@ -235,8 +235,12 @@ export const usePantryStore = defineStore('pantry', {
       this.loading = true
       this.error = null
       
+      console.log('Store: Creating item with pantryId:', pantryId)
+      console.log('Store: Item data:', JSON.stringify(itemData, null, 2))
+      
       try {
         const response = await pantryApi.addPantryItem(pantryId, itemData)
+        console.log('Store: API response:', response)
         const newItem = response.data || response
         this.items.unshift(newItem)
         this.save()
@@ -247,10 +251,18 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to create pantry item:', error)
         
-        // Fallback: add locally
+        // Don't create local fallback for 400 errors (bad request)
+        // Only create local fallback for network/server errors
+        if (error.response && error.response.status === 400) {
+          console.log('Bad request - not creating local fallback')
+          throw error // Re-throw to let the UI handle the error
+        }
+        
+        // Fallback: add locally only for network/server errors
         const newItem = {
           id: Date.now(),
           ...itemData,
+          quantity: parseInt(itemData.quantity), // Ensure quantity is a number
           createdAt: new Date().toISOString()
         }
         this.addItem(newItem)

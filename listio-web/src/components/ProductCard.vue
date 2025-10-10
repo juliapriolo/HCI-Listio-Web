@@ -2,6 +2,7 @@
   <v-card
     class="product-card"
     hover
+    color="grey-darken-3"
     @click="$emit('click', product)"
   >
     <v-img
@@ -30,27 +31,42 @@
     </v-img>
 
     <v-card-text>
-      <h4 class="text-h6 mb-1">{{ product.name }}</h4>
-
-      <!-- <div class="d-flex align-center justify-end mt-3">
-        <div class="actions-section">
-          <v-btn
-            icon
-            size="small"
-            color="success"
-            variant="elevated"
-            @click.stop="$emit('add-to-list', product)"
-            aria-label="Agregar"
-          >
-            <v-icon>mdi-plus</v-icon>
-          </v-btn>
-        </div>
-      </div> -->
+      <!-- Header with title and menu -->
+      <div class="d-flex align-center justify-space-between mb-2">
+        <h4 class="text-h6 mb-0">{{ product.name }}</h4>
+        
+        <!-- Actions Menu -->
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn
+              icon="mdi-dots-vertical"
+              variant="text"
+              size="small"
+              v-bind="props"
+              @click.stop
+            />
+          </template>
+          <v-list>
+            <v-list-item @click="$emit('edit', product)">
+              <v-list-item-title>Editar</v-list-item-title>
+              <template v-slot:prepend>
+                <v-icon>mdi-pencil</v-icon>
+              </template>
+            </v-list-item>
+            <v-list-item @click="$emit('delete', product)">
+              <v-list-item-title>Eliminar</v-list-item-title>
+              <template v-slot:prepend>
+                <v-icon color="error">mdi-delete</v-icon>
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </div>
 
       <!-- Additional Info -->
-      <div class="mt-2" v-if="product.description">
+      <div class="mt-2" v-if="product.metadata?.description">
         <p class="text-body-2 text-grey-darken-1 mb-0">
-          {{ product.description }}
+          {{ product.metadata.description }}
         </p>
       </div>
 
@@ -80,7 +96,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['click', 'add-to-list'])
+defineEmits(['click', 'add-to-list', 'edit', 'delete'])
 
 const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='%23eeeeee' width='100%' height='100%'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial, Helvetica, sans-serif' font-size='24'>Sin imagen</text></svg>"
 
@@ -136,3 +152,5 @@ const getStockText = (stock) => {
   gap: 8px;
 }
 </style>
+
+

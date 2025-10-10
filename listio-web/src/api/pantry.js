@@ -66,6 +66,12 @@ export default {
 
   // POST /api/pantries/{id}/items - Add an item to the pantry
   addPantryItem(pantryId, payload) {
+    console.log('API: addPantryItem called with:')
+    console.log('  pantryId:', pantryId)
+    console.log('  payload:', JSON.stringify(payload, null, 2))
+    console.log('  payload type:', typeof payload)
+    console.log('  payload keys:', Object.keys(payload))
+    
     return api.post(`/api/pantries/${pantryId}/items`, payload)
   },
 
