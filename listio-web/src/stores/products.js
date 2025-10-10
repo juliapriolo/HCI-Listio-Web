@@ -1,52 +1,141 @@
 import { defineStore } from 'pinia'
+import { productsApi } from '@/api/products'
 
 const STORAGE_KEY = 'listio:products'
 
-export const useProductsStore = defineStore('products', {
+function mapProduct(data) {
+  if (!data) return null
+  return {
+    id: data.id,
+    name: data.name,
+    metadata: data.metadata || {},
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    category: data.category
+      ? {
+          id: data.category.id,
+          name: data.category.name,
+          metadata: data.category.metadata || {},
+          createdAt: data.category.createdAt,
+          updatedAt: data.category.updatedAt,
+        }
+      : null,
+  }
+}
+
+export const useProductStore = defineStore('product', {
   state: () => ({
-    products: []
+    products: [],
   }),
+
   getters: {
-    byId: (state) => (id) => state.products.find(p => p.id === id)
+    getById: (state) => (id) => state.products.find((p) => p.id === id),
   },
+
   actions: {
+    // --- LOCAL ---
     load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY)
         this.products = raw ? JSON.parse(raw) : []
       } catch (e) {
-        console.error('Failed to load products', e)
+        console.error('Error cargando productos de localStorage:', e)
         this.products = []
       }
     },
+
     save() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.products))
       } catch (e) {
-        console.error('Failed to save products', e)
+        console.error('Error guardando productos en localStorage:', e)
       }
     },
-    seed(sample) {
-      this.products = sample
-      this.save()
-    },
-    addProduct(product) {
+
+    addLocal(product) {
       this.products.unshift(product)
       this.save()
     },
-    updateProduct(id, patch) {
-      const idx = this.products.findIndex(p => p.id === id)
+
+    updateLocal(id, patch) {
+      const idx = this.products.findIndex((p) => p.id === id)
       if (idx > -1) {
         this.products[idx] = { ...this.products[idx], ...patch }
         this.save()
       }
     },
-    deleteProduct(id) {
-      const idx = this.products.findIndex(p => p.id === id)
+
+    deleteLocal(id) {
+      const idx = this.products.findIndex((p) => p.id === id)
       if (idx > -1) {
         this.products.splice(idx, 1)
         this.save()
       }
-    }
-  }
+    },
+
+    // --- REMOTO ---
+    async fetchRemote(params) {
+      try {
+        const data = await productsApi.getAll(params)
+
+        if (Array.isArray(data)) {
+          this.products = data.map(mapProduct)
+          this.save()
+          return { items: this.products }
+        }
+
+        const items = data?.data || data?.items || []
+        this.products = Array.isArray(items) ? items.map(mapProduct) : []
+        this.save()
+        return { items: this.products }
+      } catch (e) {
+        console.error('Error al obtener productos del backend:', e)
+        throw e
+      }
+    },
+
+    async createRemote(payload) {
+      try {
+        const created = await productsApi.add(payload)
+        if (created && created.id) {
+          this.addLocal(mapProduct(created))
+        }
+        return created
+      } catch (e) {
+        console.error('Error al crear producto:', e)
+        throw e
+      }
+    },
+
+    async updateRemote(id, patch) {
+      try {
+        const updated = await productsApi.update(id, patch)
+        if (updated && updated.id) {
+          this.updateLocal(id, mapProduct(updated))
+        }
+        return updated
+      } catch (e) {
+        console.error('Error al actualizar producto:', e)
+        throw e
+      }
+    },
+
+    async deleteRemote(id) {
+      try {
+        await productsApi.remove(id)
+        this.deleteLocal(id)
+      } catch (e) {
+        console.error('Error al eliminar producto:', e)
+        throw e
+      }
+    },
+
+    // --- INIT ---
+    async init() {
+      this.load()
+      if (!this.products || this.products.length === 0) {
+        await this.fetchRemote()
+      }
+    },
+  },
 })

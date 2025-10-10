@@ -19,7 +19,7 @@
         </div>
       </template>
       
-      <!-- Category Badge -->
+      
       <v-chip
         class="category-chip"
         color="primary"

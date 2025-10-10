@@ -4,13 +4,17 @@
       <!-- Page Header with Search -->
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Mis Listas
+          Productos
         </h1>
-        
-        <SearchBar
-          v-model="searchQuery"
-          placeholder="Buscar productos..."
-        />
+
+        <div class="header-actions">
+          <div class="search-wrapper">
+            <SearchBar
+              v-model="searchQuery"
+              placeholder="Buscar productos..."
+            />
+          </div>
+        </div>
       </div>
 
       <!-- Products Grid -->
@@ -25,148 +29,162 @@
         >
           <ProductCard
             :product="product"
-            @click="selectProduct"
-            @add-to-list="addToList"
+            @click="selectProduct(product)"
+            @add-to-list="addToList(product)"
           />
         </v-col>
       </v-row>
 
       <!-- Empty State -->
       <EmptyState
-        v-if="filteredProducts.length === 0"
+        v-if="!loading && filteredProducts.length === 0"
         icon="mdi-package-variant"
         title="No se encontraron productos"
         description="Intenta con otros términos de búsqueda"
       />
+
+      <!-- Loading Spinner -->
+      <div v-if="loading" class="text-center py-12">
+        <v-progress-circular indeterminate color="primary" size="48" />
+      </div>
     </v-container>
 
-    <!-- Success Snackbar -->
-    <v-snackbar
-      v-model="snackbar"
-      :timeout="3000"
+    <!-- Floating Action Button -->
+    <v-btn
       color="success"
+      size="large"
+      icon
+      class="new-item-fab"
+      elevation="8"
+      @click="openNewProductDialog"
     >
+      <v-icon size="24">mdi-plus</v-icon>
+    </v-btn>
+
+    <!-- Snackbar -->
+    <v-snackbar v-model="snackbar" :timeout="3000" color="success">
       {{ snackbarText }}
       <template v-slot:actions>
-        <v-btn
-          variant="text"
-          @click="snackbar = false"
-        >
-          Cerrar
-        </v-btn>
+        <v-btn variant="text" @click="snackbar = false">Cerrar</v-btn>
       </template>
     </v-snackbar>
+
+    <!-- Diálogo para nuevo producto -->
+    <NewItemDialog
+      v-model="newProductDialog"
+      v-model:form-data="newProductForm"
+      title="Agregar Producto"
+      submit-text="Confirmar"
+      :fields="addProductFields"
+      @submit="addProduct"
+      @cancel="newProductDialog = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useProductsStore } from '@/stores/products'
+import { useProductStore } from '@/stores/products'
+import { useCategoryStore } from '@/stores/category'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import NewItemDialog from '@/components/NewItemDialog.vue'
 
-// Reactive data
 const searchQuery = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
+const loading = ref(true)
 
-// Use Pinia products store
-const productsStore = useProductsStore()
+const newProductDialog = ref(false)
+const newProductForm = ref({
+  name: '',
+  description: '',
+  price: '',
+  category_id: null,
+})
 
-// Sample products data with enhanced information
-const sampleProducts = [
-  {
-    id: 1,
-    name: 'Leche Entera',
-    category: 'Lácteos',
-    price: '2.99',
-    unit: 'L',
-    stock: 15,
-    description: 'Leche fresca entera de alta calidad',
-    image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&h=300&fit=crop'
-  },
-  {
-    id: 2,
-    name: 'Pan Integral',
-    category: 'Panadería',
-    price: '1.50',
-    unit: 'unidad',
-    stock: 8,
-    description: 'Pan integral artesanal recién horneado',
-    image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=300&fit=crop'
-  },
-  {
-    id: 3,
-    name: 'Manzanas',
-    category: 'Frutas',
-    price: '3.20',
-    unit: 'kg',
-    stock: 25,
-    description: 'Manzanas rojas frescas de temporada',
-    image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&h=300&fit=crop'
-  },
-  {
-    id: 4,
-    name: 'Pollo',
-    category: 'Carnes',
-    price: '8.99',
-    unit: 'kg',
-    stock: 12,
-    description: 'Pollo fresco de granja',
-    image: 'https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=400&h=300&fit=crop'
-  },
-  {
-    id: 5,
-    name: 'Arroz',
-    category: 'Granos',
-    price: '2.10',
-    unit: 'kg',
-    stock: 30,
-    description: 'Arroz blanco de grano largo',
-    image: 'https://images.unsplash.com/photo-1516684732162-798a0062be99?w=400&h=300&fit=crop'
-  },
-  {
-    id: 6,
-    name: 'Yogurt',
-    category: 'Lácteos',
-    price: '1.75',
-    unit: 'unidad',
-    stock: 0,
-    description: 'Yogurt natural cremoso',
-    image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop'
-  }
-]
+const productStore = useProductStore()
+const categoryStore = useCategoryStore()
+const categories = ref([])
 
-// Computed properties
+const addProductFields = computed(() => [
+  {
+    key: 'name',
+    label: 'Nombre del producto',
+    type: 'text',
+    required: true,
+    autofocus: true,
+  },
+  {
+    key: 'description',
+    label: 'Descripción (opcional)',
+    type: 'textarea',
+    required: false,
+  },
+  {
+    key: 'price',
+    label: 'Precio',
+    type: 'number',
+    required: false,
+  },
+  {
+    key: 'category_id',
+    label: 'Categoría',
+    type: 'select',
+    required: false,
+    options: categories.value.map((c) => ({
+      title: c.name,
+      value: c.id,
+    })),
+  },
+])
+
 const filteredProducts = computed(() => {
-  const list = productsStore.products
+  const list = productStore.products
   if (!searchQuery.value) return list
-  
-  return list.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    (product.description || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+
+  const q = searchQuery.value.toLowerCase()
+  return list.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) ||
+      (p.category?.name || '').toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q)
   )
 })
 
-// Methods
-const selectProduct = (product) => {
-  console.log('Selected product:', product.name)
-  // Navigate to product detail or implement selection logic
+const openNewProductDialog = () => {
+  newProductForm.value = { name: '', description: '', price: '', category_id: null }
+  newProductDialog.value = true
 }
 
-const addToList = (product) => {
-  snackbarText.value = `${product.name} agregado a la lista`
-  snackbar.value = true
-  console.log('Added to list:', product.name)
-  // Could call a list store to add to active list
+const addProduct = async (formData) => {
+  if (!formData.name) return
+  try {
+    await productStore.createRemote({
+      name: formData.name,
+      metadata: {},
+      category_id: formData.category_id,
+    })
+    snackbarText.value = `${formData.name} agregado correctamente`
+    snackbar.value = true
+  } catch (error) {
+    console.error('Error al agregar producto:', error)
+  } finally {
+    newProductDialog.value = false
+  }
 }
 
-onMounted(() => {
-  productsStore.load()
-  if (!productsStore.products || productsStore.products.length === 0) {
-    productsStore.seed(sampleProducts)
+onMounted(async () => {
+  try {
+    loading.value = true
+    await categoryStore.init()
+    await productStore.init()
+    categories.value = categoryStore.categories
+  } catch (err) {
+    console.error('Error cargando productos o categorías:', err)
+  } finally {
+    loading.value = false
   }
 })
 </script>
@@ -174,8 +192,37 @@ onMounted(() => {
 <style scoped>
 .products-page {
   padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding-bottom: 6rem;
   min-height: calc(100vh - 80px);
   background-color: #fafafa;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 8px;
+}
+
+.search-wrapper {
+  flex: 1;
+  max-width: 100%;
+  min-width: 250px;
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .search-wrapper {
+    width: 160px;
+  }
+}
+
+.new-item-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
 }
 </style>
