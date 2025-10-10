@@ -162,9 +162,8 @@ const totalPages = computed(() => {
 
 // Methods
 const openList = (list) => {
-  // Navigate to list detail (to be implemented)
-  // console.log('Opening list:', list.name)
-  router.push("/list")
+  // Navigate to list detail and pass the list id as a query parameter
+  router.push({ path: '/list', query: { id: String(list.id) } })
 }
 
 const editList = (list) => {

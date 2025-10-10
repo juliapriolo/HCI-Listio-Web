@@ -4,7 +4,7 @@
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Mi Lista: Supermercado
+          {{ currentListName }}
         </h1>
         
         <div class="header-actions">
@@ -54,7 +54,8 @@
 
                 <div class="item-buttons">
                   <v-checkbox
-                    v-model="item.checked"
+                    :model-value="item.checked"
+                    @click="toggleChecked(item)"
                     :ripple="false"
                     color="black"
                     base-color="black"
@@ -146,20 +147,44 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
+import { useListItemsStore } from '@/stores/listItems'
+import { useListsStore } from '@/stores/lists'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
 import ItemMenuDialog from '@/components/ItemMenuDialog.vue'
 
-// Datos iniciales de ejemplo
-const items = ref([
-  { id: 1, name: "Manzanas", category: "Frutas", checked: true },
-  { id: 2, name: "Pan", category: "Despensa", checked: true },
-  { id: 3, name: "Leche", category: "Lácteos", checked: false },
-  { id: 4, name: "Aceite", category: "Despensa", checked: false },
-  { id: 5, name: "Yogur", category: "Lácteos", checked: false }
-])
+// Use listItems store for per-list persistence
+const route = useRoute()
+const listItemsStore = useListItemsStore()
+const listsStore = useListsStore()
+
+const items = computed(() => listItemsStore.items)
+
+// Load the items for the requested list id (query param `id`). If no id
+// present, keep items empty.
+const loadForRoute = () => {
+  const id = route.query.id || null
+  // route.query values are strings; try to coerce numeric ids
+  const listId = id ? (Number(id) || id) : null
+  listItemsStore.load(listId)
+}
+
+const currentListName = computed(() => {
+  const id = route.query.id || null
+  const listId = id ? (Number(id) || id) : null
+  const list = listId ? listsStore.getById(listId) : null
+  return list ? `Mi Lista: ${list.name}` : 'Mi Lista'
+})
+
+onMounted(() => loadForRoute())
+watch(() => route.fullPath, () => loadForRoute())
+onBeforeUnmount(() => {
+  // stop storage event listening when component unmounts
+  try { listItemsStore.stopListening() } catch (e) {}
+})
 
 const searchQuery = ref('')
 const newItemDialog = ref(false)
@@ -240,25 +265,21 @@ const openFilterDialog = () => {
 
 const addItem = (formData) => {
   if (!formData.name) return
-  items.value.push({
-    id: Date.now(),
+  listItemsStore.addItem({
     name: formData.name,
-    category: "Sin categoría",
+    category: 'Sin categoría',
     checked: false
   })
   newItemDialog.value = false
 }
 
 const updateItem = (updated) => {
-  const index = items.value.findIndex(i => i.id === updated.id)
-  if (index !== -1) {
-    items.value[index] = { ...updated }
-  }
+  listItemsStore.updateItem(updated.id, updated)
   itemMenuDialog.value = false
 }
 
 const deleteItem = (item) => {
-  items.value = items.value.filter(i => i.id !== item.id)
+  listItemsStore.deleteItem(item.id)
   itemMenuDialog.value = false
 }
 
@@ -269,6 +290,11 @@ const shareList = (list) => {
 
 const applyFilters = (appliedFilters) => {
   filters.value = { ...appliedFilters }
+}
+
+// Toggle checked state and persist
+const toggleChecked = (item) => {
+  listItemsStore.updateItem(item.id, { checked: !item.checked })
 }
 </script>
 

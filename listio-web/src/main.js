@@ -17,7 +17,7 @@ import { createApp } from 'vue'
 import 'unfonts.css'
 
 import { createPinia } from 'pinia'
-import { useUserStore } from '@/stores/user'
+import bootstrapStores from '@/stores/bootstrap'
 
 const app = createApp(App)
 
@@ -27,13 +27,9 @@ app.use(pinia)
 
 registerPlugins(app)
 
-const userStore = useUserStore(pinia)
-userStore.load()
-
-if (userStore.token) {
-  userStore.fetchProfile().catch((err) => {
-    console.error('Failed to refresh user profile', err)
-  })
-}
+// Bootstrap stores (load persisted state, refresh profile if needed)
+bootstrapStores(pinia).catch((err) => {
+  console.error('Failed to bootstrap stores', err)
+})
 
 app.mount('#app')
