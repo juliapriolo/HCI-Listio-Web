@@ -25,7 +25,7 @@
         <form @submit.prevent="handleLogin" class="login-form">
           <!-- Campo Email -->
           <div class="form-group">
-            <label for="email" class="form-label">Mail</label>
+            <label for="email" class="form-label">Email</label>
             <input
               id="email"
               v-model="form.email"
@@ -473,12 +473,12 @@ const sendVerificationEmail = async () => {
   sendingVerification.value = true
   try {
     await usersApi.sendVerification({ email })
-    setLoginFeedback('success', 'Te enviamos un nuevo correo de verificación. Revisá tu bandeja.', {
+    setLoginFeedback('success', 'Te enviamos un nuevo email de verificación. Revisá tu bandeja.', {
       canResend: false,
       canVerify: true
     })
   } catch (error) {
-    const message = getErrorMessage(error, 'No pudimos reenviar el correo de verificación')
+    const message = getErrorMessage(error, 'No pudimos reenviar el email de verificación')
     const needsVerification = /not verified/i.test(error?.message || message)
     setLoginFeedback('error', message, { canResend: needsVerification, canVerify: true })
   } finally {

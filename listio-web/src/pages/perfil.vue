@@ -24,16 +24,26 @@ const handleLogout = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Asegurar que los datos del usuario se carguen del localStorage
+  if (!userStore.token) {
+    userStore.load()
+  }
+  
+  // Verificar nuevamente después de cargar
   if (!userStore.token) {
     redirectToLogin()
     return
   }
 
-  if (!storedProfile.value) {
-    userStore.fetchProfile().catch(() => {
+  // Si no tenemos perfil, intentar cargarlo
+  if (!userStore.profile) {
+    try {
+      await userStore.fetchProfile()
+    } catch (error) {
+      console.error('Error al cargar perfil:', error)
       redirectToLogin()
-    })
+    }
   }
 })
 </script>

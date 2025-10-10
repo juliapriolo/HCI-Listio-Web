@@ -40,15 +40,16 @@
           </div>
 
           <div class="form-group">
-            <label for="email" class="form-label">Mail</label>
+            <label for="email" class="form-label">Email</label>
             <input
               id="email"
               v-model="form.email"
               type="email"
-              class="form-input"
-              placeholder="Ingrese su mail"
+              :class="['form-input', errors.email ? 'form-input--error' : '']"
+              placeholder="Ingrese su email"
               required
             />
+            <p v-if="errors.email" class="input-error-text">{{ errors.email }}</p>
           </div>
 
           <div class="form-group">
@@ -93,7 +94,13 @@ const form = ref({
   password: '',
 })
 
+const errors = ref({
+  email: '',
+})
+
 const handleRegister = async () => {
+  errors.value.email = ''
+
   const payload = {
     name: form.value.name.trim(),
     surname: form.value.surname.trim(),
@@ -106,7 +113,12 @@ const handleRegister = async () => {
     alert('Registro completado. Inicia sesión para continuar.')
     router.push({ path: '/login', query: { registered: '1' } })
   } catch (error) {
-    alert(error?.message || 'No se pudo registrar.')
+    const message = error?.message || 'No se pudo registrar.'
+    if (/email.*(exists|registered)/i.test(message)) {
+      errors.value.email = 'Este email ya está registrado.'
+      return
+    }
+    alert(message)
   }
 }
 </script>
@@ -225,6 +237,17 @@ const handleRegister = async () => {
   border-radius: 10px;
   font-size: 1rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input--error {
+  border-color: #e53935;
+  background-color: #fdeaea;
+}
+
+.input-error-text {
+  color: #b71c1c;
+  font-size: 0.85rem;
+  margin: 0;
 }
 
 .form-input:focus {

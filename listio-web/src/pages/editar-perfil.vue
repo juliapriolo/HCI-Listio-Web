@@ -37,6 +37,7 @@ watch(
 )
 
 const showPasswordModal = ref(false)
+const showAvatarModal = ref(false)
 const passwordForm = reactive({ current: '', new: '' })
 
 const handleFileUpload = (event) => {
@@ -53,15 +54,30 @@ const handleFileUpload = (event) => {
   reader.readAsDataURL(file)
 }
 
+const showSuccessMessage = ref(false)
+
 const submitForm = async () => {
   try {
-    await userStore.updateProfile({
+    // Solo enviar los campos que realmente pueden cambiar
+    const updateData = {
       name: form.name,
-      email: form.email,
       avatar: form.avatar,
-    })
-    alert('Perfil actualizado con exito')
-    router.push('/perfil')
+    }
+    
+    // Solo incluir surname si existe en el perfil original
+    if (profile.value?.surname) {
+      updateData.surname = profile.value.surname
+    }
+    
+    await userStore.updateProfile(updateData)
+    
+    // Mostrar mensaje agradable
+    showSuccessMessage.value = true
+    setTimeout(() => {
+      showSuccessMessage.value = false
+      router.push('/perfil')
+    }, 2000)
+    
   } catch (error) {
     alert(error?.message || 'No se pudo actualizar el perfil')
   }
@@ -81,54 +97,100 @@ const changePassword = async () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Asegurar que los datos del usuario se carguen del localStorage
+  if (!userStore.token) {
+    userStore.load()
+  }
+  
+  // Verificar nuevamente después de cargar
   if (!userStore.token) {
     redirectToLogin()
     return
   }
 
+  // Si no tenemos perfil, intentar cargarlo
   if (!profile.value) {
-    userStore.fetchProfile().catch(() => {
+    try {
+      await userStore.fetchProfile()
+    } catch (error) {
+      console.error('Error al cargar perfil:', error)
       redirectToLogin()
-    })
+    }
   }
 })
 </script>
 
 <template>
   <main class="edit-profile">
-    <h1 class="edit-profile__title">Editar Perfil</h1>
+    <!-- Header con flecha y título alineados -->
+    <div class="page-header">
+      <button @click="router.push('/perfil')" class="back-button">
+        <span class="back-arrow">←</span>
+        <span class="back-text">Perfil</span>
+      </button>
+      <h1 class="edit-profile__title">Editar Perfil</h1>
+      <div class="spacer"></div>
+    </div>
 
-    <form class="edit-profile__form" @submit.prevent="submitForm">
-      <div class="form-group">
-        <label for="name">Nombre</label>
-        <input v-model="form.name" id="name" type="text" required />
-      </div>
-
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input v-model="form.email" id="email" type="email" required />
-      </div>
-
-      <div class="form-group">
-        <button type="button" class="btn btn--secondary" @click="showPasswordModal = true">
-        </button>
-      </div>
-
-      <div class="form-group">
-        <label for="avatar">Foto de Perfil</label>
-        <input type="file" id="avatar" @change="handleFileUpload" />
-        <div v-if="avatarPreview" class="avatar-preview">
-          <img :src="avatarPreview" alt="Vista previa del avatar" />
+    <!-- Mensaje de éxito -->
+    <div v-if="showSuccessMessage" class="success-message">
+      <div class="success-content">
+        <div class="success-icon">✓</div>
+        <div class="success-text">
+          <h3>¡Perfil actualizado!</h3>
+          <p>Tus cambios se han guardado correctamente</p>
         </div>
       </div>
+    </div>
 
-      <div class="edit-profile__actions">
-        <button type="submit" class="btn btn--save">Guardar</button>
-        <router-link to="/perfil" class="btn btn--cancel">Cancelar</router-link>
+    <form class="edit-profile__form" @submit.prevent="submitForm">
+      <div class="form-container">
+        <!-- Foto de perfil centrada -->
+        <div class="avatar-section">
+          <div class="avatar-container" @click="showAvatarModal = true">
+            <img 
+              v-if="avatarPreview" 
+              :src="avatarPreview" 
+              alt="Foto de perfil" 
+              class="avatar-image"
+            />
+            <div v-else class="avatar-placeholder">
+              <span class="avatar-icon">👤</span>
+            </div>
+            <div class="avatar-overlay">
+              <span class="avatar-edit-icon">📷</span>
+            </div>
+          </div>
+          <p class="avatar-hint">Haz clic para cambiar tu foto</p>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="name">Nombre</label>
+            <input v-model="form.name" id="name" type="text" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input v-model="form.email" id="email" type="email" readonly disabled />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="button" class="btn btn--secondary" @click="showPasswordModal = true">
+            Cambiar contraseña
+          </button>
+        </div>
+
+        <div class="edit-profile__actions">
+          <button type="submit" class="btn btn--save">Guardar</button>
+          <router-link to="/perfil" class="btn btn--cancel">Cancelar</router-link>
+        </div>
       </div>
     </form>
 
+    <!-- Modal de cambio de contraseña -->
     <div v-if="showPasswordModal" class="modal-overlay">
       <div class="modal">
         <h2>Cambiar contraseña</h2>
@@ -146,6 +208,42 @@ onMounted(() => {
             <button type="button" class="btn btn--cancel" @click="showPasswordModal = false">Cancelar</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Modal de cambio de avatar -->
+    <div v-if="showAvatarModal" class="modal-overlay">
+      <div class="modal">
+        <h2>Cambiar foto de perfil</h2>
+        <div class="avatar-modal-content">
+          <div class="current-avatar">
+            <img 
+              v-if="avatarPreview" 
+              :src="avatarPreview" 
+              alt="Foto actual" 
+              class="modal-avatar-preview"
+            />
+            <div v-else class="modal-avatar-placeholder">
+              <span class="avatar-icon">👤</span>
+            </div>
+          </div>
+          <div class="avatar-upload">
+            <input 
+              type="file" 
+              id="avatarFile" 
+              @change="handleFileUpload" 
+              accept="image/*"
+              style="display: none"
+            />
+            <label for="avatarFile" class="upload-button">
+              📁 Seleccionar nueva foto
+            </label>
+            <p class="upload-hint">JPG, PNG o GIF. Máximo 5MB.</p>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn--save" @click="showAvatarModal = false">Cerrar</button>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -175,18 +273,158 @@ onMounted(() => {
 }
 
 .edit-profile {
-  max-width: 600px;
-  margin: 40px auto;
-  padding: 24px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  min-height: 100vh;
+  padding: 20px;
+  background: #f9f9f9;
+  margin: 0;
+  max-width: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Header alineado */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.spacer {
+  width: 100px; /* Mismo ancho aproximado que el botón de regreso */
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #4CAF50;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+  min-width: 100px;
+}
+
+.back-button:hover {
+  background-color: #f5f5f5;
+}
+
+.back-arrow {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.back-text {
+  font-weight: 500;
 }
 
 .edit-profile__title {
   font-size: 24px;
   font-weight: bold;
+  color: #333;
+  margin: 0;
+  text-align: center;
+  flex: 1;
+}
+
+/* Layout del formulario */
+.edit-profile__form {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 120px);
+  padding-top: 20px;
+}
+
+.form-container {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 500px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
   margin-bottom: 20px;
+}
+
+/* Sección de Avatar */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.avatar-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 4px solid #e0e0e0;
+}
+
+.avatar-container:hover {
+  transform: scale(1.05);
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-icon {
+  font-size: 48px;
+  color: #999;
+}
+
+.avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+}
+
+.avatar-edit-icon {
+  font-size: 16px;
+  color: white;
+}
+
+.avatar-hint {
+  margin-top: 8px;
+  color: #666;
+  font-size: 14px;
+  text-align: center;
 }
 
 .form-group {
@@ -204,6 +442,12 @@ onMounted(() => {
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
+}
+
+.form-group input:disabled {
+  background-color: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
 }
 
 .form-group small {
@@ -255,13 +499,155 @@ onMounted(() => {
 }
 
 .btn--secondary {
-  background: #009951;
+  background: #4CAF50;
   color: #fff;
   border: none;
   font-weight: 600;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: 8px;
   cursor: pointer;
-  margin-bottom: 8px;
+  width: 100%;
+  margin-bottom: 16px;
+  font-size: 14px;
+  transition: background-color 0.3s ease;
+}
+
+.btn--secondary:hover {
+  background: #45A049;
+}
+
+/* Mensaje de éxito */
+.success-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.success-content {
+  background: linear-gradient(135deg, #4CAF50, #45A049);
+  color: white;
+  padding: 20px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 300px;
+}
+
+.success-icon {
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.success-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.success-text p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Estilos del modal de avatar */
+.avatar-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.current-avatar {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-avatar-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #e0e0e0;
+}
+
+.modal-avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #e0e0e0;
+}
+
+.avatar-upload {
+  text-align: center;
+}
+
+.upload-button {
+  display: inline-block;
+  background: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.upload-button:hover {
+  background: #45A049;
+}
+
+.upload-hint {
+  margin-top: 8px;
+  color: #666;
+  font-size: 12px;
+}
+
+.modal-actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-container {
+    padding: 30px 20px;
+    margin: 0 10px;
+  }
+  
+  .edit-profile {
+    padding: 10px;
+  }
 }
 </style>
