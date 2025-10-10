@@ -108,16 +108,12 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.getAllPantries(params)
-        // this.pantries = response.data || response
-        // this.lastSync = new Date().toISOString()
-        // this.save()
+        const response = await pantryApi.getAllPantries(params)
+        this.pantries = response.data || response
+        this.lastSync = new Date().toISOString()
+        this.save()
         
-        // For now, just load from localStorage
-        this.load()
-        
-        console.log('Pantries API fetch - commented out until API is enabled')
+        console.log('Pantries fetched from API successfully')
       } catch (error) {
         this.error = error.message
         console.error('Failed to fetch pantries:', error)
@@ -133,17 +129,13 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.getPantryItemsPaginated(pantryId, params)
-        // this.items = response.data || response
-        // this.currentPantryId = pantryId
-        // this.lastSync = new Date().toISOString()
-        // this.save()
+        const response = await pantryApi.getPantryItemsPaginated(pantryId, params)
+        this.items = response.data || response
+        this.currentPantryId = pantryId
+        this.lastSync = new Date().toISOString()
+        this.save()
         
-        // For now, just load from localStorage
-        this.load()
-        
-        console.log('Pantry items API fetch - commented out until API is enabled')
+        console.log('Pantry items fetched from API successfully')
       } catch (error) {
         this.error = error.message
         console.error('Failed to fetch pantry items:', error)
@@ -159,21 +151,27 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.createPantry(pantryData)
-        // this.pantries.unshift(response.data || response)
-        // this.save()
+        const response = await pantryApi.createPantry(pantryData)
+        const newPantry = response.data || response
+        this.pantries.unshift(newPantry)
+        this.save()
         
-        // For now, add locally
-        pantryData.id = Date.now()
-        this.addPantry(pantryData)
-        
-        console.log('Pantry API create - commented out until API is enabled')
-        return pantryData
+        console.log('Pantry created via API successfully')
+        return newPantry
       } catch (error) {
         this.error = error.message
         console.error('Failed to create pantry:', error)
-        throw error
+        
+        // Fallback: add locally with proper structure
+        const newPantry = {
+          id: Date.now(),
+          name: pantryData.name,
+          metadata: pantryData.metadata || {},
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+        this.addPantry(newPantry)
+        return newPantry
       } finally {
         this.loading = false
       }
@@ -184,23 +182,22 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.updatePantry(pantryId, patch)
-        // const idx = this.pantries.findIndex(p => p.id === pantryId)
-        // if (idx > -1) {
-        //   this.pantries[idx] = { ...this.pantries[idx], ...patch }
-        //   this.save()
-        // }
+        const response = await pantryApi.updatePantry(pantryId, patch)
+        const idx = this.pantries.findIndex(p => p.id === pantryId)
+        if (idx > -1) {
+          this.pantries[idx] = { ...this.pantries[idx], ...patch }
+          this.save()
+        }
         
-        // For now, update locally
-        this.updatePantry(pantryId, patch)
-        
-        console.log('Pantry API update - commented out until API is enabled')
+        console.log('Pantry updated via API successfully')
         return patch
       } catch (error) {
         this.error = error.message
         console.error('Failed to update pantry:', error)
-        throw error
+        
+        // Fallback: update locally
+        this.updatePantry(pantryId, patch)
+        return patch
       } finally {
         this.loading = false
       }
@@ -211,26 +208,24 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // await pantryApi.deletePantry(pantryId)
-        // const idx = this.pantries.findIndex(p => p.id === pantryId)
-        // if (idx > -1) {
-        //   this.pantries.splice(idx, 1)
-        //   if (this.currentPantryId === pantryId) {
-        //     this.currentPantryId = this.pantries.length > 0 ? this.pantries[0].id : null
-        //     this.items = []
-        //   }
-        //   this.save()
-        // }
+        await pantryApi.deletePantry(pantryId)
+        const idx = this.pantries.findIndex(p => p.id === pantryId)
+        if (idx > -1) {
+          this.pantries.splice(idx, 1)
+          if (this.currentPantryId === pantryId) {
+            this.currentPantryId = this.pantries.length > 0 ? this.pantries[0].id : null
+            this.items = []
+          }
+          this.save()
+        }
         
-        // For now, delete locally
-        this.deletePantry(pantryId)
-        
-        console.log('Pantry API delete - commented out until API is enabled')
+        console.log('Pantry deleted via API successfully')
       } catch (error) {
         this.error = error.message
         console.error('Failed to delete pantry:', error)
-        throw error
+        
+        // Fallback: delete locally
+        this.deletePantry(pantryId)
       } finally {
         this.loading = false
       }
@@ -241,21 +236,25 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.addPantryItem(pantryId, itemData)
-        // this.items.unshift(response.data || response)
-        // this.save()
+        const response = await pantryApi.addPantryItem(pantryId, itemData)
+        const newItem = response.data || response
+        this.items.unshift(newItem)
+        this.save()
         
-        // For now, add locally
-        itemData.id = Date.now()
-        this.addItem(itemData)
-        
-        console.log('Pantry item API create - commented out until API is enabled')
-        return itemData
+        console.log('Pantry item created via API successfully')
+        return newItem
       } catch (error) {
         this.error = error.message
         console.error('Failed to create pantry item:', error)
-        throw error
+        
+        // Fallback: add locally
+        const newItem = {
+          id: Date.now(),
+          ...itemData,
+          createdAt: new Date().toISOString()
+        }
+        this.addItem(newItem)
+        return newItem
       } finally {
         this.loading = false
       }
@@ -266,23 +265,22 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.updatePantryItem(pantryId, itemId, patch)
-        // const idx = this.items.findIndex(i => i.id === itemId)
-        // if (idx > -1) {
-        //   this.items[idx] = { ...this.items[idx], ...patch }
-        //   this.save()
-        // }
+        const response = await pantryApi.updatePantryItem(pantryId, itemId, patch)
+        const idx = this.items.findIndex(i => i.id === itemId)
+        if (idx > -1) {
+          this.items[idx] = { ...this.items[idx], ...patch }
+          this.save()
+        }
         
-        // For now, update locally
-        this.updateItem(itemId, patch)
-        
-        console.log('Pantry item API update - commented out until API is enabled')
+        console.log('Pantry item updated via API successfully')
         return patch
       } catch (error) {
         this.error = error.message
         console.error('Failed to update pantry item:', error)
-        throw error
+        
+        // Fallback: update locally
+        this.updateItem(itemId, patch)
+        return patch
       } finally {
         this.loading = false
       }
@@ -293,22 +291,20 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       
       try {
-        // TODO: Uncomment when API is enabled
-        // await pantryApi.deletePantryItem(pantryId, itemId)
-        // const idx = this.items.findIndex(i => i.id === itemId)
-        // if (idx > -1) {
-        //   this.items.splice(idx, 1)
-        //   this.save()
-        // }
+        await pantryApi.deletePantryItem(pantryId, itemId)
+        const idx = this.items.findIndex(i => i.id === itemId)
+        if (idx > -1) {
+          this.items.splice(idx, 1)
+          this.save()
+        }
         
-        // For now, delete locally
-        this.deleteItem(itemId)
-        
-        console.log('Pantry item API delete - commented out until API is enabled')
+        console.log('Pantry item deleted via API successfully')
       } catch (error) {
         this.error = error.message
         console.error('Failed to delete pantry item:', error)
-        throw error
+        
+        // Fallback: delete locally
+        this.deleteItem(itemId)
       } finally {
         this.loading = false
       }

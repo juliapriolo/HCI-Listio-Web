@@ -57,6 +57,20 @@
             :required="field.required"
             rows="3"
           />
+          
+          <!-- File Field -->
+          <div v-else-if="field.type === 'file'">
+            <v-file-input
+              :model-value="formData[field.key]"
+              @update:model-value="updateField(field.key, $event)"
+              :label="field.label"
+              variant="outlined"
+              :required="field.required"
+              :accept="field.accept"
+              prepend-icon=""
+              prepend-inner-icon="mdi-camera"
+            />
+          </div>
         </div>
       </v-card-text>
       
@@ -123,6 +137,9 @@ const isFormValid = computed(() => {
   const requiredFields = props.fields.filter(field => field.required)
   return requiredFields.every(field => {
     const value = props.formData[field.key]
+    if (field.type === 'file') {
+      return value && value.length > 0
+    }
     return value && value.toString().trim() !== ''
   })
 })

@@ -1,6 +1,6 @@
 <template>
   <v-card
-    class="text-center pa-8"
+    class="empty-state-card"
     color="grey-lighten-5"
     flat
   >
@@ -69,5 +69,13 @@ defineEmits(['action'])
 </script>
 
 <style scoped>
-/* Component-specific styles can go here if needed */
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 400px;
+  padding: 2rem;
+}
 </style>
