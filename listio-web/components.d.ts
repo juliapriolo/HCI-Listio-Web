@@ -15,6 +15,7 @@ declare module 'vue' {
     FilterList: typeof import('./src/components/FilterList.vue')['default']
     ItemMenuDialog: typeof import('./src/components/ItemMenuDialog.vue')['default']
     ListCard: typeof import('./src/components/ListCard.vue')['default']
+    LoginCard: typeof import('./src/components/LoginCard.vue')['default']
     NewItemDialog: typeof import('./src/components/NewItemDialog.vue')['default']
     PantryItemCard: typeof import('./src/components/PantryItemCard.vue')['default']
     ProductCard: typeof import('./src/components/ProductCard.vue')['default']
