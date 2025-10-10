@@ -6,7 +6,7 @@ export async function bootstrapStores(pinia) {
   // Import stores lazily to avoid circular imports during module initialization
   const { useUserStore } = await import('./user')
   const { useListsStore } = await import('./lists')
-  const { useProductsStore } = await import('./products')
+  const { useProductStore } = await import('./products')
   const { usePantryStore } = await import('./pantry')
 
   const userStore = useUserStore(pinia)
@@ -23,7 +23,7 @@ export async function bootstrapStores(pinia) {
   const listsStore = useListsStore(pinia)
   listsStore.load()
 
-  const productsStore = useProductsStore(pinia)
+  const productsStore = useProductStore(pinia)
   productsStore.load && productsStore.load()
 
   const pantryStore = usePantryStore(pinia)

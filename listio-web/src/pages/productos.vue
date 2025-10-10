@@ -29,7 +29,7 @@
         >
           <ProductCard
             :product="product"
-            @click="selectProduct(product)"
+            @click="openProductDialog(product)"
             @add-to-list="addToList(product)"
           />
         </v-col>
@@ -69,7 +69,7 @@
       </template>
     </v-snackbar>
 
-    <!-- Diálogo para nuevo producto -->
+    <!-- Diálogos -->
     <NewItemDialog
       v-model="newProductDialog"
       v-model:form-data="newProductForm"
@@ -78,6 +78,16 @@
       :fields="addProductFields"
       @submit="addProduct"
       @cancel="newProductDialog = false"
+    />
+
+    <ProductInfoDialog
+      v-model="productInfoDialog"
+      :item="selectedProduct"
+      :categories="categories"
+      @update="updateProduct"
+      @delete="deleteProduct"
+      @add-to-list="addToList"
+      @cancel="productInfoDialog = false"
     />
   </div>
 </template>
@@ -90,13 +100,17 @@ import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
+import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
 
 const searchQuery = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
 const loading = ref(true)
 
+const productInfoDialog = ref(false)
 const newProductDialog = ref(false)
+const selectedProduct = ref(null)
+
 const newProductForm = ref({
   name: '',
   description: '',
@@ -158,6 +172,12 @@ const openNewProductDialog = () => {
   newProductDialog.value = true
 }
 
+const openProductDialog = (product) => {
+  selectedProduct.value = { ...product }
+  productInfoDialog.value = true
+}
+
+// --- CRUD Actions ---
 const addProduct = async (formData) => {
   if (!formData.name) return
   try {
@@ -173,6 +193,35 @@ const addProduct = async (formData) => {
   } finally {
     newProductDialog.value = false
   }
+}
+
+const updateProduct = async (updatedData) => {
+  try {
+    await productStore.updateRemote(updatedData.id, updatedData)
+    snackbarText.value = `Producto actualizado correctamente`
+    snackbar.value = true
+  } catch (e) {
+    console.error('Error al actualizar producto:', e)
+  } finally {
+    productInfoDialog.value = false
+  }
+}
+
+const deleteProduct = async (product) => {
+  try {
+    await productStore.deleteRemote(product.id)
+    snackbarText.value = `Producto eliminado correctamente`
+    snackbar.value = true
+  } catch (e) {
+    console.error('Error al eliminar producto:', e)
+  } finally {
+    productInfoDialog.value = false
+  }
+}
+
+const addToList = (product) => {
+  snackbarText.value = `${product.name} añadido a la lista`
+  snackbar.value = true
 }
 
 onMounted(async () => {

@@ -5,8 +5,8 @@
     @click="$emit('click', product)"
   >
     <v-img
-      :src="product.image"
-      :alt="product.name"
+      :src="imageSrc"
+      :alt="product.name || 'Producto'"
       height="150"
       cover
     >
@@ -18,49 +18,42 @@
           ></v-progress-circular>
         </div>
       </template>
-      
-      
+
       <v-chip
         class="category-chip"
         color="primary"
         size="small"
         variant="elevated"
       >
-        {{ product.category }}
+        {{ categoryName }}
       </v-chip>
     </v-img>
-    
+
     <v-card-text>
       <h4 class="text-h6 mb-1">{{ product.name }}</h4>
-      
-      <div class="d-flex align-center justify-space-between mt-3">
-        <div class="price-section">
-          <span class="text-h6 font-weight-bold text-success">
-            ${{ product.price }}
-          </span>
-          <span class="text-body-2 text-grey-darken-1 ml-1" v-if="product.unit">
-            / {{ product.unit }}
-          </span>
-        </div>
-        
+
+      <!-- <div class="d-flex align-center justify-end mt-3">
         <div class="actions-section">
           <v-btn
-            icon="mdi-plus"
+            icon
             size="small"
             color="success"
             variant="elevated"
             @click.stop="$emit('add-to-list', product)"
-          />
+            aria-label="Agregar"
+          >
+            <v-icon>mdi-plus</v-icon>
+          </v-btn>
         </div>
-      </div>
-      
+      </div> -->
+
       <!-- Additional Info -->
       <div class="mt-2" v-if="product.description">
         <p class="text-body-2 text-grey-darken-1 mb-0">
           {{ product.description }}
         </p>
       </div>
-      
+
       <!-- Stock Status -->
       <v-chip
         v-if="product.stock !== undefined"
@@ -75,17 +68,35 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   product: {
     type: Object,
     required: true,
     validator: (product) => {
-      return product.name && product.price && product.image
+      return !!product && !!product.id && !!product.name
     }
   }
 })
 
 defineEmits(['click', 'add-to-list'])
+
+const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='%23eeeeee' width='100%' height='100%'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial, Helvetica, sans-serif' font-size='24'>Sin imagen</text></svg>"
+
+const imageSrc = computed(() => {
+  const p = props.product || {}
+  return (
+    p.image ||
+    p.metadata?.image ||
+    p.metadata?.imageUrl ||
+    defaultImage
+  )
+})
+
+const categoryName = computed(() => {
+  return props.product?.category?.name || 'Sin categoría'
+})
 
 const getStockColor = (stock) => {
   if (stock === 0) return 'error'
@@ -118,11 +129,6 @@ const getStockText = (stock) => {
   position: absolute;
   top: 8px;
   left: 8px;
-}
-
-.price-section {
-  display: flex;
-  align-items: baseline;
 }
 
 .actions-section {

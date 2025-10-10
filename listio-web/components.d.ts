@@ -19,6 +19,7 @@ declare module 'vue' {
     NewItemDialog: typeof import('./src/components/NewItemDialog.vue')['default']
     PantryItemCard: typeof import('./src/components/PantryItemCard.vue')['default']
     ProductCard: typeof import('./src/components/ProductCard.vue')['default']
+    ProductInfoDialog: typeof import('./src/components/ProductInfoDialog.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./src/components/SearchBar.vue')['default']
