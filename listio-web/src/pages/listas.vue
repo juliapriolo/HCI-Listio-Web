@@ -3,24 +3,9 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-        <div class="d-flex align-items-center gap-3">
-          <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-            Mis Listas
-          </h1>
-          
-          <!-- API Status Indicator -->
-          <v-chip 
-            v-if="isApiAvailable !== null"
-            :color="isApiAvailable ? 'success' : 'warning'"
-            size="small"
-            variant="outlined"
-          >
-            <v-icon size="12" class="mr-1">
-              {{ isApiAvailable ? 'mdi-cloud-check' : 'mdi-cloud-off' }}
-            </v-icon>
-            {{ isApiAvailable ? 'Online' : 'Offline' }}
-          </v-chip>
-        </div>
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+          Mis Listas
+        </h1>
         
         <div class="search-wrapper">
             <SearchBar
