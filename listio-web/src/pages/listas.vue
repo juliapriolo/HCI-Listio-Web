@@ -251,11 +251,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useListsStore } from '@/stores/lists'
 import { useLanguage } from '@/composables/useLanguage'
 import listsApi from '@/api/lists'
+import listItemsApi from '@/api/listItems'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -672,7 +673,85 @@ onMounted(async () => {
   console.log('=== END DEBUGGING ===')
   
   isLoading.value = false
+
+  // After lists are loaded, compute item counts
+  try {
+    await updateAllListItemCounts()
+  } catch (e) {
+    console.warn('Failed to update item counts on mount:', e)
+  }
+
+  // Listen to localStorage changes for list items to keep counts in sync
+  window.addEventListener('storage', onListItemsStorage)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('storage', onListItemsStorage)
+})
+
+// --- Item count helpers ---
+const LIST_ITEMS_STORAGE_PREFIX = 'listio:list-items:'
+
+function getLocalListItemCount(listId) {
+  try {
+    const raw = localStorage.getItem(LIST_ITEMS_STORAGE_PREFIX + String(listId))
+    if (!raw) return 0
+    const arr = JSON.parse(raw)
+    return Array.isArray(arr) ? arr.length : 0
+  } catch (e) {
+    return 0
+  }
+}
+
+async function getRemoteListItemCount(listId) {
+  try {
+    const data = await listItemsApi.getAll(listId, { limit: 1, page: 1 })
+    // Try common envelopes first for a total
+    const meta = data?.meta || data?.data?.meta || null
+    if (meta && typeof meta.total === 'number') return meta.total
+    // Fall back to array lengths in various shapes
+    if (Array.isArray(data)) return data.length
+    if (Array.isArray(data?.data)) return data.data.length
+    if (Array.isArray(data?.items)) return data.items.length
+    return null
+  } catch (e) {
+    return null
+  }
+}
+
+async function updateAllListItemCounts() {
+  const lists = listsStore.lists || []
+  if (!lists.length) return
+  const useRemote = isApiAvailable.value !== false
+
+  await Promise.all(
+    lists.map(async (list) => {
+      let count = null
+      if (useRemote) {
+        count = await getRemoteListItemCount(list.id)
+      }
+      if (count === null || typeof count !== 'number') {
+        count = getLocalListItemCount(list.id)
+      }
+      if ((list.itemCount || 0) !== count) {
+        listsStore.updateList(list.id, { itemCount: count })
+      }
+    })
+  )
+}
+
+function onListItemsStorage(e) {
+  if (!e || !e.key) return
+  if (!e.key.startsWith(LIST_ITEMS_STORAGE_PREFIX)) return
+  const listId = e.key.substring(LIST_ITEMS_STORAGE_PREFIX.length)
+  if (!listId) return
+  const count = getLocalListItemCount(listId)
+  const idNum = isNaN(Number(listId)) ? listId : Number(listId)
+  const list = listsStore.getById(idNum)
+  if (list && (list.itemCount || 0) !== count) {
+    listsStore.updateList(idNum, { itemCount: count })
+  }
+}
 </script>
 
 <style scoped>
