@@ -1,59 +1,71 @@
 <template>
   <v-card
-    class="shopping-list-card"
+    class="list-card"
     elevation="2"
-    rounded="lg"
-    hover
-    @click="$emit('click')"
   >
-    <div class="d-flex align-center pa-4">
-      <!-- Image -->
-      <v-img
-        :src="list.image"
-        :alt="list.name"
-        width="80"
-        height="80"
-        cover
-        class="rounded-lg"
-      >
-        <template v-slot:placeholder>
-          <div class="d-flex align-center justify-center fill-height">
-            <v-progress-circular
-              color="grey-lighten-4"
-              indeterminate
-            ></v-progress-circular>
-          </div>
-        </template>
-      </v-img>
-
-      <!-- List Info -->
-      <div class="ml-4 flex-grow-1">
-        <h3 class="text-h6 font-weight-medium text-grey-darken-3">
-          {{ list.name }}
-        </h3>
-        <p class="text-body-2 text-grey-darken-1 mb-0" v-if="list.itemCount">
-          {{ list.itemCount }} productos
-        </p>
-        <p class="text-body-2 text-grey-darken-1 mb-0" v-if="list.lastUpdated">
+    <div class="list-content" @click="$emit('click')">
+      <div class="list-image">
+        <img 
+          v-if="list.image" 
+          :src="list.image" 
+          :alt="list.name" 
+        />
+        <div v-else class="image-placeholder">
+          <v-icon size="32" color="grey-lighten-1">mdi-format-list-bulleted</v-icon>
+        </div>
+      </div>
+      <div class="list-info">
+        <h3 class="list-title">{{ list.name }}</h3>
+        <div class="list-details">
+          <span class="item-count">{{ list.itemCount || 0 }} productos</span>
+          <span v-if="list.completedItems && list.itemCount" class="progress-info">
+            {{ Math.round((list.completedItems / list.itemCount) * 100) }}% completado
+          </span>
+        </div>
+        <p v-if="list.lastUpdated" class="last-updated">
           Actualizada {{ formatDate(list.lastUpdated) }}
         </p>
       </div>
-
-      <!-- Actions -->
-      <div class="ml-4">
-        <v-btn
-          icon="mdi-chevron-right"
-          variant="text"
-          size="small"
-          color="grey-darken-2"
-        />
+    </div>
+    
+    <!-- Menu Button -->
+    <div class="list-menu">
+      <button 
+        class="menu-button"
+        @click.stop="toggleMenu"
+        @blur="hideMenu"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+          <circle cx="12" cy="12" r="1"/>
+          <circle cx="12" cy="5" r="1"/>
+          <circle cx="12" cy="19" r="1"/>
+        </svg>
+      </button>
+      
+      <div v-if="showMenu" class="menu-dropdown">
+        <div class="menu-item" @click="handleMenuAction('edit', list.id)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          <span>Editar</span>
+        </div>
+        <div class="menu-item delete-item" @click="handleMenuAction('delete', list.id)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
+            <polyline points="3,6 5,6 21,6"/>
+            <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+            <line x1="10" y1="11" x2="10" y2="17"/>
+            <line x1="14" y1="11" x2="14" y2="17"/>
+          </svg>
+          <span>Eliminar</span>
+        </div>
       </div>
     </div>
   </v-card>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   list: {
@@ -65,7 +77,29 @@ const props = defineProps({
   }
 })
 
-defineEmits(['click'])
+const emit = defineEmits(['click', 'edit', 'delete'])
+
+const showMenu = ref(false)
+
+const toggleMenu = (event) => {
+  event.stopPropagation()
+  showMenu.value = !showMenu.value
+}
+
+const hideMenu = () => {
+  setTimeout(() => {
+    showMenu.value = false
+  }, 150)
+}
+
+const handleMenuAction = (action, listId) => {
+  showMenu.value = false
+  if (action === 'edit') {
+    emit('edit', listId)
+  } else if (action === 'delete') {
+    emit('delete', listId)
+  }
+}
 
 const formatDate = (date) => {
   if (!date) return ''
@@ -86,13 +120,157 @@ const formatDate = (date) => {
 </script>
 
 <style scoped>
-.shopping-list-card {
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+.list-card {
   cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border-radius: 8px;
+  background-color: white;
+  border: 0.5px solid #9e9e9e;
+  box-shadow: none;
 }
 
-.shopping-list-card:hover {
+.list-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.list-content {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  gap: 20px;
+  height: 140px;
+}
+
+.list-menu {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+/* Custom menu styles for lists */
+.menu-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.menu-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #424242;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item.delete-item {
+  color: #f44336;
+}
+
+.menu-item.delete-item:hover {
+  background-color: #ffebee;
+}
+
+.menu-item span {
+  flex: 1;
+}
+
+.list-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.list-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border: 2px dashed #e0e0e0;
+}
+
+.list-info {
+  flex: 1;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 80px;
+}
+
+.list-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #424242;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.list-details {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.item-count {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.progress-info {
+  font-size: 0.9rem;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.last-updated {
+  font-size: 0.85rem;
+  color: #999;
+  margin: 0;
+  line-height: 1.3;
 }
 </style>
