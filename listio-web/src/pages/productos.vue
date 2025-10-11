@@ -71,16 +71,65 @@
       </template>
     </v-snackbar>
 
-    <!-- Diálogos -->
-    <NewItemDialog
-      v-model="newProductDialog"
-      v-model:form-data="newProductForm"
-      title="Agregar Producto"
-      submit-text="Confirmar"
-      :fields="addProductFields"
-      @submit="addProduct"
-      @cancel="newProductDialog = false"
-    />
+    <!-- New Product Dialog -->
+    <div v-if="newProductDialog" class="modal-overlay">
+      <div class="modal product-modal">
+        <h2>Agregar Producto</h2>
+        
+        <form @submit.prevent="addProduct(newProductForm)">
+          <div class="form-group">
+            <label for="productName">Nombre del producto</label>
+            <input
+              id="productName"
+              v-model="newProductForm.name"
+              type="text"
+              class="form-input"
+              placeholder="Ingrese el nombre del producto"
+              required
+              autofocus
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="productImage">Imagen del producto</label>
+            <input
+              id="productImage"
+              type="file"
+              accept="image/*"
+              class="form-input file-input"
+              @change="handleProductImageChange"
+            />
+            <div v-if="productImagePreview" class="image-preview">
+              <img :src="productImagePreview" alt="Vista previa" class="preview-img" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="productDescription">Descripción (opcional)</label>
+            <textarea
+              id="productDescription"
+              v-model="newProductForm.description"
+              class="form-input"
+              placeholder="Ingrese una descripción para el producto"
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="closeNewProductDialog">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              :disabled="!newProductForm.name?.trim() || isCreating"
+            >
+              {{ isCreating ? 'Agregando...' : 'Agregar Producto' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <ProductInfoDialog
       v-model="productInfoDialog"
@@ -127,7 +176,6 @@ import { useProductStore } from '@/stores/products'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import NewItemDialog from '@/components/NewItemDialog.vue'
 import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
 
 const searchQuery = ref('')
@@ -141,6 +189,9 @@ const newProductDialog = ref(false)
 const deleteConfirmDialog = ref(false)
 const selectedProduct = ref(null)
 const productToDelete = ref(null)
+const isCreating = ref(false)
+const productImageFile = ref(null)
+const productImagePreview = ref('')
 
 const newProductForm = ref({
   name: '',
@@ -150,28 +201,6 @@ const newProductForm = ref({
 
 const productStore = useProductStore()
 
-const addProductFields = computed(() => [
-  {
-    key: 'name',
-    label: 'Nombre del producto',
-    type: 'text',
-    required: true,
-    autofocus: true,
-  },
-  {
-    key: 'description',
-    label: 'Descripción (opcional)',
-    type: 'textarea',
-    required: false,
-  },
-  {
-    key: 'image',
-    label: 'Imagen del producto',
-    type: 'file',
-    required: false,
-    accept: 'image/*',
-  },
-])
 
 const filteredProducts = computed(() => {
   const list = productStore.products
@@ -183,7 +212,29 @@ const filteredProducts = computed(() => {
 
 const openNewProductDialog = () => {
   newProductForm.value = { name: '', description: '', image: null }
+  productImageFile.value = null
+  productImagePreview.value = ''
   newProductDialog.value = true
+}
+
+const closeNewProductDialog = () => {
+  newProductDialog.value = false
+  newProductForm.value = { name: '', description: '', image: null }
+  productImageFile.value = null
+  productImagePreview.value = ''
+}
+
+// Handle image file selection for new product
+const handleProductImageChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    productImageFile.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      productImagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
 }
 
 const openProductDialog = (product) => {
@@ -208,16 +259,20 @@ const convertImageToBase64 = (file) => {
 
 // --- CRUD Actions ---
 const addProduct = async (formData) => {
-  if (!formData.name) return
+  if (!formData.name || isCreating.value) return
   
+  isCreating.value = true
   try {
     // Convertir imagen a base64 si existe
-    const imageBase64 = await convertImageToBase64(formData.image)
+    let imageBase64 = null
+    if (productImageFile.value) {
+      imageBase64 = await convertImageToBase64(productImageFile.value)
+    }
     
     const payload = {
-      name: formData.name,
+      name: formData.name.trim(),
       metadata: {
-        description: formData.description || '',
+        description: formData.description?.trim() || '',
         image: imageBase64,
       },
     }
@@ -226,13 +281,14 @@ const addProduct = async (formData) => {
     snackbarText.value = `${formData.name} agregado correctamente`
     snackbarColor.value = 'success'
     snackbar.value = true
+    closeNewProductDialog()
   } catch (error) {
     console.error('Error al agregar producto:', error)
     snackbarText.value = `Error al agregar ${formData.name}: ${error.message || 'Error desconocido'}`
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
-    newProductDialog.value = false
+    isCreating.value = false
   }
 }
 
@@ -362,5 +418,181 @@ onMounted(async () => {
   bottom: 24px;
   right: 24px;
   z-index: 1000;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  flex: 1;
+}
+
+.btn--primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: #45A049;
+}
+
+.btn--primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn--cancel {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.btn--cancel:hover {
+  background: #e0e0e0;
+}
+
+/* Product modal specific styles */
+.product-modal {
+  max-width: 500px;
+  width: 90vw;
+}
+
+.file-input {
+  padding: 6px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-input:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.file-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+  background-color: #fff;
+}
+
+.file-input::file-selector-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.file-input::file-selector-button:hover {
+  background-color: #5a6268;
+}
+
+.image-preview {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.preview-img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  object-fit: cover;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #424242;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.form-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.form-input::placeholder {
+  color: #9e9e9e;
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal {
+    margin: 20px;
+    padding: 24px 16px;
+    min-width: auto;
+    width: calc(100vw - 40px);
+  }
 }
 </style>

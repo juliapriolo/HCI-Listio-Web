@@ -4,9 +4,9 @@
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
          <div class="d-flex align-items-center gap-3">
-           <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
              Listas
-           </h1>
+        </h1>
           
           <!-- API Status Indicator -->
           <v-chip 
@@ -88,16 +88,64 @@
     </v-btn>
 
     <!-- New List Dialog -->
-    <NewItemDialog
-      v-model="newListDialog"
-      v-model:form-data="newListForm"
-      title="Nueva Lista"
-      submit-text="Crear Lista"
-      :fields="listFields"
-      :loading="isCreating"
-      @submit="createNewList"
-      @cancel="newListDialog = false"
-    />
+    <div v-if="newListDialog" class="modal-overlay">
+      <div class="modal list-modal">
+        <h2>Nueva Lista</h2>
+        
+        <form @submit.prevent="createNewList(newListForm)">
+          <div class="form-group">
+            <label for="listName">Nombre de la lista</label>
+            <input
+              id="listName"
+              v-model="newListForm.name"
+              type="text"
+              class="form-input"
+              placeholder="Ingrese el nombre de la lista"
+              required
+              autofocus
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="listImage">Imagen de la lista</label>
+            <input
+              id="listImage"
+              type="file"
+              accept="image/*"
+              class="form-input file-input"
+              @change="handleNewImageChange"
+            />
+            <div v-if="newImagePreview" class="image-preview">
+              <img :src="newImagePreview" alt="Vista previa" class="preview-img" />
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="listDescription">Descripción (opcional)</label>
+            <textarea
+              id="listDescription"
+              v-model="newListForm.description"
+              class="form-input"
+              placeholder="Ingrese una descripción para la lista"
+              rows="3"
+            ></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              :disabled="!newListForm.name?.trim() || isCreating"
+            >
+              {{ isCreating ? 'Creando...' : 'Crear Lista' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Edit List Dialog -->
     <div v-if="editListDialog" class="modal-overlay">
@@ -196,7 +244,6 @@ import listsApi from '@/api/lists'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import NewItemDialog from '@/components/NewItemDialog.vue'
 
 const router = useRouter()
 
@@ -210,25 +257,11 @@ const listToDelete = ref(null)
 const listToEdit = ref(null)
 const editImageFile = ref(null)
 const editImagePreview = ref('')
+const newImageFile = ref(null)
+const newImagePreview = ref('')
 const isLoading = ref(false)
 const isCreating = ref(false)
 
-// Form configuration for new list dialog
-const listFields = [
-  {
-    key: 'name',
-    label: 'Nombre de la lista',
-    type: 'text',
-    required: true,
-    autofocus: true
-  },
-  {
-    key: 'description',
-    label: 'Descripción (opcional)',
-    type: 'textarea',
-    required: false
-  }
-]
 
 const newListForm = ref({
   name: '',
@@ -317,7 +350,36 @@ const confirmDeleteList = async () => {
 }
 
 const openNewListDialog = () => {
+  newListForm.value = {
+    name: '',
+    description: ''
+  }
+  newImageFile.value = null
+  newImagePreview.value = ''
   newListDialog.value = true
+}
+
+const closeNewListDialog = () => {
+  newListDialog.value = false
+  newListForm.value = {
+    name: '',
+    description: ''
+  }
+  newImageFile.value = null
+  newImagePreview.value = ''
+}
+
+// Handle image file selection for new list
+const handleNewImageChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    newImageFile.value = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      newImagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
 }
 
 const createNewList = async (formData) => {
@@ -325,10 +387,17 @@ const createNewList = async (formData) => {
   
   isCreating.value = true
   try {
+    let imageData = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop'
+    
+    // Handle image file if provided
+    if (newImageFile.value) {
+      imageData = await convertFileToBase64(newImageFile.value)
+    }
+    
     const payload = {
       name: formData.name.trim(),
       description: formData.description?.trim() || '',
-      image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop'
+      image: imageData
     }
 
     console.log('Attempting to create list with payload:', payload)
@@ -357,20 +426,19 @@ const createNewList = async (formData) => {
       }
     } else {
       // API is known to be unavailable, create locally
-      const newList = {
-        id: Date.now(),
+  const newList = {
+    id: Date.now(),
         ...payload,
-        itemCount: 0,
-        completedItems: 0,
-        lastUpdated: new Date()
-      }
-      
-      listsStore.addList(newList)
+    itemCount: 0,
+    completedItems: 0,
+    lastUpdated: new Date()
+  }
+
+  listsStore.addList(newList)
       console.log('Created list locally (API unavailable):', payload.name)
     }
     
-    newListDialog.value = false
-    newListForm.value = { name: '', description: '' } // Reset form
+     closeNewListDialog()
     
   } catch (error) {
     console.error('Unexpected error creating list:', error)
@@ -467,7 +535,7 @@ onMounted(async () => {
    }
    
    // Load from localStorage first as immediate fallback
-   listsStore.load()
+  listsStore.load()
    
    console.log('Current lists in store after load:', listsStore.lists)
   
@@ -611,7 +679,8 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-/* List edit modal specific styles */
+/* List modals specific styles */
+.list-modal,
 .list-edit-modal {
   max-width: 500px;
   width: 90vw;
