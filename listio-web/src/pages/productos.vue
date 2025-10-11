@@ -275,6 +275,7 @@ const addProduct = async (formData) => {
         description: formData.description?.trim() || '',
         image: imageBase64,
       },
+      category: { id: formData.category.id } 
     }
     
     await productStore.createRemote(payload)
@@ -303,6 +304,7 @@ const updateProduct = async (updatedData) => {
         description: updatedData.description || '',
         image: imageBase64 || updatedData.metadata?.image, // Mantener imagen existente si no se sube nueva
       },
+      category: { id: updatedData.category?.id }
     }
     
     await productStore.updateRemote(updatedData.id, payload)
