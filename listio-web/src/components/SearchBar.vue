@@ -1,9 +1,10 @@
 <template>
   <div class="search-container">
-    <!-- Campo de búsqueda (aparece al lado del botón) -->
+    <!-- Campo de búsqueda -->
     <v-expand-transition>
       <v-text-field
         v-show="showSearch"
+        ref="searchField"
         :model-value="modelValue"
         @update:model-value="$emit('update:modelValue', $event)"
         :placeholder="placeholder"
@@ -12,11 +13,8 @@
         bg-color="grey-lighten-3"
         color="grey-darken-3"
         rounded="lg"
-        clearable
         hide-details
-        autofocus
         class="search-field"
-        @click:clear="$emit('update:modelValue', '')"
       />
     </v-expand-transition>
 
@@ -33,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 
 const props = defineProps({
   modelValue: String,
@@ -45,16 +43,19 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 const showSearch = ref(false)
+const searchField = ref(null) 
 
-const toggleSearch = () => {
+const toggleSearch = async () => {
   showSearch.value = !showSearch.value
-  if (!showSearch.value) emit('update:modelValue', '')
+
+  if (showSearch.value) {
+    await nextTick()
+    searchField.value?.focus()
+  } else {
+    emit('update:modelValue', '')
+  }
 }
 
-// Si se limpia desde fuera, oculta la barra
-watch(() => props.modelValue, (newValue) => {
-  if (!newValue && showSearch.value) showSearch.value = false
-})
 </script>
 
 <style scoped>
@@ -67,7 +68,7 @@ watch(() => props.modelValue, (newValue) => {
 }
 
 .search-field {
-  flex: 1; /* Ocupa todo el espacio libre */
+  flex: 1;
   transition: all 0.3s ease;
   margin: 20px;
 }
