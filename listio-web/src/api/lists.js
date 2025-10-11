@@ -22,6 +22,7 @@ export default {
 
   // POST /api/shopping-lists
   create(payload) {
+    console.log('API call: POST /api/shopping-lists with payload:', payload)
     return api.post('/api/shopping-lists', payload)
   },
 

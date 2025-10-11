@@ -76,14 +76,15 @@
       
       <v-card-actions>
         <v-spacer />
-        <v-btn @click="handleCancel">
+        <v-btn @click="handleCancel" :disabled="loading">
           {{ cancelText }}
         </v-btn>
         <v-btn
           :color="submitColor"
           variant="elevated"
           @click="handleSubmit"
-          :disabled="!isFormValid"
+          :disabled="!isFormValid || loading"
+          :loading="loading"
         >
           {{ submitText }}
         </v-btn>
@@ -128,6 +129,10 @@ const props = defineProps({
   submitColor: {
     type: String,
     default: 'success'
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 

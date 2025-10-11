@@ -79,6 +79,14 @@ function prepareInit(method, payload, options = {}) {
 }
 
 async function request(path, init) {
+  // Log the request details
+  console.log('API Request:', {
+    url: resolveUrl(path),
+    method: init.method,
+    headers: init.headers,
+    body: init.body
+  })
+  
   // Attach Authorization Bearer token if available in the user store (dynamic import to avoid cycles)
   try {
     const existingHeaders = normalizeHeaders(init.headers)
@@ -118,6 +126,13 @@ async function request(path, init) {
   }
 
   const response = await fetch(resolveUrl(path), init);
+  console.log('API Response:', {
+    status: response.status,
+    statusText: response.statusText,
+    url: response.url,
+    ok: response.ok
+  })
+  
   const contentType = response.headers.get('content-type') ?? '';
 
   if (!response.ok) {

@@ -3,9 +3,24 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Mis Listas
-        </h1>
+        <div class="d-flex align-items-center gap-3">
+          <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+            Mis Listas
+          </h1>
+          
+          <!-- API Status Indicator -->
+          <v-chip 
+            v-if="isApiAvailable !== null"
+            :color="isApiAvailable ? 'success' : 'warning'"
+            size="small"
+            variant="outlined"
+          >
+            <v-icon size="12" class="mr-1">
+              {{ isApiAvailable ? 'mdi-cloud-check' : 'mdi-cloud-off' }}
+            </v-icon>
+            {{ isApiAvailable ? 'Online' : 'Offline' }}
+          </v-chip>
+        </div>
         
         <div class="search-wrapper">
             <SearchBar
@@ -15,8 +30,18 @@
           </div>
       </div>
 
+      <!-- Loading State -->
+      <div v-if="isLoading" class="text-center py-8">
+        <v-progress-circular 
+          indeterminate 
+          color="success" 
+          size="48"
+        ></v-progress-circular>
+        <p class="text-body-1 text-grey-darken-1 mt-4">Cargando listas...</p>
+      </div>
+
       <!-- Shopping Lists Grid -->
-      <div v-if="filteredLists.length > 0" class="lists-grid mb-8">
+      <div v-else-if="filteredLists.length > 0" class="lists-grid mb-8">
         <ListCard
           v-for="list in filteredLists"
           :key="list.id"
@@ -29,7 +54,7 @@
 
       <!-- Empty States -->
       <EmptyState
-        v-if="filteredLists.length === 0 && !searchQuery"
+        v-else-if="filteredLists.length === 0 && !searchQuery"
         icon="mdi-format-list-bulleted"
         title="No tienes listas aún"
         description="Crea tu primera lista de compras"
@@ -71,6 +96,7 @@
       title="Nueva Lista"
       submit-text="Crear Lista"
       :fields="listFields"
+      :loading="isCreating"
       @submit="createNewList"
       @cancel="newListDialog = false"
     />
@@ -168,6 +194,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useListsStore } from '@/stores/lists'
+import listsApi from '@/api/lists'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -185,6 +212,8 @@ const listToDelete = ref(null)
 const listToEdit = ref(null)
 const editImageFile = ref(null)
 const editImagePreview = ref('')
+const isLoading = ref(false)
+const isCreating = ref(false)
 
 // Form configuration for new list dialog
 const listFields = [
@@ -216,6 +245,22 @@ const editListForm = ref({
 
 // Use Pinia store for lists
 const listsStore = useListsStore()
+
+// API availability check
+const isApiAvailable = ref(null) // null = unknown, true = available, false = unavailable
+
+const checkApiAvailability = async () => {
+  try {
+    // Try a simple GET request to see if API is available without overwriting local data
+    console.log('Checking API availability...')
+    await listsApi.getAll()
+    isApiAvailable.value = true
+    console.log('API is available')
+  } catch (error) {
+    isApiAvailable.value = false
+    console.log('API is not available, using local storage')
+  }
+}
 
 // If empty on first run, seed with sample data
 const sampleData = [
@@ -287,11 +332,16 @@ const deleteList = (listId) => {
   }
 }
 
-const confirmDeleteList = () => {
+const confirmDeleteList = async () => {
   if (listToDelete.value) {
-    listsStore.deleteList(listToDelete.value.id)
-    deleteDialog.value = false
-    listToDelete.value = null
+    try {
+      await listsStore.deleteRemote(listToDelete.value.id)
+      deleteDialog.value = false
+      listToDelete.value = null
+    } catch (error) {
+      console.error('Error deleting list:', error)
+      alert('Error al eliminar la lista. Por favor, intenta de nuevo.')
+    }
   }
 }
 
@@ -299,20 +349,64 @@ const openNewListDialog = () => {
   newListDialog.value = true
 }
 
-const createNewList = (formData) => {
-  const newList = {
-    id: Date.now(),
-    name: formData.name.trim(),
-    description: formData.description?.trim() || '',
-    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop',
-    itemCount: 0,
-    completedItems: 0,
-    lastUpdated: new Date()
-  }
+const createNewList = async (formData) => {
+  if (isCreating.value) return // Prevent double submission
+  
+  isCreating.value = true
+  try {
+    const payload = {
+      name: formData.name.trim(),
+      description: formData.description?.trim() || '',
+      image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop'
+    }
 
-  listsStore.addList(newList)
-  newListDialog.value = false
-  console.log('Created new list:', newList.name)
+    console.log('Attempting to create list with payload:', payload)
+    
+    // Check if API is available and try API first if we think it is
+    if (isApiAvailable.value !== false) {
+      try {
+        await listsStore.createRemote(payload)
+        console.log('Successfully created list via API:', payload.name)
+        isApiAvailable.value = true // Mark API as available for future calls
+      } catch (apiError) {
+        console.warn('API creation failed, falling back to local storage:', apiError)
+        isApiAvailable.value = false // Mark API as unavailable
+        
+        // Fallback to local creation
+        const newList = {
+          id: Date.now(),
+          ...payload,
+          itemCount: 0,
+          completedItems: 0,
+          lastUpdated: new Date()
+        }
+        
+        listsStore.addList(newList)
+        console.log('Successfully created list locally:', payload.name)
+      }
+    } else {
+      // API is known to be unavailable, create locally
+      const newList = {
+        id: Date.now(),
+        ...payload,
+        itemCount: 0,
+        completedItems: 0,
+        lastUpdated: new Date()
+      }
+      
+      listsStore.addList(newList)
+      console.log('Created list locally (API unavailable):', payload.name)
+    }
+    
+    newListDialog.value = false
+    newListForm.value = { name: '', description: '' } // Reset form
+    
+  } catch (error) {
+    console.error('Unexpected error creating list:', error)
+    alert('Error inesperado al crear la lista. Por favor, intenta de nuevo.')
+  } finally {
+    isCreating.value = false
+  }
 }
 
 // Helper function to convert file to base64
@@ -341,33 +435,81 @@ const handleEditImageChange = (event) => {
 const saveListEdit = async () => {
   if (!listToEdit.value) return
   
-  let imageData = editListForm.value.image
-  
-  // Handle image file if provided
-  if (editImageFile.value) {
-    imageData = await convertFileToBase64(editImageFile.value)
+  try {
+    let imageData = editListForm.value.image
+    
+    // Handle image file if provided
+    if (editImageFile.value) {
+      imageData = await convertFileToBase64(editImageFile.value)
+    }
+    
+    // Update the list via API
+    const updateData = {
+      name: editListForm.value.name.trim(),
+      description: editListForm.value.description?.trim() || '',
+      image: imageData
+    }
+    
+    await listsStore.updateRemote(listToEdit.value.id, updateData)
+    editListDialog.value = false
+    listToEdit.value = null
+    console.log('Updated list:', updateData.name)
+  } catch (error) {
+    console.error('Error updating list:', error)
+    alert('Error al actualizar la lista. Por favor, intenta de nuevo.')
   }
-  
-  // Update the list
-  const updateData = {
-    name: editListForm.value.name.trim(),
-    description: editListForm.value.description?.trim() || '',
-    image: imageData,
-    lastUpdated: new Date()
-  }
-  
-  listsStore.updateList(listToEdit.value.id, updateData)
-  editListDialog.value = false
-  listToEdit.value = null
-  console.log('Updated list:', updateData.name)
 }
 
-onMounted(() => {
-  // Initialize component: load lists from localStorage, seed if empty
+onMounted(async () => {
+  isLoading.value = true
+  
+  // Debug: Check what's in localStorage
+  console.log('=== DEBUGGING LOCALSTORAGE ===')
+  console.log('localStorage listio:user:', localStorage.getItem('listio:user'))
+  
+  // Get the current storage key that will be used
+  let currentStorageKey = 'listio:lists' // default
+  try {
+    const userRaw = localStorage.getItem('listio:user')
+    if (userRaw) {
+      const userData = JSON.parse(userRaw)
+      const userId = userData?.profile?.id
+      if (userId) {
+        currentStorageKey = `listio:lists:${userId}`
+      }
+    }
+  } catch (e) {
+    console.warn('Could not determine storage key:', e)
+  }
+  
+  console.log('Using storage key:', currentStorageKey)
+  console.log('localStorage data for key:', localStorage.getItem(currentStorageKey))
+  console.log('Current lists in store before load:', listsStore.lists)
+  
+  // Load from localStorage first as immediate fallback
   listsStore.load()
+  
+  console.log('Current lists in store after load:', listsStore.lists)
+  
+  try {
+    // Try to fetch from API to check availability and get latest data
+    console.log('Checking API availability and fetching latest data...')
+    await checkApiAvailability()
+  } catch (error) {
+    console.warn('API check failed:', error)
+    isApiAvailable.value = false
+  }
+  
+  // If no lists exist locally and API failed, seed with sample data
   if (!listsStore.lists || listsStore.lists.length === 0) {
+    console.log('No lists found locally, seeding with sample data')
     listsStore.seed(sampleData)
   }
+  
+  console.log('Final lists in store:', listsStore.lists)
+  console.log('=== END DEBUGGING ===')
+  
+  isLoading.value = false
 })
 </script>
 

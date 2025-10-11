@@ -12,16 +12,24 @@ export async function bootstrapStores(pinia) {
   const userStore = useUserStore(pinia)
   userStore.load()
 
+  // Load lists store
+  const listsStore = useListsStore(pinia)
+
   // If user has a token, refresh profile (best-effort)
   if (userStore.token) {
-    userStore.fetchProfile().catch((err) => {
+    try {
+      await userStore.fetchProfile()
+      // After user profile is loaded, reload lists for current user
+      listsStore.reload()
+    } catch (err) {
       console.error('Failed to refresh user profile', err)
-    })
+      // Load lists anyway even if profile refresh failed
+      listsStore.load()
+    }
+  } else {
+    // No user logged in, load lists normally (will use generic key)
+    listsStore.load()
   }
-
-  // Load other stores so they are available on any route
-  const listsStore = useListsStore(pinia)
-  listsStore.load()
 
   const productsStore = useProductStore(pinia)
   productsStore.load && productsStore.load()

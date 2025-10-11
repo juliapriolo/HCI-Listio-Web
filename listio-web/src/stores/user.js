@@ -134,6 +134,15 @@ export const useUserStore = defineStore('user', {
 
         await this.fetchProfile(true)
         this.save()
+        
+        // Reload lists for the new user
+        try {
+          const { useListsStore } = await import('./lists')
+          const listsStore = useListsStore()
+          listsStore.reload()
+        } catch (e) {
+          console.warn('Failed to reload lists after login:', e)
+        }
       } catch (e) {
         this.error = e?.message || 'Unable to login'
         this.clearProfile()
@@ -223,6 +232,15 @@ export const useUserStore = defineStore('user', {
         console.warn('Logout failed (continuing):', e)
       } finally {
         this.clearProfile()
+        
+        // Clear lists when logging out
+        try {
+          const { useListsStore } = await import('./lists')
+          const listsStore = useListsStore()
+          listsStore.clear()
+        } catch (e) {
+          console.warn('Failed to clear lists after logout:', e)
+        }
       }
     },
   },
