@@ -168,7 +168,7 @@ onMounted(async () => {
         <div class="form-row">
           <div class="form-group">
             <label for="name">Nombre</label>
-            <input v-model="form.name" id="name" type="text" required />
+            <input v-model="form.name" id="name" type="text" style="color:black;" required />
           </div>
 
           <div class="form-group">
@@ -431,6 +431,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   margin-bottom: 16px;
+  color:black;
 }
 
 .form-group label {

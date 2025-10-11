@@ -172,6 +172,7 @@ defineExpose({
   font-size: 1rem;
   transition: border-color 0.3s ease;
   box-sizing: border-box;
+  color:black;
 }
 
 .form-input:focus {

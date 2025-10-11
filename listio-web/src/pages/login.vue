@@ -521,6 +521,15 @@ html, body {
   padding: 20px;
 }
 
+.form-input {
+  width: 100%;
+  padding: 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1rem;
+  color:black;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
 /* Modal styles */
 .modal-overlay {
