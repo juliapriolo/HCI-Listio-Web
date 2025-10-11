@@ -63,16 +63,7 @@ onMounted(async () => {
             :alt="`Foto de ${profile.name}`"
             class="profile__avatar-image"
           />
-          <svg v-else class="profile__avatar-icon" viewBox="0 0 64 64" aria-hidden="true">
-            <circle cx="32" cy="24" r="16" fill="none" stroke="currentColor" stroke-width="4" />
-            <path
-              d="M14 52c0-9.941 8.059-18 18-18s18 8.059 18 18"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="4"
-              stroke-linecap="round"
-            />
-          </svg>
+          <v-icon class="profile__avatar-icon" size="64">mdi-account</v-icon>
         </div>
         <div class="profile__identity">
           <h2 class="profile__name">{{ profile.name }}</h2>
@@ -144,10 +135,10 @@ onMounted(async () => {
   width: clamp(96px, 14vw, 140px);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(85, 201, 109, 0.15), rgba(7, 120, 62, 0.1));
+  background: #d9dadb;
   display: grid;
   place-items: center;
-  color: #3cb660;
+  color: #ffffff;
   overflow: hidden;
 }
 
@@ -158,8 +149,7 @@ onMounted(async () => {
 }
 
 .profile__avatar-icon {
-  width: clamp(60px, 10vw, 88px);
-  height: clamp(60px, 10vw, 88px);
+  color: #ffffff;
 }
 
 .profile__identity {
