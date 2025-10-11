@@ -6,20 +6,20 @@
   >
     <v-card>
       <v-card-title class="text-h6">
-        Filtrar listas
+        {{ t('pages.lists.filters.title') }}
       </v-card-title>
       
       <v-card-text>
         <!-- Filtrar por nombre -->
         <v-text-field
-          label="Nombre"
+          :label="t('pages.lists.filters.name')"
           variant="outlined"
           v-model="localFilters.name"
         />
 
         <!-- Filtrar por categoría -->
         <v-select
-          label="Categoría"
+          :label="t('pages.lists.filters.category')"
           variant="outlined"
           v-model="localFilters.category"
           :items="categories"
@@ -29,20 +29,20 @@
       
       <v-card-actions>
         <v-btn color="secondary" variant="outlined" @click="handleClear">
-          Limpiar
+          {{ t('pages.lists.filters.clear') }}
         </v-btn>
 
         <v-spacer />
 
         <v-btn @click="handleCancel">
-          Cancelar
+          {{ t('common.cancel') }}
         </v-btn>
         <v-btn
           color="primary"
           variant="elevated"
           @click="handleApply"
         >
-          Aplicar
+          {{ t('pages.lists.filters.apply') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -51,6 +51,8 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
+const { t } = useLanguage()
 
 const props = defineProps({
   modelValue: Boolean,

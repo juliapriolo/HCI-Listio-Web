@@ -3,14 +3,14 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-           Listas
-         </h1>
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+          {{ t('pages.lists.title') }}
+        </h1>
         
         <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
-              placeholder="Buscar productos..."
+              :placeholder="t('pages.lists.searchPlaceholder')"
             />
           </div>
       </div>
@@ -22,7 +22,7 @@
           color="success" 
           size="48"
         ></v-progress-circular>
-        <p class="text-body-1 text-grey-darken-1 mt-4">Cargando listas...</p>
+        <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('pages.lists.loadingLists') }}</p>
       </div>
 
       <!-- Shopping Lists Grid -->
@@ -41,21 +41,23 @@
       <EmptyState
         v-else-if="filteredLists.length === 0 && !searchQuery"
         icon="mdi-format-list-bulleted"
-        title="No tienes listas aún"
-        description="Crea tu primera lista de compras"
+        :title="t('pages.lists.noListsTitle')"
+        :description="t('pages.lists.noListsDescription')"
+        :action-text="t('pages.lists.createListAction')"
+        @action="openNewListDialog"
       />
 
       <EmptyState
         v-else-if="filteredLists.length === 0 && searchQuery"
         icon="mdi-magnify"
-        title="No se encontraron listas"
-        description="Intenta con otros términos de búsqueda"
+        :title="t('pages.lists.noSearchResults')"
+        :description="t('pages.lists.noSearchDescription')"
       />
 
       <!-- Pagination -->
       <div class="text-center mt-6" v-if="totalPages > 1">
         <span class="text-body-2 text-grey-darken-1">
-          Frame {{ currentPage }}
+          {{ t('pages.lists.paginationLabel', { page: currentPage }) }}
         </span>
       </div>
     </v-container>
@@ -75,24 +77,24 @@
     <!-- New List Dialog -->
     <div v-if="newListDialog" class="modal-overlay">
       <div class="modal list-modal">
-        <h2>Nueva Lista</h2>
+        <h2>{{ t('pages.lists.modals.new.title') }}</h2>
         
         <form @submit.prevent="createNewList(newListForm)">
           <div class="form-group">
-            <label for="listName">Nombre de la lista</label>
+            <label for="listName">{{ t('pages.lists.modals.common.nameLabel') }}</label>
             <input
               id="listName"
               v-model="newListForm.name"
               type="text"
               class="form-input"
-              placeholder="Ingrese el nombre de la lista"
+               :placeholder="t('pages.lists.modals.common.namePlaceholder')"
               required
               autofocus
             />
           </div>
           
           <div class="form-group">
-            <label for="listImage">Imagen de la lista</label>
+            <label for="listImage">{{ t('pages.lists.modals.common.imageLabel') }}</label>
             <input
               id="listImage"
               type="file"
@@ -101,20 +103,20 @@
               @change="handleNewImageChange"
             />
             <div v-if="newImagePreview" class="image-preview">
-              <img :src="newImagePreview" alt="Vista previa" class="preview-img" />
+              <img :src="newImagePreview"  :alt="t('pages.lists.modals.common.previewAlt')" class="preview-img" />
             </div>
           </div>
           
-          <div class="form-group">
-            <label for="listDescription">Descripción (opcional)</label>
-            <textarea
-              id="listDescription"
-              v-model="newListForm.description"
-              class="form-input"
-              placeholder="Ingrese una descripción para la lista"
-              rows="3"
-            ></textarea>
-          </div>
+            <div class="form-group">
+              <label for="listDescription">{{ t('pages.lists.modals.common.descriptionLabel') }}</label>
+              <textarea
+                id="listDescription"
+                v-model="newListForm.description"
+                class="form-input"
+                :placeholder="t('pages.lists.modals.common.descriptionPlaceholder')"
+                rows="3"
+              ></textarea>
+            </div>
           
           <div class="form-group">
             <label class="checkbox-label">
@@ -123,22 +125,22 @@
                 v-model="newListForm.recurring"
                 class="checkbox-input"
               />
-              <span class="checkbox-text">Lista recurrente</span>
+              <span class="checkbox-text">{{ t('pages.lists.modals.common.recurringLabel') }}</span>
             </label>
           </div>
           
-          <div class="modal-actions">
-            <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              class="btn btn--primary"
-              :disabled="!newListForm.name?.trim() || isCreating"
-            >
-              {{ isCreating ? 'Creando...' : 'Crear Lista' }}
-            </button>
-          </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
+                {{ t('Cancel') }}
+              </button>
+              <button
+                type="submit"
+                class="btn btn--primary"
+                :disabled="!newListForm.name?.trim() || isCreating"
+              >
+                {{ isCreating ? t('pages.lists.modals.new.creating') : t('pages.lists.modals.new.submit') }}
+              </button>
+            </div>
         </form>
       </div>
     </div>
@@ -146,24 +148,24 @@
     <!-- Edit List Dialog -->
     <div v-if="editListDialog" class="modal-overlay">
       <div class="modal list-edit-modal">
-        <h2>Editar Lista</h2>
+        <h2>{{ t('pages.lists.modals.edit.title') }}</h2>
         
         <form @submit.prevent="saveListEdit">
           <div class="form-group">
-            <label for="editListName">Nombre de la lista</label>
+            <label for="editListName">{{ t('pages.lists.modals.common.nameLabel') }}</label>
             <input
               id="editListName"
               v-model="editListForm.name"
               type="text"
               class="form-input"
-              placeholder="Ingrese el nombre de la lista"
+               :placeholder="t('pages.lists.modals.common.namePlaceholder')"
               required
               autofocus
             />
           </div>
           
           <div class="form-group">
-            <label for="editListImage">Imagen de la lista</label>
+            <label for="editListImage">{{ t('pages.lists.modals.common.imageLabel') }}</label>
             <input
               id="editListImage"
               type="file"
@@ -172,17 +174,17 @@
               @change="handleEditImageChange"
             />
             <div v-if="editImagePreview" class="image-preview">
-              <img :src="editImagePreview" alt="Vista previa" class="preview-img" />
+              <img :src="editImagePreview"  :alt="t('pages.lists.modals.common.previewAlt')" class="preview-img" />
             </div>
           </div>
           
           <div class="form-group">
-            <label for="editListDescription">Descripción (opcional)</label>
+            <label for="editListDescription">{{ t('pages.lists.modals.common.descriptionLabel') }}</label>
             <textarea
               id="editListDescription"
               v-model="editListForm.description"
               class="form-input"
-              placeholder="Ingrese una descripción para la lista"
+              :placeholder="t('pages.lists.modals.common.descriptionPlaceholder')"
               rows="3"
             ></textarea>
           </div>
@@ -194,20 +196,20 @@
                 v-model="editListForm.recurring"
                 class="checkbox-input"
               />
-              <span class="checkbox-text">Lista recurrente</span>
+              <span class="checkbox-text">{{ t('pages.lists.modals.common.recurringLabel') }}</span>
             </label>
           </div>
           
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="editListDialog = false">
-              Cancelar
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
               class="btn btn--primary"
               :disabled="!editListForm.name?.trim()"
             >
-              Guardar
+              {{ t('common.save') }}
             </button>
           </div>
         </form>
@@ -217,25 +219,22 @@
     <!-- Delete Confirmation Dialog -->
     <div v-if="deleteDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-        <h2>Confirmar eliminación</h2>
+  <h2>{{ t('pages.lists.deleteConfirm.title') }}</h2>
         
         <div class="confirmation-content">
-          <p class="confirmation-text">
-            ¿Estás seguro de que quieres eliminar la lista <strong>"{{ listToDelete?.name }}"</strong>? 
-            Esta acción no se puede deshacer.
-          </p>
+          <p class="confirmation-text" v-html="t('pages.lists.deleteConfirm.message', { name: listToDelete?.name || '' })"></p>
         </div>
         
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="deleteDialog = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             class="btn btn--danger"
             @click="confirmDeleteList"
           >
-            Eliminar
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
@@ -245,7 +244,7 @@
     <v-snackbar v-model="snackbar" :timeout="4000" :color="snackbarColor">
       {{ snackbarText }}
       <template v-slot:actions>
-        <v-btn variant="text" @click="snackbar = false">Cerrar</v-btn>
+        <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
       </template>
     </v-snackbar>
   </div>
@@ -255,12 +254,14 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useListsStore } from '@/stores/lists'
+import { useLanguage } from '@/composables/useLanguage'
 import listsApi from '@/api/lists'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 
 const router = useRouter()
+const { t } = useLanguage()
 
 // Reactive data
 const searchQuery = ref('')

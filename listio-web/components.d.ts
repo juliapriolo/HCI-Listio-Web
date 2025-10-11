@@ -14,6 +14,7 @@ declare module 'vue' {
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
     FilterList: typeof import('./src/components/FilterList.vue')['default']
     ItemMenuDialog: typeof import('./src/components/ItemMenuDialog.vue')['default']
+    LanguageSwitcher: typeof import('./src/components/LanguageSwitcher.vue')['default']
     ListCard: typeof import('./src/components/ListCard.vue')['default']
     LoginCard: typeof import('./src/components/LoginCard.vue')['default']
     NewItemDialog: typeof import('./src/components/NewItemDialog.vue')['default']

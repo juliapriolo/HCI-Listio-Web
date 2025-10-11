@@ -11,7 +11,7 @@
           <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
-              placeholder="Buscar productos..."
+              :placeholder="t('pages.products.searchPlaceholder')"
             />
           </div>
           <v-btn
@@ -81,15 +81,15 @@
       <EmptyState
         v-if="filteredItems.length === 0 && !searchQuery"
         icon="mdi-format-list-bulleted"
-        title="Lista vacía"
-        description="Agrega tus primeros productos"
+        :title="t('pages.list.empty.title')"
+        :description="t('pages.list.empty.description')"
       />
 
       <EmptyState
         v-else-if="filteredItems.length === 0 && searchQuery"
         icon="mdi-magnify"
-        title="No se encontraron productos"
-        description="Intenta con otros términos de búsqueda"
+        :title="t('pages.list.empty.searchTitle')"
+        :description="t('pages.list.empty.searchDescription')"
       />
     </v-container>
 
@@ -109,8 +109,9 @@
     <NewItemDialog
       v-model="newItemDialog"
       v-model:form-data="newItemForm"
-      title="Agregar Item"
-      submit-text="Confirmar"
+      :title="t('pages.list.addItem.title')"
+      :submit-text="t('pages.list.addItem.submit')"
+      :cancel-text="t('common.cancel')"
       :fields="addItemFields"
       @submit="addItem"
       @cancel="newItemDialog = false"
@@ -128,8 +129,9 @@
     <NewItemDialog
       v-model="shareListDialog"
       v-model:form-data="newItemForm"
-      title="Compartir Lista"
-      submit-text="Confirmar"
+      :title="t('pages.list.share.title')"
+      :submit-text="t('pages.list.share.submit')"
+      :cancel-text="t('common.cancel')"
       :fields="shareListFields"
       @submit="shareList"
       @cancel="shareListDialog = false"
@@ -146,6 +148,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
 import { useRoute } from 'vue-router'
 import { useListItemsStore } from '@/stores/listItems'
 import { useListsStore } from '@/stores/lists'
@@ -154,6 +157,7 @@ import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
 import ItemMenuDialog from '@/components/ItemMenuDialog.vue'
 
+const { t } = useLanguage()
 // Use listItems store for per-list persistence
 const route = useRoute()
 const listItemsStore = useListItemsStore()
@@ -174,7 +178,7 @@ const currentListName = computed(() => {
   const id = route.query.id || null
   const listId = id ? (Number(id) || id) : null
   const list = listId ? listsStore.getById(listId) : null
-  return list ? `Mi Lista: ${list.name}` : 'Mi Lista'
+  return list ? `Mi Lista: ${list.name}` : 'My List'
 })
 
 onMounted(() => loadForRoute())
@@ -205,14 +209,14 @@ const filters = ref({
 const addItemFields = [
   {
     key: 'name',
-    label: 'Producto',
+    label: t('pages.list.fields.product'),
     type: 'text',
     required: true,
     autofocus: true
   },
   {
     key: 'description',
-    label: 'Descripción (opcional)',
+    label: t('pages.list.fields.descriptionOptional'),
     type: 'textarea',
     required: false
   }
@@ -221,14 +225,14 @@ const addItemFields = [
 const shareListFields = [
   {
     key: 'name',
-    label: 'Destinatario',
+    label: t('pages.list.share.recipient'),
     type: 'text',
     required: true,
     autofocus: true
   },
   {
     key: 'description',
-    label: 'Descripción (opcional)',
+    label: t('pages.list.fields.descriptionOptional'),
     type: 'textarea',
     required: false
   }
@@ -265,7 +269,7 @@ const addItem = (formData) => {
   if (!formData.name) return
   listItemsStore.addItem({
     name: formData.name,
-    category: 'Sin categoría',
+    category: t('common.noCategory'),
     checked: false
   })
   newItemDialog.value = false

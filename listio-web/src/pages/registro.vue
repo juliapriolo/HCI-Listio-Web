@@ -5,8 +5,8 @@
         <h1>LISTIO</h1>
       </div>
       <div class="illustrations">
-        <img src="@/assets/login_1.png" alt="Bolsa de compras" class="grocery-bag-image" />
-        <img src="@/assets/login_2.png" alt="Bolsas de colores" class="colored-bags-image" />
+        <img src="@/assets/login_1.png" :alt="t('register.groceryBagAlt')" class="grocery-bag-image" />
+        <img src="@/assets/login_2.png" :alt="t('register.coloredBagsAlt')" class="colored-bags-image" />
       </div>
     </div>
 
@@ -21,13 +21,13 @@
 
         <form @submit.prevent="handleRegister" class="register-form">
           <div class="form-group">
-            <label for="name" class="form-label">Nombre</label>
+            <label for="name" class="form-label">{{ t('register.name') }}</label>
             <input
               id="name"
               v-model="form.name"
               type="text"
               class="form-input"
-              placeholder="Ingrese su nombre"
+              :placeholder="t('register.namePlaceholder')"
               required
               @invalid="onRegisterInvalid"
               @input="onRegisterInput"
@@ -35,13 +35,13 @@
           </div>
 
           <div class="form-group">
-            <label for="surname" class="form-label">Apellido</label>
+            <label for="surname" class="form-label">{{ t('register.surname') }}</label>
             <input
               id="surname"
               v-model="form.surname"
               type="text"
               class="form-input"
-              placeholder="Ingrese su apellido"
+              :placeholder="t('register.surnamePlaceholder')"
               required
               @invalid="onRegisterInvalid"
               @input="onRegisterInput"
@@ -49,13 +49,13 @@
           </div>
 
           <div class="form-group">
-            <label for="email" class="form-label">Email</label>
+            <label for="email" class="form-label">{{ t('register.email') }}</label>
             <input
               id="email"
               v-model="form.email"
               type="email"
               :class="['form-input', errors.email ? 'form-input--error' : '']"
-              placeholder="Ingrese su email"
+              :placeholder="t('register.emailPlaceholder')"
               required
               @invalid="onRegisterInvalid"
               @input="onRegisterInput"
@@ -64,13 +64,13 @@
           </div>
 
           <div class="form-group">
-            <label for="password" class="form-label">Contraseña</label>
+            <label for="password" class="form-label">{{ t('register.password') }}</label>
             <input
               id="password"
               v-model="form.password"
               type="password"
               class="form-input"
-              placeholder="Cree una contraseña"
+              :placeholder="t('register.passwordPlaceholder')"
               minlength="6"
               required
               @invalid="onRegisterInvalid"
@@ -104,9 +104,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useLanguage } from '@/composables/useLanguage'
 
 const router = useRouter()
 const userStore = useUserStore()
+const { t } = useLanguage()
 
 const form = ref({
   name: '',
@@ -164,9 +166,9 @@ const handleRegister = async () => {
     // After successful registration, navigate to login and open verification
     router.push({ path: '/login', query: { registered: '1' } })
   } catch (error) {
-    const message = error?.message || 'No se pudo registrar.'
+    const message = error?.message || ''
     if (/email.*(exists|registered)/i.test(message)) {
-      errors.value.email = 'Este email ya está registrado.'
+      errors.value.email = t('register.emailExists')
       return
     }
     // Show server error inside the register card feedback area

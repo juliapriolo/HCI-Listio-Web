@@ -6,19 +6,19 @@
   >
     <v-card>
       <v-card-title class="text-h6">
-        Editar ítem
+        {{ t('pages.list.itemMenu.title') }}
       </v-card-title>
       
       <v-card-text>
         <v-text-field
-          label="Nombre"
+          :label="t('common.name')"
           variant="outlined"
           v-model="localData.name"
           required
         />
 
         <v-select
-          label="Categoría"
+          :label="t('common.category')"
           variant="outlined"
           v-model="localData.category"
           :items="categories"
@@ -28,13 +28,13 @@
       
       <v-card-actions>
         <v-btn color="error" variant="outlined" @click="handleDelete">
-          Eliminar
+          {{ t('common.delete') }}
         </v-btn>
 
         <v-spacer />
 
         <v-btn @click="handleCancel">
-          Cancelar
+          {{ t('common.cancel') }}
         </v-btn>
         <v-btn
           color="success"
@@ -42,7 +42,7 @@
           @click="handleSubmit"
           :disabled="!isFormValid"
         >
-          Guardar
+          {{ t('common.save') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -51,6 +51,8 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
+const { t } = useLanguage()
 
 const props = defineProps({
   modelValue: Boolean,

@@ -48,13 +48,13 @@
           </template>
           <v-list>
             <v-list-item @click="$emit('edit', product)">
-              <v-list-item-title>Editar</v-list-item-title>
+              <v-list-item-title>{{ t('common.edit') }}</v-list-item-title>
               <template v-slot:prepend>
                 <v-icon>mdi-pencil</v-icon>
               </template>
             </v-list-item>
             <v-list-item @click="$emit('delete', product)">
-              <v-list-item-title>Eliminar</v-list-item-title>
+              <v-list-item-title>{{ t('common.delete') }}</v-list-item-title>
               <template v-slot:prepend>
                 <v-icon color="error">mdi-delete</v-icon>
               </template>
@@ -85,6 +85,8 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
+const { t } = useLanguage()
 
 const props = defineProps({
   product: {
@@ -111,7 +113,7 @@ const imageSrc = computed(() => {
 })
 
 const categoryName = computed(() => {
-  return props.product?.category?.name || 'Sin categoría'
+  return props.product?.category?.name || t('common.noCategory')
 })
 
 const getStockColor = (stock) => {
@@ -121,9 +123,9 @@ const getStockColor = (stock) => {
 }
 
 const getStockText = (stock) => {
-  if (stock === 0) return 'Sin stock'
-  if (stock < 5) return 'Poco stock'
-  return 'Disponible'
+  if (stock === 0) return t('pages.products.stock.none')
+  if (stock < 5) return t('pages.products.stock.low')
+  return t('pages.products.stock.available')
 }
 </script>
 

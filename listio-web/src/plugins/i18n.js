@@ -1,0 +1,702 @@
+import { createI18n } from 'vue-i18n'
+
+const messages = {
+  es: {
+    landing: {
+      title: 'Bienvenido a LISTIO',
+      subtitle: 'Haz tus compras con confianza',
+      signIn: 'Inicia sesión',
+      signUp: 'Regístrate',
+      imageAlt: 'Bolsas de compras'
+    },
+    login: {
+      title: 'Iniciar sesión',
+      email: 'Email',
+      emailPlaceholder: 'Ingresa tu email',
+      password: 'Contraseña',
+      passwordPlaceholder: 'Ingresa tu contraseña',
+      loginButton: 'Iniciar sesión',
+      loginButtonLoading: 'Iniciando...',
+      forgotPassword: '¿Olvidaste tu contraseña?',
+      resendVerification: 'Reenviar verificación',
+      resendingVerification: 'Enviando...',
+      enterCode: 'Ingresar código',
+      termsText: 'Al iniciar sesión, aceptas nuestros',
+      termsOfUse: 'Términos de Uso',
+      privacyPolicy: 'Política de Privacidad',
+      groceryBagAlt: 'Bolsa de compras con productos',
+      coloredBagsAlt: 'Bolsas de compras de colores',
+      verificationCode: 'Código de verificación',
+      forgotPasswordModal: {
+        title: 'Recuperar contraseña',
+        step1Description: 'Ingresa tu email para recibir el código de recuperación:',
+        sending: 'Enviando...',
+        sendCode: 'Enviar código',
+        step2Description: 'Ingresa el código recibido en tu email y tu nueva contraseña:',
+        codePlaceholder: 'Ingresa el código',
+        newPasswordLabel: 'Nueva contraseña',
+        newPasswordPlaceholder: 'Ingresa tu nueva contraseña',
+        changing: 'Cambiando...',
+        changePassword: 'Cambiar contraseña',
+        recoverySent: 'Código de recuperación enviado a tu email',
+        passwordChanged: 'Contraseña cambiada con éxito'
+      },
+      verifyModal: {
+        title: 'Verificar cuenta',
+        description: 'Ingresa el código de verificación que recibiste por email para activar tu cuenta.',
+        codePlaceholder: 'Ingresa el código',
+        verifying: 'Verificando...',
+        submit: 'Verificar cuenta',
+        successMessage: 'Cuenta verificada con éxito. Ya podés iniciar sesión.',
+        successLogin: 'Cuenta verificada con éxito. Inicia sesión con tus credenciales.',
+        error: 'No pudimos verificar la cuenta. Revisá el código e intentá nuevamente.',
+        resendSuccess: 'Te enviamos un nuevo email de verificación. Revisá tu bandeja.'
+      },
+      errors: {
+        loginFailed: 'Error al iniciar sesión',
+        missingEmail: 'Ingresa tu dirección de email',
+        missingPassword: 'Ingresa tu contraseña',
+        invalidEmail: 'El formato del email no es válido',
+        userNotFound: 'No encontramos un usuario con ese email',
+        invalidPassword: 'La contraseña es incorrecta',
+        invalidCode: 'El código de verificación es incorrecto',
+        accountNotVerified: 'Tu cuenta aún no está verificada. Revisá tu email para activarla.',
+        accountNotVerifiedAction: 'Tu cuenta aún no está verificada. Revisá tu email o reenviá el código.',
+        codeExpired: 'El código de verificación ha expirado',
+        unauthorized: 'No tienes permisos para realizar esta acción',
+        network: 'Error de conexión. Verifica tu internet',
+        recoverySendFailed: 'Error al enviar el código de recuperación',
+        passwordChangeFailed: 'Error al cambiar la contraseña',
+        verifyCodeMissing: 'Ingresa el código de verificación que recibiste por email',
+        resendFailed: 'No pudimos reenviar el email de verificación',
+        enterEmailToResend: 'Ingresa tu email para reenviar la verificación'
+      },
+      registeredFeedback: 'Registro completado. Revisá tu email y verificá tu cuenta para iniciar sesión.',
+  noAccount: '¿No tienes una cuenta?',
+  signUpLink: 'Regístrate'
+    },
+    register: {
+      title: 'Crear cuenta',
+      name: 'Nombre',
+      namePlaceholder: 'Ingresa tu nombre',
+      surname: 'Apellido',
+      surnamePlaceholder: 'Ingresa tu apellido',
+      email: 'Email',
+      emailPlaceholder: 'Ingresa tu email',
+      password: 'Contraseña',
+      passwordPlaceholder: 'Crea una contraseña',
+      registerButton: 'Registrarme',
+      registerButtonLoading: 'Registrando...',
+      alreadyHaveAccount: '¿Ya tienes cuenta?',
+      loginLink: 'Inicia sesión',
+      registerComplete: 'Registro completado. Inicia sesión para continuar.',
+      groceryBagAlt: 'Bolsa de compras',
+      coloredBagsAlt: 'Bolsas de colores',
+      emailExists: 'Este email ya está registrado.',
+      genericError: 'No se pudo completar el registro.'
+    },
+    nav: {
+      lists: 'Listas',
+      products: 'Productos',
+      pantry: 'Despensa'
+    },
+    profile: {
+      title: 'Mi perfil',
+      editProfile: 'Editar perfil',
+      changeLanguage: 'Cambiar idioma',
+      logout: 'Cerrar sesión',
+      photoAlt: 'Foto de {name}',
+      editTitle: 'Editar perfil',
+      personalInfo: 'Información personal',
+      saveChanges: 'Guardar cambios',
+      cancel: 'Cancelar',
+      accountActions: 'Acciones de la cuenta',
+      avatarFallback: 'Avatar',
+      email: 'Email',
+      changePassword: 'Cambiar contraseña',
+      currentPassword: 'Contraseña actual',
+      newPassword: 'Nueva contraseña',
+      changePhoto: 'Cambiar foto',
+      selectNewPhoto: 'Seleccionar nueva foto',
+      uploadHint: 'Selecciona una imagen desde tu dispositivo',
+      photoHint: 'Haz clic en tu foto para cambiarla',
+      successTitle: '¡Perfil actualizado!',
+      successDescription: 'Tus cambios se han guardado correctamente'
+    },
+      common: {
+        cancel: 'Cancelar',
+        save: 'Guardar',
+        delete: 'Eliminar',
+        edit: 'Editar',
+        add: 'Agregar',
+        search: 'Buscar',
+        loading: 'Cargando...',
+        error: 'Error',
+        success: 'Éxito',
+        name: 'Nombre',
+        description: 'Descripción',
+        category: 'Categoría',
+        noCategory: 'Sin categoría',
+        filter: 'Filtrar',
+        share: 'Compartir',
+        quantity: 'Cantidad',
+        price: 'Precio',
+        total: 'Total',
+        and: 'y',
+        close: 'Cerrar',
+        send: 'Enviar',
+        confirm: 'Confirmar',
+        back: 'Atrás',
+        englishShort: 'EN',
+        spanishShort: 'ES'
+      },
+    languageSwitcher: {
+      switchToEnglish: 'Cambiar a inglés',
+      switchToSpanish: 'Cambiar a español'
+    },
+    errors: {
+      generic: 'Algo salió mal. Intenta nuevamente.'
+    },
+    pages: {
+      list: {
+        // Individual list page
+        searchPlaceholder: 'Buscar ítems...',
+        empty: {
+          title: 'Tu lista está vacía',
+          description: 'Agrega tu primer ítem para empezar',
+          searchTitle: 'No se encontraron ítems',
+          searchDescription: 'Intenta con otros términos de búsqueda'
+        },
+        fields: {
+          product: 'Producto',
+          descriptionOptional: 'Descripción (opcional)'
+        },
+        addItem: {
+          title: 'Agregar ítem',
+          submit: 'Agregar'
+        },
+        share: {
+          title: 'Compartir lista',
+          submit: 'Compartir',
+          recipient: 'Destinatario'
+        }
+      },
+      lists: {
+        title: 'Mis listas',
+        searchPlaceholder: 'Buscar productos...',
+        loadingLists: 'Cargando listas...',
+        noListsTitle: 'No tienes listas aún',
+        noListsDescription: 'Crea tu primera lista de compras',
+        createListAction: 'Crear lista',
+        noSearchResults: 'No se encontraron listas',
+        noSearchDescription: 'Intenta con otros términos de búsqueda',
+        paginationLabel: 'Página {page}',
+        fields:{
+          descriptionOptional: 'Descripción (opcional)'
+        },
+        modals: {
+          common: {
+            nameLabel: 'Nombre de la lista',
+            namePlaceholder: 'Ingresa el nombre de la lista',
+            imageLabel: 'Imagen de la lista',
+            previewAlt: 'Vista previa',
+            descriptionLabel: 'Descripción (opcional)',
+            descriptionPlaceholder: 'Ingresa una descripción para la lista',
+            recurringLabel: 'Lista recurrente'
+          },
+          new: {
+            title: 'Nueva lista',
+            creating: 'Creando...',
+            submit: 'Crear lista',
+            cancel: 'Cancelar'
+          },
+          edit: {
+            title: 'Editar lista'
+          }
+        },
+        filters: {
+          title: 'Filtrar listas',
+          name: 'Nombre',
+          category: 'Categoría',
+          clear: 'Limpiar',
+          apply: 'Aplicar'
+        },
+        deleteConfirm: {
+          title: 'Confirmar eliminación',
+          message: '¿Estás seguro de que quieres eliminar la lista <strong>"{name}"</strong>? Esta acción no se puede deshacer.'
+        }
+      },
+      products: {
+        title: 'Productos',
+        searchPlaceholder: 'Buscar productos...',
+        empty: {
+          noResultsTitle: 'No se encontraron productos',
+          noResultsDescription: 'Intenta con otros términos de búsqueda'
+        },
+        stock: {
+          none: 'Sin stock',
+          low: 'Poco stock',
+          available: 'Disponible'
+        },
+        modals: {
+          common: {
+            nameLabel: 'Nombre del producto',
+            namePlaceholder: 'Ingrese el nombre del producto',
+            imageLabel: 'Imagen del producto',
+            previewAlt: 'Vista previa',
+            descriptionLabel: 'Descripción (opcional)',
+            descriptionPlaceholder: 'Ingrese una descripción para el producto'
+          },
+          new: {
+            title: 'Agregar Producto',
+            creating: 'Agregando...',
+            submit: 'Agregar Producto'
+          }
+  },
+        deleteConfirm: {
+          title: 'Confirmar eliminación',
+          message: '¿Estás seguro de que quieres eliminar el producto <strong>"{name}"</strong>?',
+          warning: 'Esta acción no se puede deshacer.'
+        },
+        messages: {
+          added: '{name} agregado correctamente',
+          addError: 'Error al agregar {name}: {error}',
+          updated: 'Producto actualizado correctamente',
+          updateError: 'Error al actualizar producto: {error}',
+          deleted: 'Producto eliminado correctamente',
+          deleteError: 'Error al eliminar producto: {error}',
+          addedToList: '{name} añadido a la lista',
+          loadError: 'Error al cargar los datos. Verificando conexión...'
+        }
+      },
+        pantry: {
+          title: 'Mi despensa',
+          searchCategories: 'Buscar categorías...',
+          searchProducts: 'Buscar productos...',
+          addCategoryTitle: 'Agregar categoría',
+          editCategoryTitle: 'Editar categoría',
+          categoryNameLabel: 'Nombre de la categoría',
+          categoryNamePlaceholder: 'Ej: Lácteos',
+          categoryImageLabel: 'Imagen de la categoría',
+          addCategoryButton: 'Agregar',
+          updateCategoryButton: 'Actualizar',
+          existingCategoriesTitle: 'Categorías existentes',
+          loadingCategories: 'Cargando categorías...',
+          noCategories: 'No hay categorías cargadas todavía.',
+          statusLabel: 'Estado del producto',
+          empty: {
+            noCategoriesTitle: 'No tienes categorías creadas',
+            noCategoriesDescription: 'Comienza agregando categorías a tu despensa',
+            noProductsTitle: 'No hay productos en esta despensa',
+            noProductsDescription: 'Comienza agregando productos a tu despensa',
+            searchNotFoundTitle: 'No se encontraron productos',
+            searchNotFoundDescription: 'Intenta con otros términos de búsqueda'
+          },
+          productSelection: {
+            title: 'Seleccionar Producto',
+            noneAvailable: 'No hay productos disponibles',
+            goToProducts: 'Ve a la sección "Productos" para agregar productos primero',
+            detailsTitle: 'Detalles del producto',
+            quantityLabel: 'Cantidad',
+            unitLabel: 'Unidad',
+            expiryLabel: 'Fecha de vencimiento',
+            categoryOptional: 'Categoría (opcional)',
+            enterCategory: 'Ingrese categoría',
+            addToPantry: 'Agregar a la despensa'
+          },
+          units: {
+            unidad: 'unidad',
+            kg: 'kg',
+            g: 'g',
+            l: 'l',
+            ml: 'ml',
+            paquete: 'paquete',
+            caja: 'caja'
+          },
+          share: {
+            title: 'Compartir despensa',
+            emailLabel: 'Correo electrónico',
+            emailPlaceholder: 'usuario@ejemplo.com'
+          },
+          deleteConfirm: {
+            categoryTitle: 'Confirmar eliminación',
+            categoryMessage: '¿Estás seguro de que quieres eliminar la despensa <strong>"{name}"</strong>?',
+            productTitle: 'Confirmar eliminación',
+            productMessage: '¿Estás seguro de que quieres eliminar el producto <strong>"{name}"</strong>?'
+          },
+          editProduct: {
+            title: 'Editar producto',
+            quantityLabel: 'Cantidad',
+            unitLabel: 'Unidad',
+            expiryLabel: 'Fecha de vencimiento',
+            changeImage: 'Cambiar imagen'
+          },
+          status: {
+            available: 'Disponible',
+            low: 'Poco stock',
+            expiring: 'Por vencer',
+            expired: 'Vencido',
+            unknown: 'Desconocido'
+          },
+          messages: {
+            invalidQuantityUnit: 'Error: No se pudo agregar el producto. Verifica que la cantidad y unidad sean válidas.'
+          }
+        }
+    }
+  },
+  en: {
+    landing: {
+      title: 'Welcome to LISTIO',
+      subtitle: 'Shop with confidence',
+      signIn: 'Sign in',
+      signUp: 'Sign up',
+      imageAlt: 'Shopping bags'
+    },
+    login: {
+      title: 'Sign in',
+      email: 'Email',
+      emailPlaceholder: 'Enter your email',
+      password: 'Password',
+      passwordPlaceholder: 'Enter your password',
+      loginButton: 'Sign in',
+      loginButtonLoading: 'Signing in...',
+      forgotPassword: 'Forgot your password?',
+      resendVerification: 'Resend verification',
+      resendingVerification: 'Sending...',
+      enterCode: 'Enter code',
+      termsText: 'By signing in, you accept our',
+      termsOfUse: 'Terms of Use',
+      privacyPolicy: 'Privacy Policy',
+      groceryBagAlt: 'Grocery bag with products',
+      coloredBagsAlt: 'Colored shopping bags',
+      verificationCode: 'Verification code',
+      forgotPasswordModal: {
+        title: 'Recover password',
+        step1Description: 'Enter your email to receive the recovery code:',
+        sending: 'Sending...',
+        sendCode: 'Send code',
+        step2Description: 'Enter the code you received and your new password:',
+        codePlaceholder: 'Enter the code',
+        newPasswordLabel: 'New password',
+        newPasswordPlaceholder: 'Enter your new password',
+        changing: 'Updating...',
+        changePassword: 'Change password',
+        recoverySent: 'Recovery code sent to your email',
+        passwordChanged: 'Password changed successfully'
+      },
+      verifyModal: {
+        title: 'Verify account',
+        description: 'Enter the verification code you received by email to activate your account.',
+        codePlaceholder: 'Enter the code',
+        verifying: 'Verifying...',
+        submit: 'Verify account',
+        successMessage: 'Account verified successfully. You can now sign in.',
+        successLogin: 'Account verified successfully. Sign in with your credentials.',
+        error: 'We could not verify the account. Check the code and try again.',
+        resendSuccess: 'We sent you a new verification email. Check your inbox.'
+      },
+      errors: {
+        loginFailed: 'Could not sign in',
+        missingEmail: 'Please enter your email address',
+        missingPassword: 'Please enter your password',
+        invalidEmail: 'Email format is invalid',
+        userNotFound: 'We could not find a user with that email',
+        invalidPassword: 'The password is incorrect',
+        invalidCode: 'The verification code is incorrect',
+        accountNotVerified: 'Your account is not verified yet. Check your email to activate it.',
+        accountNotVerifiedAction: 'Your account is not verified yet. Check your email or resend the code.',
+        codeExpired: 'The verification code has expired',
+        unauthorized: 'You do not have permission to perform this action',
+        network: 'Connection error. Check your internet connection',
+        recoverySendFailed: 'We could not send the recovery code',
+        passwordChangeFailed: 'We could not change the password',
+        verifyCodeMissing: 'Enter the verification code you received by email',
+        resendFailed: 'We could not resend the verification email',
+        enterEmailToResend: 'Enter your email to resend the verification'
+      },
+      registeredFeedback: 'Registration complete. Check your email and verify your account to continue.',
+      noAccount: "Don't have an account?",
+      signUpLink: 'Sign up'
+    },
+    register: {
+      title: 'Create account',
+      name: 'Name',
+      namePlaceholder: 'Enter your name',
+      surname: 'Last name',
+      surnamePlaceholder: 'Enter your last name',
+      email: 'Email',
+      emailPlaceholder: 'Enter your email',
+      password: 'Password',
+      passwordPlaceholder: 'Create a password',
+      registerButton: 'Register',
+      registerButtonLoading: 'Registering...',
+      alreadyHaveAccount: 'Already have an account?',
+      loginLink: 'Sign in',
+      registerComplete: 'Registration completed. Sign in to continue.',
+      groceryBagAlt: 'Grocery bag',
+      coloredBagsAlt: 'Colored bags',
+      emailExists: 'This email is already registered.',
+      genericError: 'We could not complete the registration.'
+    },
+    nav: {
+      lists: 'Lists',
+      products: 'Products',
+      pantry: 'Pantry'
+    },
+    profile: {
+      title: 'My profile',
+      editProfile: 'Edit profile',
+      changeLanguage: 'Change language',
+      logout: 'Sign out',
+      photoAlt: 'Photo of {name}',
+      editTitle: 'Edit profile',
+      personalInfo: 'Personal information',
+      saveChanges: 'Save changes',
+      cancel: 'Cancel',
+      accountActions: 'Account actions',
+      avatarFallback: 'Avatar',
+      email: 'Email',
+      changePassword: 'Change password',
+      currentPassword: 'Current password',
+      newPassword: 'New password',
+      changePhoto: 'Change photo',
+      selectNewPhoto: 'Select new photo',
+      uploadHint: 'Choose an image from your device',
+      photoHint: 'Click your photo to change it',
+      successTitle: 'Profile updated!',
+      successDescription: 'Your changes have been saved successfully'
+    },
+    common: {
+      cancel: 'Cancel',
+      save: 'Save',
+      delete: 'Delete',
+      edit: 'Edit',
+      add: 'Add',
+      search: 'Search',
+      loading: 'Loading...',
+      error: 'Error',
+      success: 'Success',
+      name: 'Name',
+      description: 'Description',
+      category: 'Category',
+      noCategory: 'No category',
+      filter: 'Filter',
+      share: 'Share',
+      quantity: 'Quantity',
+      price: 'Price',
+      total: 'Total',
+      and: 'and',
+      close: 'Close',
+      send: 'Send',
+      confirm: 'Confirm',
+      back: 'Back',
+      englishShort: 'EN',
+      spanishShort: 'ES'
+    },
+    languageSwitcher: {
+      switchToEnglish: 'Switch to English',
+      switchToSpanish: 'Switch to Spanish'
+    },
+    errors: {
+      generic: 'Something went wrong. Please try again.'
+    },
+    pages: {
+      list: {
+        // Individual list page
+        searchPlaceholder: 'Search items...',
+        empty: {
+          title: 'Your list is empty',
+          description: 'Add your first item to get started',
+          searchTitle: 'No items found',
+          searchDescription: 'Try different search terms'
+        },
+        fields: {
+          product: 'Product',
+          descriptionOptional: 'Description (optional)'
+        },
+        addItem: {
+          title: 'Add item',
+          submit: 'Add'
+        },
+        share: {
+          title: 'Share list',
+          submit: 'Share',
+          recipient: 'Recipient'
+        },
+        itemMenu:{
+          title: 'Product ',
+        }
+      },
+      lists: {
+        title: 'My lists',
+        searchPlaceholder: 'Search products...',
+        loadingLists: 'Loading lists...',
+        noListsTitle: 'You do not have any lists yet',
+        noListsDescription: 'Create your first shopping list',
+        createListAction: 'Create list',
+        noSearchResults: 'No lists found',
+        noSearchDescription: 'Try different search terms',
+        paginationLabel: 'Page {page}',
+        fields: {
+          descriptionOptional: 'Description (optional)'
+        },
+        modals: {
+          common: {
+            nameLabel: 'List name',
+            namePlaceholder: 'Enter the list name',
+            imageLabel: 'List image',
+            previewAlt: 'Preview image',
+            descriptionLabel: 'Description (optional)',
+            descriptionPlaceholder: 'Enter a description for the list',
+            recurringLabel: 'Recurring list'
+          },
+          new: {
+            title: 'New list',
+            creating: 'Creating...',
+            submit: 'Create list',
+            cancel: 'Cancel'
+          },
+          edit: {
+            title: 'Edit list'
+          }
+        },
+        filters: {
+          title: 'Filter lists',
+          name: 'Name',
+          category: 'Category',
+          clear: 'Clear',
+          apply: 'Apply'
+        },
+        deleteConfirm: {
+          title: 'Confirm deletion',
+          message: 'Are you sure you want to delete the list <strong>"{name}"</strong>? This action cannot be undone.'
+        }
+      },
+      products: {
+        title: 'Products',
+        searchPlaceholder: 'Search products...',
+        empty: {
+          noResultsTitle: 'No products found',
+          noResultsDescription: 'Try different search terms'
+        },
+        stock: {
+          none: 'Out of stock',
+          low: 'Low stock',
+          available: 'Available'
+        },
+        modals: {
+          common: {
+            nameLabel: 'Product name',
+            namePlaceholder: 'Enter the product name',
+            imageLabel: 'Product image',
+            previewAlt: 'Preview image',
+            descriptionLabel: 'Description (optional)',
+            descriptionPlaceholder: 'Enter a description for the product'
+          },
+          new: {
+            title: 'Add Product',
+            creating: 'Adding...',
+            submit: 'Add Product'
+          }
+        },
+        deleteConfirm: {
+          title: 'Confirm deletion',
+          message: 'Are you sure you want to delete the product <strong>"{name}"</strong>?',
+          warning: 'This action cannot be undone.'
+        },
+        messages: {
+          added: '{name} added successfully',
+          addError: 'Error adding {name}: {error}',
+          updated: 'Product updated successfully',
+          updateError: 'Error updating product: {error}',
+          deleted: 'Product deleted successfully',
+          deleteError: 'Error deleting product: {error}',
+          addedToList: '{name} added to the list',
+          loadError: 'Error loading data. Checking connection...'
+        }
+      },
+      pantry: {
+        title: 'My pantry',
+        searchCategories: 'Search categories...',
+          searchProducts: 'Search products...',
+          statusLabel: 'Product status',
+          addCategoryTitle: 'Add category',
+          editCategoryTitle: 'Edit category',
+          categoryNameLabel: 'Category name',
+          categoryNamePlaceholder: 'e.g., Dairy',
+          categoryImageLabel: 'Category image',
+          addCategoryButton: 'Add',
+          updateCategoryButton: 'Update',
+          existingCategoriesTitle: 'Existing categories',
+          loadingCategories: 'Loading categories...',
+          noCategories: 'There are no categories yet.',
+          empty: {
+            noCategoriesTitle: 'You have no categories yet',
+            noCategoriesDescription: 'Start by adding categories to your pantry',
+            noProductsTitle: 'There are no products in this pantry',
+            noProductsDescription: 'Start by adding products to your pantry',
+            searchNotFoundTitle: 'No products found',
+            searchNotFoundDescription: 'Try different search terms'
+          },
+          productSelection: {
+            title: 'Select Product',
+            noneAvailable: 'No products available',
+            goToProducts: 'Go to the Products section to add products first',
+            detailsTitle: 'Product details',
+            quantityLabel: 'Quantity',
+            unitLabel: 'Unit',
+            expiryLabel: 'Expiration date',
+            categoryOptional: 'Category (optional)',
+            enterCategory: 'Enter category',
+            addToPantry: 'Add to pantry'
+          },
+          units: {
+            unidad: 'unit',
+            kg: 'kg',
+            g: 'g',
+            l: 'l',
+            ml: 'ml',
+            paquete: 'pack',
+            caja: 'box'
+          },
+          share: {
+            title: 'Share pantry',
+            emailLabel: 'Email',
+            emailPlaceholder: 'user@example.com'
+          },
+          deleteConfirm: {
+            categoryTitle: 'Confirm deletion',
+            categoryMessage: 'Are you sure you want to delete the pantry <strong>"{name}"</strong>?',
+            productTitle: 'Confirm deletion',
+            productMessage: 'Are you sure you want to delete the product <strong>"{name}"</strong>?'
+          },
+          editProduct: {
+            title: 'Edit product',
+            quantityLabel: 'Quantity',
+            unitLabel: 'Unit',
+            expiryLabel: 'Expiration date',
+            changeImage: 'Change image'
+          },
+          status: {
+            available: 'Available',
+            low: 'Low stock',
+            expiring: 'Expiring soon',
+            expired: 'Expired',
+            unknown: 'Unknown'
+          },
+          messages: {
+            invalidQuantityUnit: 'Error: Could not add the product. Please check that quantity and unit are valid.'
+          }
+      }
+    }
+  }
+}
+
+const i18n = createI18n({
+  legacy: false,
+  locale: 'es',
+  fallbackLocale: 'es',
+  messages
+})
+
+export default i18n

@@ -3,11 +3,13 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useLanguage } from '@/composables/useLanguage'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const { profile } = storeToRefs(userStore)
+const { t } = useLanguage()
 
 const redirectToLogin = () => {
   const target = route.fullPath || '/editar-perfil'
@@ -127,9 +129,9 @@ onMounted(async () => {
     <div class="page-header">
       <button @click="router.push('/perfil')" class="back-button">
         <span class="back-arrow">←</span>
-        <span class="back-text">Perfil</span>
+        <span class="back-text">{{ t('profile.title') }}</span>
       </button>
-      <h1 class="edit-profile__title">Editar Perfil</h1>
+      <h1 class="edit-profile__title">{{ t('profile.editTitle') }}</h1>
       <div class="spacer"></div>
     </div>
 
@@ -138,8 +140,8 @@ onMounted(async () => {
       <div class="success-content">
         <div class="success-icon">✓</div>
         <div class="success-text">
-          <h3>¡Perfil actualizado!</h3>
-          <p>Tus cambios se han guardado correctamente</p>
+          <h3>{{ t('profile.successTitle') }}</h3>
+          <p>{{ t('profile.successDescription') }}</p>
         </div>
       </div>
     </div>
@@ -152,7 +154,7 @@ onMounted(async () => {
             <img 
               v-if="avatarPreview" 
               :src="avatarPreview" 
-              alt="Foto de perfil" 
+              :alt="t('profile.avatarFallback')" 
               class="avatar-image"
             />
             <div v-else class="avatar-placeholder">
@@ -162,30 +164,30 @@ onMounted(async () => {
               <span class="avatar-edit-icon">📷</span>
             </div>
           </div>
-          <p class="avatar-hint">Haz clic para cambiar tu foto</p>
+          <p class="avatar-hint">{{ t('profile.photoHint') }}</p>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="name">Nombre</label>
+            <label for="name">{{ t('common.name') }}</label>
             <input v-model="form.name" id="name" type="text" style="color:black;" required />
           </div>
 
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">{{ t('profile.email') }}</label>
             <input v-model="form.email" id="email" type="email" readonly disabled />
           </div>
         </div>
 
         <div class="form-group">
           <button type="button" class="btn btn--secondary" @click="showPasswordModal = true">
-            Cambiar contraseña
+            {{ t('profile.changePassword') }}
           </button>
         </div>
 
         <div class="edit-profile__actions">
-          <button type="submit" class="btn btn--save">Guardar</button>
-          <router-link to="/perfil" class="btn btn--cancel">Cancelar</router-link>
+          <button type="submit" class="btn btn--save">{{ t('common.save') }}</button>
+          <router-link to="/perfil" class="btn btn--cancel">{{ t('common.cancel') }}</router-link>
         </div>
       </div>
     </form>
@@ -193,19 +195,19 @@ onMounted(async () => {
     <!-- Modal de cambio de contraseña -->
     <div v-if="showPasswordModal" class="modal-overlay">
       <div class="modal">
-        <h2>Cambiar contraseña</h2>
+  <h2>{{ t('profile.changePassword') }}</h2>
         <form @submit.prevent="changePassword">
           <div class="form-group">
-            <label for="currentPassword">Contraseña actual</label>
+            <label for="currentPassword">{{ t('profile.currentPassword') }}</label>
             <input v-model="passwordForm.current" id="currentPassword" type="password" required />
           </div>
           <div class="form-group">
-            <label for="newPassword">Nueva contraseña</label>
+            <label for="newPassword">{{ t('profile.newPassword') }}</label>
             <input v-model="passwordForm.new" id="newPassword" type="password" required />
           </div>
           <div class="edit-profile__actions">
-            <button type="submit" class="btn btn--save">Guardar</button>
-            <button type="button" class="btn btn--cancel" @click="showPasswordModal = false">Cancelar</button>
+            <button type="submit" class="btn btn--save">{{ t('common.save') }}</button>
+            <button type="button" class="btn btn--cancel" @click="showPasswordModal = false">{{ t('common.cancel') }}</button>
           </div>
         </form>
       </div>
@@ -214,13 +216,13 @@ onMounted(async () => {
     <!-- Modal de cambio de avatar -->
     <div v-if="showAvatarModal" class="modal-overlay">
       <div class="modal">
-        <h2>Cambiar foto de perfil</h2>
+  <h2>{{ t('profile.changePhoto') }}</h2>
         <div class="avatar-modal-content">
           <div class="current-avatar">
             <img 
               v-if="avatarPreview" 
               :src="avatarPreview" 
-              alt="Foto actual" 
+              :alt="t('profile.avatarFallback')" 
               class="modal-avatar-preview"
             />
             <div v-else class="modal-avatar-placeholder">
@@ -236,18 +238,24 @@ onMounted(async () => {
               style="display: none"
             />
             <label for="avatarFile" class="upload-button">
-              📁 Seleccionar nueva foto
+          📁 {{ t('profile.selectNewPhoto') }}
             </label>
-            <p class="upload-hint">JPG, PNG o GIF. Máximo 5MB.</p>
+            <p class="upload-hint">{{ t('profile.uploadHint') }}</p>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn btn--save" @click="showAvatarModal = false">Cerrar</button>
+            <button type="button" class="btn btn--save" @click="showAvatarModal = false">{{ t('common.close') }}</button>
           </div>
         </div>
       </div>
     </div>
   </main>
 </template>
+
+<route lang="json">
+{
+  "alias": ["/edit-profile"]
+}
+</route>
 
 <style scoped>
 .modal-overlay {

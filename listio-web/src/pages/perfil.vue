@@ -3,11 +3,17 @@ import { computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useLanguage } from '@/composables/useLanguage'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const { profile: storedProfile } = storeToRefs(userStore)
+const { t, toggleLanguage, language } = useLanguage()
+
+const alternateLanguageLabel = computed(() =>
+  language.value === 'es' ? t('common.englishShort') : t('common.spanishShort')
+)
 
 const redirectToLogin = () => {
   const target = route.fullPath || '/perfil'
@@ -22,6 +28,10 @@ const handleLogout = async () => {
   } finally {
     router.push('/login')
   }
+}
+
+const handleLanguageChange = () => {
+  toggleLanguage()
 }
 
 onMounted(async () => {
@@ -52,7 +62,7 @@ onMounted(async () => {
   <main class="profile">
     <section class="profile__layout">
       <header class="profile__header">
-        <h1 class="profile__title">Mi Perfil</h1>
+        <h1 class="profile__title">{{ t('profile.title') }}</h1>
       </header>
 
       <article class="profile__card">
@@ -60,7 +70,7 @@ onMounted(async () => {
           <img
             v-if="profile.avatar"
             :src="profile.avatar"
-            :alt="`Foto de ${profile.name}`"
+            :alt="t('profile.photoAlt', { name: profile.name })"
             class="profile__avatar-image"
           />
           <v-icon class="profile__avatar-icon" size="64">mdi-account</v-icon>
@@ -71,17 +81,17 @@ onMounted(async () => {
         </div>
       </article>
 
-      <nav class="profile__actions" aria-label="Acciones de la cuenta">
+      <nav class="profile__actions" :aria-label="t('profile.accountActions')">
         <RouterLink class="profile__action" to="/editar-perfil">
-          <span>Editar Perfil</span>
+          <span>{{ t('profile.editProfile') }}</span>
           <span aria-hidden="true">&rsaquo;</span>
         </RouterLink>
-        <button class="profile__action" type="button">
-          <span>Cambiar Idioma</span>
+        <button class="profile__action" type="button" @click="handleLanguageChange">
+          <span>{{ t('profile.changeLanguage') }} ({{ alternateLanguageLabel }})</span>
           <span aria-hidden="true">&rsaquo;</span>
         </button>
         <button class="profile__action profile__action--warning" type="button" @click="handleLogout">
-          <span>Cerrar Sesion</span>
+          <span>{{ t('profile.logout') }}</span>
           <span aria-hidden="true">&rsaquo;</span>
         </button>
       </nav>

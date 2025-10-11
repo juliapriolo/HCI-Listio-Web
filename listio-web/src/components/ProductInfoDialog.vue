@@ -6,19 +6,19 @@
   >
     <v-card>
       <v-card-title class="text-h6 font-weight-bold">
-        Información del producto
+        {{ t('pages.products.dialog.title') }}
       </v-card-title>
 
       <v-card-text>
         <v-text-field
-          label="Nombre"
+          :label="t('common.name')"
           variant="outlined"
           v-model="localData.name"
           required
         />
 
         <v-select
-          label="Categoría"
+          :label="t('common.category')"
           variant="outlined"
           v-model="localData.category_id"
           :items="categories"
@@ -30,17 +30,17 @@
 
       <v-card-actions class="flex-wrap">
         <v-btn color="primary" variant="outlined" @click="handleAddToList">
-          Añadir a lista
+          {{ t('pages.products.dialog.addToList') }}
         </v-btn>
 
         <v-btn color="error" variant="outlined" @click="handleDelete">
-          Eliminar
+          {{ t('common.delete') }}
         </v-btn>
 
         <v-spacer />
 
         <v-btn @click="handleCancel">
-          Cancelar
+          {{ t('common.cancel') }}
         </v-btn>
         <v-btn
           color="success"
@@ -48,7 +48,7 @@
           @click="handleSubmit"
           :disabled="!isFormValid"
         >
-          Guardar
+          {{ t('common.save') }}
         </v-btn>
       </v-card-actions>
     </v-card>

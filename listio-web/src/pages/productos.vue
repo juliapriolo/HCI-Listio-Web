@@ -4,14 +4,14 @@
       <!-- Page Header with Search -->
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Productos
+          {{ t('pages.products.title') }}
         </h1>
 
         <div class="header-actions">
           <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
-              placeholder="Buscar productos..."
+              :placeholder="t('pages.products.searchPlaceholder')"
             />
           </div>
         </div>
@@ -41,8 +41,8 @@
       <EmptyState
         v-if="!loading && filteredProducts.length === 0"
         icon="mdi-package-variant"
-        title="No se encontraron productos"
-        description="Intenta con otros términos de búsqueda"
+        :title="t('pages.products.empty.noResultsTitle')"
+        :description="t('pages.products.empty.noResultsDescription')"
       />
 
       <!-- Loading Spinner -->
@@ -67,31 +67,31 @@
     <v-snackbar v-model="snackbar" :timeout="4000" :color="snackbarColor">
       {{ snackbarText }}
       <template v-slot:actions>
-        <v-btn variant="text" @click="snackbar = false">Cerrar</v-btn>
+        <v-btn variant="text" @click="snackbar = false">{{ t('common.close') }}</v-btn>
       </template>
     </v-snackbar>
 
     <!-- New Product Dialog -->
     <div v-if="newProductDialog" class="modal-overlay">
       <div class="modal product-modal">
-        <h2>Agregar Producto</h2>
+        <h2>{{ t('pages.products.modals.new.title') }}</h2>
         
         <form @submit.prevent="addProduct(newProductForm)">
           <div class="form-group">
-            <label for="productName">Nombre del producto</label>
+            <label for="productName">{{ t('pages.products.modals.common.nameLabel') }}</label>
             <input
               id="productName"
               v-model="newProductForm.name"
               type="text"
               class="form-input"
-              placeholder="Ingrese el nombre del producto"
+              :placeholder="t('pages.products.modals.common.namePlaceholder')"
               required
               autofocus
             />
           </div>
           
           <div class="form-group">
-            <label for="productImage">Imagen del producto</label>
+            <label for="productImage">{{ t('pages.products.modals.common.imageLabel') }}</label>
             <input
               id="productImage"
               type="file"
@@ -100,31 +100,31 @@
               @change="handleProductImageChange"
             />
             <div v-if="productImagePreview" class="image-preview">
-              <img :src="productImagePreview" alt="Vista previa" class="preview-img" />
+              <img :src="productImagePreview" :alt="t('pages.products.modals.common.previewAlt')" class="preview-img" />
             </div>
           </div>
           
           <div class="form-group">
-            <label for="productDescription">Descripción (opcional)</label>
+            <label for="productDescription">{{ t('pages.products.modals.common.descriptionLabel') }}</label>
             <textarea
               id="productDescription"
               v-model="newProductForm.description"
               class="form-input"
-              placeholder="Ingrese una descripción para el producto"
+              :placeholder="t('pages.products.modals.common.descriptionPlaceholder')"
               rows="3"
             ></textarea>
           </div>
           
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="closeNewProductDialog">
-              Cancelar
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
               class="btn btn--primary"
               :disabled="!newProductForm.name?.trim() || isCreating"
             >
-              {{ isCreating ? 'Agregando...' : 'Agregar Producto' }}
+              {{ isCreating ? t('pages.products.modals.new.creating') : t('pages.products.modals.new.submit') }}
             </button>
           </div>
         </form>
@@ -140,29 +140,29 @@
       @cancel="productInfoDialog = false"
     />
 
-    <!-- Diálogo de confirmación de eliminación -->
+    <!-- Delete confirmation dialog -->
     <v-dialog v-model="deleteConfirmDialog" max-width="400">
       <v-card>
         <v-card-title class="text-h6">
-          Confirmar eliminación
+          {{ t('pages.products.deleteConfirm.title') }}
         </v-card-title>
         
         <v-card-text>
-          <p>¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>?</p>
-          <p class="text-caption text-grey">Esta acción no se puede deshacer.</p>
+          <p v-html="t('pages.products.deleteConfirm.message', { name: productToDelete?.name || '' })"></p>
+          <p class="text-caption text-grey">{{ t('pages.products.deleteConfirm.warning') }}</p>
         </v-card-text>
         
         <v-card-actions>
           <v-spacer />
           <v-btn @click="deleteConfirmDialog = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </v-btn>
           <v-btn
             color="error"
             variant="elevated"
             @click="executeDelete"
           >
-            Eliminar
+            {{ t('common.delete') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -173,10 +173,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/products'
+import { useLanguage } from '@/composables/useLanguage'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
+const { t } = useLanguage()
 
 const searchQuery = ref('')
 const snackbar = ref(false)
@@ -277,14 +279,14 @@ const addProduct = async (formData) => {
       },
     }
     
-    await productStore.createRemote(payload)
-    snackbarText.value = `${formData.name} agregado correctamente`
+  await productStore.createRemote(payload)
+  snackbarText.value = t('pages.products.messages.added', { name: formData.name })
     snackbarColor.value = 'success'
     snackbar.value = true
     closeNewProductDialog()
   } catch (error) {
     console.error('Error al agregar producto:', error)
-    snackbarText.value = `Error al agregar ${formData.name}: ${error.message || 'Error desconocido'}`
+    snackbarText.value = t('pages.products.messages.addError', { name: formData.name, error: error.message || 'Error desconocido' })
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
@@ -305,13 +307,13 @@ const updateProduct = async (updatedData) => {
       },
     }
     
-    await productStore.updateRemote(updatedData.id, payload)
-    snackbarText.value = `Producto actualizado correctamente`
+  await productStore.updateRemote(updatedData.id, payload)
+  snackbarText.value = t('pages.products.messages.updated')
     snackbarColor.value = 'success'
     snackbar.value = true
   } catch (error) {
     console.error('Error al actualizar producto:', error)
-    snackbarText.value = `Error al actualizar producto: ${error.message || 'Error desconocido'}`
+    snackbarText.value = t('pages.products.messages.updateError', { error: error.message || 'Error desconocido' })
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
@@ -321,13 +323,13 @@ const updateProduct = async (updatedData) => {
 
 const deleteProduct = async (product) => {
   try {
-    await productStore.deleteRemote(product.id)
-    snackbarText.value = `Producto eliminado correctamente`
+  await productStore.deleteRemote(product.id)
+  snackbarText.value = t('pages.products.messages.deleted')
     snackbarColor.value = 'success'
     snackbar.value = true
   } catch (error) {
     console.error('Error al eliminar producto:', error)
-    snackbarText.value = `Error al eliminar producto: ${error.message || 'Error desconocido'}`
+    snackbarText.value = t('pages.products.messages.deleteError', { error: error.message || 'Error desconocido' })
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
@@ -336,7 +338,7 @@ const deleteProduct = async (product) => {
 }
 
 const addToList = (product) => {
-  snackbarText.value = `${product.name} añadido a la lista`
+  snackbarText.value = t('pages.products.messages.addedToList', { name: product.name })
   snackbarColor.value = 'success'
   snackbar.value = true
 }
@@ -374,7 +376,7 @@ onMounted(async () => {
     
   } catch (err) {
     console.error('Error cargando datos:', err)
-    snackbarText.value = 'Error al cargar los datos. Verificando conexión...'
+  snackbarText.value = t('pages.products.messages.loadError')
     snackbarColor.value = 'warning'
     snackbar.value = true
   } finally {

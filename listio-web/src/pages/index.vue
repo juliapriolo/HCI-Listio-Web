@@ -1,15 +1,18 @@
 ﻿<template>
   <main class="landing">
+    <div class="landing__lang">
+      <LanguageSwitcher variant="button" size="small" />
+    </div>
     <section class="landing__container">
       <div class="landing__content">
-        <h1 class="landing__title">Bienvenido a LISTIO</h1>
-        <p class="landing__subtitle">Hace tu compras, con confianza</p>
+        <h1 class="landing__title">{{ t('landing.title') }}</h1>
+        <p class="landing__subtitle">{{ t('landing.subtitle') }}</p>
         <div class="landing__actions">
           <router-link class="landing__btn landing__btn--light" to="/login">
-            Inicia Sesion
+            {{ t('landing.signIn') }}
           </router-link>
           <router-link class="landing__btn landing__btn--dark" to="/registro">
-            Registrate
+            {{ t('landing.signUp') }}
           </router-link>
         </div>
       </div>
@@ -17,12 +20,19 @@
         <img
           class="landing__image"
           src="@/assets/shopping-bag.png"
-          alt="Bolsas de compras"
+          :alt="t('landing.imageAlt')"
         />
       </figure>
     </section>
   </main>
 </template>
+
+<script setup>
+import { useLanguage } from '@/composables/useLanguage'
+import LanguageSwitcher from '@/components/LanguageSwitcher.vue'
+
+const { t } = useLanguage()
+</script>
 
 <style scoped>
 .landing {
@@ -33,6 +43,13 @@
   background: linear-gradient(135deg, #52be52 0%, #3fa640 100%);
   padding: 96px 32px 64px;
   box-sizing: border-box;
+}
+
+.landing__lang {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1200;
 }
 
 .landing__container {

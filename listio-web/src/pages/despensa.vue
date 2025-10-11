@@ -4,14 +4,14 @@
       <!-- Page Header -->
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          {{ currentView === 'categories' ? 'Despensa' : selectedCategory?.name || 'Productos' }}
+          {{ currentView === 'categories' ? t('pages.pantry.title') : selectedCategory?.name || t('pages.products.title') }}
         </h1>
         
         <div class="header-actions">
           <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
-              :placeholder="currentView === 'categories' ? 'Buscar categorías...' : 'Buscar productos...'"
+              :placeholder="currentView === 'categories' ? t('pages.pantry.searchCategories') : t('pages.pantry.searchProducts')"
         />
       </div>
 
@@ -25,6 +25,7 @@
               @click="openFilterDialog"
             >
               <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
+              <span class="ml-1">{{ t('common.filter') }}</span>
             </v-btn>
 
             <v-btn
@@ -35,6 +36,7 @@
               @click="openShareDialog"
             >
               <v-icon color="grey-darken-2">mdi-export-variant</v-icon>
+              <span class="ml-1">{{ t('common.share') }}</span>
             </v-btn>
           </template>
         </div>
@@ -113,7 +115,7 @@
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
-                  <span>Editar</span>
+                  <span>{{ t('common.edit') }}</span>
                 </div>
                 <div class="menu-item delete-item" @click="confirmDeleteCategory(category)">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
@@ -122,7 +124,7 @@
                     <line x1="10" y1="11" x2="10" y2="17"/>
                     <line x1="14" y1="11" x2="14" y2="17"/>
                   </svg>
-                  <span>Eliminar</span>
+                  <span>{{ t('common.delete') }}</span>
                 </div>
               </div>
             </div>
@@ -133,15 +135,15 @@
         <EmptyState
           v-if="filteredCategories.length === 0 && !searchQuery"
           icon="mdi-archive-outline"
-          title="No tienes categorías creadas"
-          description="Comienza agregando categorías a tu despensa"
+          :title="t('pages.pantry.empty.noCategoriesTitle')"
+          :description="t('pages.pantry.empty.noCategoriesDescription')"
         />
         
         <EmptyState
           v-else-if="filteredCategories.length === 0 && searchQuery"
           icon="mdi-magnify"
-          title="No se encontraron categorías"
-          description="Intenta con otros términos de búsqueda"
+          :title="t('pages.products.empty.noResultsTitle')"
+          :description="t('pages.products.empty.noResultsDescription')"
         />
       </div>
 
@@ -150,7 +152,7 @@
         <!-- Loading State -->
         <div v-if="loadingItems" class="text-center py-8">
           <v-progress-circular indeterminate color="primary" />
-          <p class="mt-2 text-grey">Cargando productos...</p>
+          <p class="mt-2 text-grey">{{ t('common.loading') }}</p>
         </div>
 
         <!-- Products Grid -->
@@ -175,15 +177,15 @@
       <EmptyState
           v-else-if="!searchQuery"
           icon="mdi-package-variant"
-          title="No hay productos en esta despensa"
-        description="Comienza agregando productos a tu despensa"
+          :title="t('pages.pantry.empty.noProductsTitle')"
+          :description="t('pages.pantry.empty.noProductsDescription')"
         />
         
         <EmptyState
           v-else
           icon="mdi-magnify"
-          title="No se encontraron productos"
-          description="Intenta con otros términos de búsqueda"
+          :title="t('pages.pantry.empty.searchNotFoundTitle')"
+          :description="t('pages.pantry.empty.searchNotFoundDescription')"
         />
       </div>
     </v-container>
@@ -191,24 +193,24 @@
     <!-- Add/Edit Category Dialog -->
     <div v-if="categoryDialog" class="modal-overlay">
       <div class="modal category-modal">
-        <h2>{{ editingCategory ? 'Editar Categoría' : 'Agregar Categoría' }}</h2>
+  <h2>{{ editingCategory ? t('pages.pantry.editCategoryTitle') : t('pages.pantry.addCategoryTitle') }}</h2>
         
         <form @submit.prevent="saveCategory(categoryForm)">
           <div class="form-group">
-            <label for="categoryName">Nombre de la categoría</label>
+            <label for="categoryName">{{ t('pages.pantry.categoryNameLabel') }}</label>
             <input
               id="categoryName"
               v-model="categoryForm.name"
               type="text"
               class="form-input"
-              placeholder="Ingrese el nombre de la categoría"
+              :placeholder="t('pages.pantry.categoryNamePlaceholder')"
               required
               autofocus
             />
           </div>
           
           <div class="form-group">
-            <label for="categoryImage">Imagen de la categoría</label>
+            <label for="categoryImage">{{ t('pages.pantry.categoryImageLabel') }}</label>
             <input
               id="categoryImage"
               type="file"
@@ -217,20 +219,20 @@
               @change="handleImageChange"
             />
             <div v-if="imagePreview" class="image-preview">
-              <img :src="imagePreview" alt="Vista previa" class="preview-img" />
+              <img :src="imagePreview" :alt="t('pages.lists.modals.common.previewAlt')" class="preview-img" />
             </div>
           </div>
           
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="categoryDialog = false">
-              Cancelar
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
               class="btn btn--primary"
               :disabled="!categoryForm.name?.trim()"
             >
-              {{ editingCategory ? 'Actualizar' : 'Agregar' }}
+              {{ editingCategory ? t('pages.pantry.updateCategoryButton') : t('pages.pantry.addCategoryButton') }}
             </button>
           </div>
         </form>
@@ -240,7 +242,7 @@
     <!-- Product Selection Dialog -->
     <div v-if="productSelectionDialog" class="modal-overlay">
       <div class="modal product-selection-modal">
-        <h2>Seleccionar Producto</h2>
+  <h2>{{ t('pages.pantry.productSelection.title') }}</h2>
         
         <div v-if="availableProducts.length === 0" class="empty-state">
           <div class="empty-icon">
@@ -248,8 +250,8 @@
               <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
             </svg>
           </div>
-          <p class="empty-text">No hay productos disponibles</p>
-          <p class="empty-subtext">Ve a la sección "Productos" para agregar productos primero</p>
+          <p class="empty-text">{{ t('pages.pantry.productSelection.noneAvailable') }}</p>
+          <p class="empty-subtext">{{ t('pages.pantry.productSelection.goToProducts') }}</p>
         </div>
         
         <div v-else>
@@ -294,10 +296,10 @@
           
           <div v-if="selectedProduct" class="product-details">
             <div class="divider"></div>
-            <h4 class="details-title">Detalles del producto</h4>
+            <h4 class="details-title">{{ t('pages.pantry.productSelection.detailsTitle') }}</h4>
             <div class="form-row">
               <div class="form-group">
-                <label for="productQuantity">Cantidad</label>
+                <label for="productQuantity">{{ t('pages.pantry.productSelection.quantityLabel') }}</label>
                 <input
                   id="productQuantity"
                   v-model="productQuantity"
@@ -307,19 +309,19 @@
                 />
               </div>
               <div class="form-group">
-                <label for="productUnit">Unidad</label>
+                <label for="productUnit">{{ t('pages.pantry.productSelection.unitLabel') }}</label>
                 <select id="productUnit" v-model="productUnit" class="form-input">
-                  <option value="unidad">unidad</option>
-                  <option value="kg">kg</option>
-                  <option value="g">g</option>
-                  <option value="l">l</option>
-                  <option value="ml">ml</option>
-                  <option value="paquete">paquete</option>
-                  <option value="caja">caja</option>
+                  <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
+                  <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
+                  <option value="g">{{ t('pages.pantry.units.g') }}</option>
+                  <option value="l">{{ t('pages.pantry.units.l') }}</option>
+                  <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
+                  <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
+                  <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
                 </select>
               </div>
               <div class="form-group">
-                <label for="productExpiryDate">Fecha de vencimiento</label>
+                <label for="productExpiryDate">{{ t('pages.pantry.productSelection.expiryLabel') }}</label>
                 <input
                   id="productExpiryDate"
                   v-model="productExpiryDate"
@@ -329,13 +331,13 @@
               </div>
             </div>
             <div class="form-group">
-              <label for="productCategory">Categoría (opcional)</label>
+              <label for="productCategory">{{ t('pages.pantry.productSelection.categoryOptional') }}</label>
               <input
                 id="productCategory"
                 v-model="productCategory"
                 type="text"
                 class="form-input"
-                placeholder="Ingrese categoría"
+                :placeholder="t('pages.pantry.productSelection.enterCategory')"
               />
             </div>
           </div>
@@ -343,7 +345,7 @@
         
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="productSelectionDialog = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
@@ -351,7 +353,7 @@
             :disabled="!selectedProduct"
             @click="addSelectedProductToPantry"
           >
-            Agregar a la despensa
+            {{ t('pages.pantry.productSelection.addToPantry') }}
           </button>
         </div>
       </div>
@@ -360,25 +362,22 @@
     <!-- Delete Confirmation Dialog -->
     <div v-if="deleteDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-        <h2>Confirmar eliminación</h2>
+  <h2>{{ t('pages.pantry.deleteConfirm.categoryTitle') }}</h2>
         
         <div class="confirmation-content">
-          <p class="confirmation-text">
-            ¿Estás seguro de que quieres eliminar la despensa <strong>"{{ categoryToDelete?.name }}"</strong>? 
-            Esta acción no se puede deshacer.
-          </p>
+          <p class="confirmation-text" v-html="t('pages.pantry.deleteConfirm.categoryMessage', { name: categoryToDelete?.name || '' })"></p>
         </div>
         
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="deleteDialog = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             class="btn btn--danger"
             @click="deleteCategory"
           >
-            Eliminar
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
@@ -387,25 +386,22 @@
     <!-- Product Delete Confirmation Dialog -->
     <div v-if="productDeleteDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-        <h2>Confirmar eliminación</h2>
+  <h2>{{ t('pages.pantry.deleteConfirm.productTitle') }}</h2>
         
         <div class="confirmation-content">
-          <p class="confirmation-text">
-            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>? 
-            Esta acción no se puede deshacer.
-          </p>
+          <p class="confirmation-text" v-html="t('pages.pantry.deleteConfirm.productMessage', { name: productToDelete?.name || '' })"></p>
         </div>
         
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="productDeleteDialog = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             class="btn btn--danger"
             @click="confirmDeleteProductAction"
           >
-            Eliminar
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
@@ -414,12 +410,12 @@
     <!-- Product Edit Dialog -->
     <div v-if="productEditDialog" class="modal-overlay">
       <div class="modal product-edit-modal">
-        <h2>Editar producto</h2>
+  <h2>{{ t('pages.pantry.editProduct.title') }}</h2>
         
         <form @submit.prevent="saveProductEdit">
           <div class="form-row">
             <div class="form-group">
-              <label for="editQuantity">Cantidad</label>
+              <label for="editQuantity">{{ t('pages.pantry.editProduct.quantityLabel') }}</label>
               <input
                 id="editQuantity"
                 v-model="editQuantity"
@@ -430,21 +426,21 @@
               />
             </div>
             <div class="form-group">
-              <label for="editUnit">Unidad</label>
+              <label for="editUnit">{{ t('pages.pantry.editProduct.unitLabel') }}</label>
               <select id="editUnit" v-model="editUnit" class="form-input">
-                <option value="unidad">unidad</option>
-                <option value="kg">kg</option>
-                <option value="g">g</option>
-                <option value="l">l</option>
-                <option value="ml">ml</option>
-                <option value="paquete">paquete</option>
-                <option value="caja">caja</option>
+                <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
+                <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
+                <option value="g">{{ t('pages.pantry.units.g') }}</option>
+                <option value="l">{{ t('pages.pantry.units.l') }}</option>
+                <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
+                <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
+                <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
               </select>
             </div>
           </div>
           
           <div class="form-group">
-            <label for="editExpiryDate">Fecha de vencimiento</label>
+            <label for="editExpiryDate">{{ t('pages.pantry.editProduct.expiryLabel') }}</label>
             <input
               id="editExpiryDate"
               v-model="editExpiryDate"
@@ -454,7 +450,7 @@
           </div>
           
           <div class="form-group">
-            <label for="editImageFile">Cambiar imagen</label>
+            <label for="editImageFile">{{ t('pages.pantry.editProduct.changeImage') }}</label>
             <input
               id="editImageFile"
               type="file"
@@ -463,19 +459,19 @@
               @change="handleEditImageChange"
             />
             <div v-if="editImagePreview" class="image-preview">
-              <img :src="editImagePreview" alt="Vista previa" class="preview-img" />
+              <img :src="editImagePreview" :alt="t('pages.lists.modals.common.previewAlt')" class="preview-img" />
             </div>
           </div>
           
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="productEditDialog = false">
-              Cancelar
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
               class="btn btn--primary"
             >
-              Guardar
+              {{ t('common.save') }}
             </button>
           </div>
         </form>
@@ -486,20 +482,20 @@
     <v-dialog v-model="filterDialog" max-width="500">
       <v-card>
         <v-card-title class="text-h6">
-          Filtrar productos
+          {{ t('common.filter') }} {{ t('nav.products') }}
         </v-card-title>
         <v-card-text>
           <v-select
             v-model="filterStatus"
             :items="statusOptions"
-            label="Estado del producto"
+            :label="t('pages.pantry.statusLabel') || 'Estado del producto'"
             variant="outlined"
             clearable
           />
           <v-select
             v-model="filterCategory"
             :items="categoryOptions"
-            label="Categoría"
+            :label="t('common.category')"
             variant="outlined"
             clearable
           />
@@ -507,14 +503,14 @@
         <v-card-actions>
           <v-spacer />
           <v-btn @click="clearFilters">
-            Limpiar filtros
+            {{ t('pages.lists.filters.clear') }}
           </v-btn>
           <v-btn
             color="primary"
             variant="elevated"
             @click="applyFilters"
           >
-            Aplicar filtros
+            {{ t('pages.lists.filters.apply') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -524,21 +520,21 @@
     <v-dialog v-model="shareDialog" max-width="400">
       <v-card>
         <v-card-title class="text-h6">
-          Compartir despensa
+          {{ t('pages.pantry.share.title') || 'Compartir despensa' }}
         </v-card-title>
         <v-card-text>
           <v-text-field
             v-model="shareEmail"
-            label="Correo electrónico"
+            :label="t('pages.pantry.share.emailLabel') || 'Correo electrónico'"
             type="email"
             variant="outlined"
-            placeholder="usuario@ejemplo.com"
+            :placeholder="t('pages.pantry.share.emailPlaceholder') || 'usuario@ejemplo.com'"
           />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn @click="shareDialog = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </v-btn>
           <v-btn
             color="primary"
@@ -546,7 +542,7 @@
             @click="sharePantry"
             :disabled="!shareEmail"
           >
-            Compartir
+            {{ t('common.share') }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -570,9 +566,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePantryStore } from '@/stores/pantry'
 import { useProductStore } from '@/stores/products'
+import { useLanguage } from '@/composables/useLanguage'
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import SearchBar from '@/components/SearchBar.vue'
+
+const { t } = useLanguage()
 
 // Reactive data
 const categoryDialog = ref(false)
@@ -670,12 +669,12 @@ const productFields = [
 ]
 
 // Filter options
-const statusOptions = [
-  { title: 'Disponible', value: 'available' },
-  { title: 'Poco stock', value: 'low' },
-  { title: 'Por vencer', value: 'expiring' },
-  { title: 'Vencido', value: 'expired' }
-]
+const statusOptions = computed(() => [
+  { title: t('pages.pantry.status.available'), value: 'available' },
+  { title: t('pages.pantry.status.low'), value: 'low' },
+  { title: t('pages.pantry.status.expiring'), value: 'expiring' },
+  { title: t('pages.pantry.status.expired'), value: 'expired' }
+])
 
 const categoryOptions = computed(() => {
   const categories = [...new Set(pantryItems.value.map(item => item.category).filter(Boolean))]
@@ -948,7 +947,7 @@ const addSelectedProductToPantry = async () => {
     // Check if it's a 400 error (bad request)
     if (error.response && error.response.status === 400) {
       // Show error message to user
-      alert('Error: No se pudo agregar el producto. Verifica que la cantidad y unidad sean válidas.')
+  alert(t('pages.pantry.messages.invalidQuantityUnit'))
       return
     }
     

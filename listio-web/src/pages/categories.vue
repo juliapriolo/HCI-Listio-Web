@@ -1,13 +1,13 @@
 <template>
   <div style="padding: 20px;">
-    <h2>Agregar categoría (prueba)</h2>
+  <h2>{{ t('pages.pantry.addCategoryTitle') }}</h2>
 
     <div style="display: flex; flex-direction: column; gap: 10px; width: 300px;">
-      <label>Nombre de la categoría:</label>
+  <label>{{ t('pages.pantry.categoryNameLabel') }}</label>
       <input
         v-model="categoryName"
         type="text"
-        placeholder="Ej: Lácteos"
+        :placeholder="t('pages.pantry.categoryNamePlaceholder')"
         style="padding: 6px; border: 1px solid #ccc; border-radius: 4px;"
       />
 
@@ -15,17 +15,17 @@
         @click="addCategory"
         style="padding: 8px; border: none; background-color: #4caf50; color: white; border-radius: 4px; cursor: pointer;"
       >
-        Agregar Categoría
+        {{ t('pages.pantry.addCategoryButton') }}
       </button>
     </div>
 
-    <p v-if="message" style="margin-top: 15px;">{{ message }}</p>
+  <p v-if="message" style="margin-top: 15px;">{{ message }}</p>
 
     <!-- 🔽 Lista de categorías -->
     <div style="margin-top: 30px;">
-      <h3>📂 Categorías existentes</h3>
+  <h3>{{ t('pages.pantry.existingCategoriesTitle') }}</h3>
 
-      <div v-if="loading" style="margin-top: 10px;">Cargando categorías...</div>
+  <div v-if="loading" style="margin-top: 10px;">{{ t('pages.pantry.loadingCategories') }}</div>
 
       <ul v-else-if="categoryStore.categories.length > 0" style="margin-top: 10px;">
         <li
@@ -38,7 +38,7 @@
       </ul>
 
       <p v-else style="margin-top: 10px; color: #888;">
-        No hay categorías cargadas todavía.
+        {{ t('pages.pantry.noCategories') }}
       </p>
     </div>
   </div>

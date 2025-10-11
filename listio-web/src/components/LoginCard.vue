@@ -1,35 +1,35 @@
 <template>
   <div class="login-card">
-    <h2 class="login-title">Iniciar Sesión</h2>
+    <h2 class="login-title">{{ t('login.title') }}</h2>
     
     <form @submit.prevent="handleLogin" class="login-form">
       <!-- Campo Email -->
       <div class="form-group">
-        <label for="email" class="form-label">Email</label>
+        <label for="email" class="form-label">{{ t('login.email') }}</label>
         <input
           id="email"
           v-model="form.email"
           type="email"
           class="form-input"
-          placeholder="Ingrese su email"
+          :placeholder="t('login.emailPlaceholder')"
         />
       </div>
       
       <!-- Campo Contraseña -->
       <div class="form-group">
-        <label for="password" class="form-label">Contraseña</label>
+        <label for="password" class="form-label">{{ t('login.password') }}</label>
         <input
           id="password"
           v-model="form.password"
           type="password"
           class="form-input"
-          placeholder="Ingrese su contraseña"
+          :placeholder="t('login.passwordPlaceholder')"
         />
       </div>
       
       <!-- Botón de Login -->
       <button type="submit" class="login-button" :disabled="loading">
-        {{ loading ? 'Iniciando...' : 'Inicia Sesión' }}
+        {{ loading ? t('login.loginButtonLoading') : t('login.loginButton') }}
       </button>
 
       <div
@@ -47,7 +47,7 @@
             @click="$emit('send-verification')"
             :disabled="sendingVerification"
           >
-            {{ sendingVerification ? 'Enviando...' : 'Reenviar verificación' }}
+            {{ sendingVerification ? t('login.resendingVerification') : t('login.resendVerification') }}
           </button>
           <button
             v-if="loginFeedback.canVerify"
@@ -55,7 +55,7 @@
             class="link-button"
             @click="$emit('open-verification')"
           >
-            Ingresar código
+            {{ t('login.enterCode') }}
           </button>
         </div>
       </div>
@@ -63,27 +63,25 @@
       <!-- Enlace de recuperación de contraseña -->
       <div class="forgot-password">
         <a href="#" @click.prevent="$emit('forgot-password')" class="forgot-link">
-          ¿Olvidó su contraseña?
+          {{ t('login.forgotPassword') }}
         </a>
       </div>
       
-      <!-- Link to register (styled like registro.vue) -->
+      <!-- Link to register (internationalized) -->
       <p class="redirect-text">
-        ¿No tenes una cuenta? <RouterLink to="/registro" class="redirect-link">Registrate</RouterLink>
+        {{ t('login.noAccount') }} <RouterLink to="/registro" class="redirect-link">{{ t('login.signUpLink') }}</RouterLink>
       </p>
     </form>
     
-    <!-- Términos y condiciones -->
-    <p class="terms-text">
-      Al iniciar sesión, aceptas nuestros 
-      <a href="#" class="terms-link">Términos de Uso</a> y 
-      <a href="#" class="terms-link">Política de Privacidad</a>
-    </p>
+    
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
+
+const { t } = useLanguage()
 
 // Props
 const props = defineProps({
