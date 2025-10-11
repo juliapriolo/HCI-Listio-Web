@@ -8,6 +8,7 @@ export const productsApi = {
     const payload = {
       name: data.name,
       metadata: data.metadata || {},
+      category: data.category_id ? { id: data.category_id } : undefined,
     }
     return api.post(PRODUCTS_BASE, payload)
   },
@@ -37,6 +38,7 @@ export const productsApi = {
     const payload = {
       name: data.name,
       metadata: data.metadata || {},
+      category: data.category_id ? { id: data.category_id } : undefined,
     }
     return api.put(`${PRODUCTS_BASE}/${id}`, payload)
   },

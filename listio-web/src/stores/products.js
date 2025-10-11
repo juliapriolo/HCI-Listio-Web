@@ -11,6 +11,15 @@ function mapProduct(data) {
     metadata: data.metadata || {},
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+    category: data.category
+      ? {
+          id: data.category.id,
+          name: data.category.name,
+          metadata: data.category.metadata || {},
+          createdAt: data.category.createdAt,
+          updatedAt: data.category.updatedAt,
+        }
+      : null,
   }
 }
 
