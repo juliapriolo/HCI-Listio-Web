@@ -131,7 +131,7 @@
           
             <div class="modal-actions">
               <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
-                {{ t('Cancel') }}
+                {{ t('common.cancel') }}
               </button>
               <button
                 type="submit"
@@ -370,6 +370,7 @@ const deleteList = (listId) => {
 const confirmDeleteList = async () => {
   if (!listToDelete.value) return
   
+  const deletedName = listToDelete.value?.name || ''
   try {
     // Try API first if available
     if (isApiAvailable.value !== false) {
@@ -391,11 +392,11 @@ const confirmDeleteList = async () => {
       console.log('Deleted list locally (API unavailable):', listToDelete.value.name)
     }
     
-    deleteDialog.value = false
-    listToDelete.value = null
+  deleteDialog.value = false
+  listToDelete.value = null
     
-    // Show success message
-    snackbarText.value = `Lista "${listToDelete.value?.name}" eliminada exitosamente`
+  // Show success message
+  snackbarText.value = `Lista "${deletedName}" eliminada exitosamente`
     snackbarColor.value = 'success'
     snackbar.value = true
     

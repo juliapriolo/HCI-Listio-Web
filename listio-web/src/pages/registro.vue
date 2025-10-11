@@ -5,18 +5,13 @@
         <h1>LISTIO</h1>
       </div>
       <div class="illustrations">
-        <img src="@/assets/login_1.png" :alt="t('register.groceryBagAlt')" class="grocery-bag-image" />
-        <img src="@/assets/login_2.png" :alt="t('register.coloredBagsAlt')" class="colored-bags-image" />
+        <img src="@/assets/login_1.png" alt="Bolsa de compras" class="grocery-bag-image" />
+        <img src="@/assets/login_2.png" alt="Bolsas de colores" class="colored-bags-image" />
       </div>
     </div>
 
     <div class="register-right">
       <div class="register-card">
-        <!-- Loading overlay -->
-        <div v-if="registerLoading" class="loading-overlay" role="status" aria-live="polite">
-          <div class="spinner" aria-hidden="true"></div>
-          <div class="loading-text">Cargando...</div>
-        </div>
         <h2 class="register-title">Crear Cuenta</h2>
 
         <form @submit.prevent="handleRegister" class="register-form">
@@ -78,8 +73,8 @@
             />
           </div>
 
-          <button type="submit" class="register-button" :disabled="registerLoading">
-            {{ registerLoading ? 'Procesando...' : 'Registrarme' }}
+          <button type="submit" class="register-button">
+            Registrarme
           </button>
 
           <div
@@ -95,6 +90,11 @@
             ¿Ya tenes una cuenta? <RouterLink to="/login" class="redirect-link">Inicia sesión</RouterLink>
           </p>
         </form>
+
+        <p class="redirect-text">
+          ¿Ya tienes cuenta?
+          <RouterLink to="/login" class="redirect-link">Inicia sesión</RouterLink>
+        </p>
       </div>
     </div>
   </div>
@@ -163,7 +163,7 @@ const handleRegister = async () => {
   try {
     registerLoading.value = true
     await userStore.register(payload)
-    // After successful registration, navigate to login and open verification
+    alert('Registro completado. Inicia sesión para continuar.')
     router.push({ path: '/login', query: { registered: '1' } })
   } catch (error) {
     const message = error?.message || ''
@@ -171,10 +171,7 @@ const handleRegister = async () => {
       errors.value.email = t('register.emailExists')
       return
     }
-    // Show server error inside the register card feedback area
-    setRegisterFeedback('error', message)
-  } finally {
-    registerLoading.value = false
+    alert(message)
   }
 }
 </script>

@@ -18,25 +18,27 @@
           <!-- Filter and Share buttons (only in products view) -->
           <template v-if="currentView === 'products'">
             <v-btn
-              icon="mdi-filter-outline"
+              icon
               variant="text"
               class="action-btn"
               size="large"
               @click="openFilterDialog"
+              :aria-label="t('common.filter')"
+              :title="t('common.filter')"
             >
               <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
-              <span class="ml-1">{{ t('common.filter') }}</span>
             </v-btn>
 
             <v-btn
-              icon="mdi-export-variant"
+              icon
               variant="text"
               class="action-btn"
               size="large"
               @click="openShareDialog"
+              :aria-label="t('common.share')"
+              :title="t('common.share')"
             >
               <v-icon color="grey-darken-2">mdi-export-variant</v-icon>
-              <span class="ml-1">{{ t('common.share') }}</span>
             </v-btn>
           </template>
         </div>
