@@ -95,32 +95,36 @@
             
             <!-- Menu Button -->
             <div class="category-menu">
-              <v-menu>
-                <template v-slot:activator="{ props }">
-                  <v-btn
-                    icon="mdi-dots-vertical"
-                    variant="text"
-                    size="small"
-                    color="grey-darken-2"
-                    v-bind="props"
-                    @click.stop
-                  />
-                </template>
-                <v-list>
-                  <v-list-item @click="editCategory(category)">
-                    <template v-slot:prepend>
-                      <v-icon>mdi-pencil</v-icon>
-                    </template>
-                    <v-list-item-title>Editar</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item @click="confirmDeleteCategory(category)">
-                    <template v-slot:prepend>
-                      <v-icon color="error">mdi-delete</v-icon>
-                    </template>
-                    <v-list-item-title>Eliminar</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
+              <button 
+                class="menu-button"
+                @click.stop="toggleCategoryMenu(category.id)"
+                @blur="hideCategoryMenu"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                  <circle cx="12" cy="12" r="1"/>
+                  <circle cx="12" cy="5" r="1"/>
+                  <circle cx="12" cy="19" r="1"/>
+                </svg>
+              </button>
+              
+              <div v-if="activeCategoryMenu === category.id" class="menu-dropdown">
+                <div class="menu-item" @click="editCategory(category)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  <span>Editar</span>
+                </div>
+                <div class="menu-item delete-item" @click="confirmDeleteCategory(category)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
+                    <polyline points="3,6 5,6 21,6"/>
+                    <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                    <line x1="10" y1="11" x2="10" y2="17"/>
+                    <line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                  <span>Eliminar</span>
+                </div>
+              </div>
             </div>
           </v-card>
         </div>
@@ -185,248 +189,298 @@
     </v-container>
 
     <!-- Add/Edit Category Dialog -->
-    <NewItemDialog
-      v-model="categoryDialog"
-      v-model:form-data="categoryForm"
-      :title="editingCategory ? 'Editar Categoría' : 'Agregar Categoría'"
-      :submit-text="editingCategory ? 'Actualizar' : 'Agregar'"
-      :fields="categoryFields"
-      @submit="saveCategory"
-      @cancel="categoryDialog = false"
-    />
+    <div v-if="categoryDialog" class="modal-overlay">
+      <div class="modal category-modal">
+        <h2>{{ editingCategory ? 'Editar Categoría' : 'Agregar Categoría' }}</h2>
+        
+        <form @submit.prevent="saveCategory(categoryForm)">
+          <div class="form-group">
+            <label for="categoryName">Nombre de la categoría</label>
+            <input
+              id="categoryName"
+              v-model="categoryForm.name"
+              type="text"
+              class="form-input"
+              placeholder="Ingrese el nombre de la categoría"
+              required
+              autofocus
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="categoryImage">Imagen de la categoría</label>
+            <input
+              id="categoryImage"
+              type="file"
+              accept="image/*"
+              class="form-input file-input"
+              @change="handleImageChange"
+            />
+            <div v-if="imagePreview" class="image-preview">
+              <img :src="imagePreview" alt="Vista previa" class="preview-img" />
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="categoryDialog = false">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              :disabled="!categoryForm.name?.trim()"
+            >
+              {{ editingCategory ? 'Actualizar' : 'Agregar' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Product Selection Dialog -->
-    <v-dialog v-model="productSelectionDialog" max-width="800">
-      <v-card>
-        <v-card-title class="text-h6">
-          Seleccionar Producto
-        </v-card-title>
-        <v-card-text>
-          <div v-if="availableProducts.length === 0" class="text-center py-8">
-            <v-icon size="64" color="grey-lighten-1">mdi-package-variant</v-icon>
-            <p class="mt-2 text-grey">No hay productos disponibles</p>
-            <p class="text-caption text-grey">Ve a la sección "Productos" para agregar productos primero</p>
+    <div v-if="productSelectionDialog" class="modal-overlay">
+      <div class="modal product-selection-modal">
+        <h2>Seleccionar Producto</h2>
+        
+        <div v-if="availableProducts.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+              <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
           </div>
-          <div v-else>
-            <div class="products-grid mb-4">
-              <v-card
-                v-for="product in availableProducts"
-                :key="product.id"
-                class="product-card"
-                :class="{ 'selected': selectedProduct?.id === product.id }"
-                @click="selectProduct(product)"
-              >
-                <v-card-text class="pa-3">
-                  <div class="d-flex align-center">
-                    <div class="product-image mr-3">
-                      <img 
-                        v-if="product.metadata?.image" 
-                        :src="product.metadata.image" 
-                        :alt="product.name"
-                        class="product-img"
-                      />
-                      <div v-else class="image-placeholder">
-                        <v-icon size="24" color="grey-lighten-1">mdi-image</v-icon>
-                      </div>
-                    </div>
-                    <div class="flex-grow-1">
-                      <h4 class="text-h6">{{ product.name }}</h4>
-                      <p v-if="product.metadata?.description" class="text-caption text-grey">
-                        {{ product.metadata.description }}
-                      </p>
-                    </div>
-                    <v-icon v-if="selectedProduct?.id === product.id" color="primary">
-                      mdi-check-circle
-                    </v-icon>
+          <p class="empty-text">No hay productos disponibles</p>
+          <p class="empty-subtext">Ve a la sección "Productos" para agregar productos primero</p>
+        </div>
+        
+        <div v-else>
+          <div class="products-grid">
+            <div
+              v-for="product in availableProducts"
+              :key="product.id"
+              class="product-card"
+              :class="{ 'selected': selectedProduct?.id === product.id }"
+              @click="selectProduct(product)"
+            >
+              <div class="product-content">
+                <div class="product-image">
+                  <img 
+                    v-if="product.metadata?.image" 
+                    :src="product.metadata.image" 
+                    :alt="product.name"
+                    class="product-img"
+                  />
+                  <div v-else class="image-placeholder">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21,15 16,10 5,21"/>
+                    </svg>
                   </div>
-                </v-card-text>
-              </v-card>
-            </div>
-            
-            <div v-if="selectedProduct" class="mt-4">
-              <v-divider class="mb-4" />
-              <h4 class="text-h6 mb-3">Detalles del producto</h4>
-              <v-row>
-                <v-col cols="4">
-                  <v-text-field
-                    v-model="productQuantity"
-                    label="Cantidad"
-                    type="number"
-                    min="1"
-                    variant="outlined"
-                    density="compact"
-                  />
-                </v-col>
-                <v-col cols="4">
-                  <v-select
-                    v-model="productUnit"
-                    :items="['unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'caja']"
-                    label="Unidad"
-                    variant="outlined"
-                    density="compact"
-                  />
-                </v-col>
-                <v-col cols="4">
-                  <v-text-field
-                    v-model="productExpiryDate"
-                    label="Fecha de vencimiento"
-                    type="date"
-                    variant="outlined"
-                    density="compact"
-                  />
-                </v-col>
-                <v-col cols="12">
-                  <v-text-field
-                    v-model="productCategory"
-                    label="Categoría (opcional)"
-                    variant="outlined"
-                    density="compact"
-                  />
-                </v-col>
-              </v-row>
+                </div>
+                <div class="product-info">
+                  <h4 class="product-name">{{ product.name }}</h4>
+                  <p v-if="product.metadata?.description" class="product-description">
+                    {{ product.metadata.description }}
+                  </p>
+                </div>
+                <div v-if="selectedProduct?.id === product.id" class="selected-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#4CAF50">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="productSelectionDialog = false">
+          
+          <div v-if="selectedProduct" class="product-details">
+            <div class="divider"></div>
+            <h4 class="details-title">Detalles del producto</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="productQuantity">Cantidad</label>
+                <input
+                  id="productQuantity"
+                  v-model="productQuantity"
+                  type="number"
+                  min="1"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group">
+                <label for="productUnit">Unidad</label>
+                <select id="productUnit" v-model="productUnit" class="form-input">
+                  <option value="unidad">unidad</option>
+                  <option value="kg">kg</option>
+                  <option value="g">g</option>
+                  <option value="l">l</option>
+                  <option value="ml">ml</option>
+                  <option value="paquete">paquete</option>
+                  <option value="caja">caja</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="productExpiryDate">Fecha de vencimiento</label>
+                <input
+                  id="productExpiryDate"
+                  v-model="productExpiryDate"
+                  type="date"
+                  class="form-input"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="productCategory">Categoría (opcional)</label>
+              <input
+                id="productCategory"
+                v-model="productCategory"
+                type="text"
+                class="form-input"
+                placeholder="Ingrese categoría"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="productSelectionDialog = false">
             Cancelar
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
+          </button>
+          <button
+            type="button"
+            class="btn btn--primary"
             :disabled="!selectedProduct"
             @click="addSelectedProductToPantry"
           >
             Agregar a la despensa
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="deleteDialog" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">
-          Confirmar eliminación
-        </v-card-title>
-        <v-card-text>
-          ¿Estás seguro de que quieres eliminar la despensa "{{ categoryToDelete?.name }}"? 
-          Esta acción no se puede deshacer.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="deleteDialog = false">
+    <div v-if="deleteDialog" class="modal-overlay">
+      <div class="modal delete-confirmation-modal">
+        <h2>Confirmar eliminación</h2>
+        
+        <div class="confirmation-content">
+          <p class="confirmation-text">
+            ¿Estás seguro de que quieres eliminar la despensa <strong>"{{ categoryToDelete?.name }}"</strong>? 
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="deleteDialog = false">
             Cancelar
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="elevated"
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger"
             @click="deleteCategory"
           >
             Eliminar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Product Delete Confirmation Dialog -->
-    <v-dialog v-model="productDeleteDialog" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">
-          Confirmar eliminación
-        </v-card-title>
-        <v-card-text>
-          ¿Estás seguro de que quieres eliminar el producto "{{ productToDelete?.name }}"? 
-          Esta acción no se puede deshacer.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="productDeleteDialog = false">
+    <div v-if="productDeleteDialog" class="modal-overlay">
+      <div class="modal delete-confirmation-modal">
+        <h2>Confirmar eliminación</h2>
+        
+        <div class="confirmation-content">
+          <p class="confirmation-text">
+            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>? 
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="productDeleteDialog = false">
             Cancelar
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="elevated"
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger"
             @click="confirmDeleteProductAction"
           >
             Eliminar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Product Edit Dialog -->
-    <v-dialog v-model="productEditDialog" max-width="600">
-      <v-card>
-        <v-card-title class="text-h6">
-          Editar producto
-        </v-card-title>
-        <v-card-text>
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
+    <div v-if="productEditDialog" class="modal-overlay">
+      <div class="modal product-edit-modal">
+        <h2>Editar producto</h2>
+        
+        <form @submit.prevent="saveProductEdit">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editQuantity">Cantidad</label>
+              <input
+                id="editQuantity"
                 v-model="editQuantity"
-                label="Cantidad"
                 type="number"
                 min="1"
-                variant="outlined"
-                density="compact"
+                class="form-input"
+                required
               />
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-select
-                v-model="editUnit"
-                :items="['unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'caja']"
-                label="Unidad"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-text-field
-                v-model="editExpiryDate"
-                label="Fecha de vencimiento"
-                type="date"
-                variant="outlined"
-                density="compact"
-              />
-            </v-col>
-            <v-col cols="12">
-              <v-file-input
-                v-model="editImageFile"
-                label="Cambiar imagen"
-                accept="image/*"
-                variant="outlined"
-                density="compact"
-                prepend-icon=""
-                @change="handleEditImageChange"
-              />
-              <div v-if="editImagePreview" class="mt-3">
-                <img
-                  :src="editImagePreview"
-                  alt="Vista previa"
-                  style="max-width: 200px; max-height: 150px; border-radius: 8px;"
-                />
-              </div>
-            </v-col>
-          </v-row>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="productEditDialog = false">
-            Cancelar
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            @click="saveProductEdit"
-          >
-            Guardar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+            </div>
+            <div class="form-group">
+              <label for="editUnit">Unidad</label>
+              <select id="editUnit" v-model="editUnit" class="form-input">
+                <option value="unidad">unidad</option>
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="l">l</option>
+                <option value="ml">ml</option>
+                <option value="paquete">paquete</option>
+                <option value="caja">caja</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="editExpiryDate">Fecha de vencimiento</label>
+            <input
+              id="editExpiryDate"
+              v-model="editExpiryDate"
+              type="date"
+              class="form-input"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="editImageFile">Cambiar imagen</label>
+            <input
+              id="editImageFile"
+              type="file"
+              accept="image/*"
+              class="form-input file-input"
+              @change="handleEditImageChange"
+            />
+            <div v-if="editImagePreview" class="image-preview">
+              <img :src="editImagePreview" alt="Vista previa" class="preview-img" />
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="productEditDialog = false">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Filter Dialog -->
     <v-dialog v-model="filterDialog" max-width="500">
@@ -518,7 +572,6 @@ import { usePantryStore } from '@/stores/pantry'
 import { useProductStore } from '@/stores/products'
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
-import NewItemDialog from '@/components/NewItemDialog.vue'
 import SearchBar from '@/components/SearchBar.vue'
 
 // Reactive data
@@ -553,6 +606,8 @@ const searchQuery = ref('')
 const filterStatus = ref('')
 const filterCategory = ref('')
 const shareEmail = ref('')
+const imagePreview = ref('')
+const activeCategoryMenu = ref(null)
 
 // Form data
 const categoryForm = ref({
@@ -583,23 +638,6 @@ const categories = ref([
   }
 ])
 
-// Form configuration for categories
-const categoryFields = [
-  {
-    key: 'name',
-    label: 'Nombre de la categoría',
-    type: 'text',
-    required: true,
-    autofocus: true
-  },
-  {
-    key: 'image',
-    label: 'Imagen de la categoría',
-    type: 'file',
-    required: false,
-    accept: 'image/*'
-  }
-]
 
 // Form configuration for products
 const productFields = [
@@ -694,6 +732,7 @@ const openAddCategoryDialog = () => {
     name: '',
     image: ''
   }
+  imagePreview.value = ''
   categoryDialog.value = true
 }
 
@@ -709,6 +748,7 @@ const openAddProductDialog = () => {
 const editCategory = (category) => {
   editingCategory.value = category
   categoryForm.value = { ...category }
+  imagePreview.value = category.image || ''
   categoryDialog.value = true
 }
 
@@ -727,7 +767,8 @@ const deleteCategory = async () => {
     const index = categories.value.findIndex(c => c.id === categoryToDelete.value.id)
     if (index > -1) {
       categories.value.splice(index, 1)
-      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+      const categoriesStorageKey = getCategoriesStorageKey()
+      localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
     }
     
     console.log('Category deleted successfully')
@@ -738,7 +779,8 @@ const deleteCategory = async () => {
     const index = categories.value.findIndex(c => c.id === categoryToDelete.value.id)
     if (index > -1) {
       categories.value.splice(index, 1)
-      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+      const categoriesStorageKey = getCategoriesStorageKey()
+      localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
     }
   } finally {
     deleteDialog.value = false
@@ -747,6 +789,15 @@ const deleteCategory = async () => {
 }
 
 const saveCategory = async (formData) => {
+  console.log('saveCategory called with:', formData)
+  
+  // Validate required fields
+  if (!formData.name || !formData.name.trim()) {
+    console.error('Category name is required')
+    alert('El nombre de la categoría es obligatorio')
+    return
+  }
+  
   let imageData = ''
   
   // Handle image file if provided
@@ -803,8 +854,12 @@ const saveCategory = async (formData) => {
         }
       }
       
+      console.log('Creating pantry with data:', pantryData)
+      
       // Try to create pantry via API
       const newPantry = await pantryStore.createPantryRemote(pantryData)
+      
+      console.log('Pantry created successfully:', newPantry)
       
       // Add to local categories for display
       const newCategory = {
@@ -830,7 +885,8 @@ const saveCategory = async (formData) => {
   }
   
   // Save to localStorage
-  localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+  const categoriesStorageKey = getCategoriesStorageKey()
+  localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
   
   categoryDialog.value = false
 }
@@ -882,7 +938,8 @@ const addSelectedProductToPantry = async () => {
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount += 1
-      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+      const categoriesStorageKey = getCategoriesStorageKey()
+      localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
     }
     
   } catch (error) {
@@ -918,7 +975,8 @@ const addSelectedProductToPantry = async () => {
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount += 1
-      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+      const categoriesStorageKey = getCategoriesStorageKey()
+      localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
     }
   }
   
@@ -937,6 +995,30 @@ const convertFileToBase64 = (file) => {
     reader.onload = () => resolve(reader.result)
     reader.onerror = error => reject(error)
   })
+}
+
+// Handle image file selection
+const handleImageChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    categoryForm.value.image = file
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+// Handle category menu
+const toggleCategoryMenu = (categoryId) => {
+  activeCategoryMenu.value = activeCategoryMenu.value === categoryId ? null : categoryId
+}
+
+const hideCategoryMenu = () => {
+  setTimeout(() => {
+    activeCategoryMenu.value = null
+  }, 150)
 }
 
 const openCategory = async (category) => {
@@ -1003,7 +1085,8 @@ const deleteItem = async (itemId) => {
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount = Math.max(0, categories.value[categoryIndex].itemCount - 1)
-      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+      const categoriesStorageKey = getCategoriesStorageKey()
+      localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
     }
   } catch (error) {
     console.error('Failed to delete item:', error)
@@ -1014,7 +1097,8 @@ const deleteItem = async (itemId) => {
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount = Math.max(0, categories.value[categoryIndex].itemCount - 1)
-      localStorage.setItem('listio:categories', JSON.stringify(categories.value))
+      const categoriesStorageKey = getCategoriesStorageKey()
+      localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
     }
   }
 }
@@ -1254,10 +1338,35 @@ onMounted(async () => {
   }
 })
 
+// Helper function to get user-specific storage key for categories
+const getCategoriesStorageKey = () => {
+  try {
+    const raw = localStorage.getItem('listio:user')
+    const userData = raw ? JSON.parse(raw) : null
+    const userId = userData?.profile?.id
+    return userId ? `listio:categories:${userId}` : 'listio:categories:anonymous'
+  } catch (e) {
+    console.error('Failed to get user ID for categories storage key', e)
+    return 'listio:categories:anonymous'
+  }
+}
+
+// Helper function to clear categories data for current user
+const clearCategoriesData = () => {
+  try {
+    const categoriesStorageKey = getCategoriesStorageKey()
+    localStorage.removeItem(categoriesStorageKey)
+    categories.value = []
+  } catch (e) {
+    console.error('Failed to clear categories data', e)
+  }
+}
+
 // Load categories on mount
 onMounted(() => {
   // Load categories from localStorage or use default ones
-  const savedCategories = localStorage.getItem('listio:categories')
+  const categoriesStorageKey = getCategoriesStorageKey()
+  const savedCategories = localStorage.getItem(categoriesStorageKey)
   if (savedCategories) {
     categories.value = JSON.parse(savedCategories)
   }
@@ -1310,6 +1419,64 @@ onMounted(() => {
   top: 12px;
   right: 12px;
   z-index: 10;
+}
+
+/* Custom menu styles for categories */
+.menu-button {
+  background: none;
+  border: none;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.menu-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #424242;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item.delete-item {
+  color: #f44336;
+}
+
+.menu-item.delete-item:hover {
+  background-color: #ffebee;
+}
+
+.menu-item span {
+  flex: 1;
 }
 
 .category-image {
@@ -1445,5 +1612,368 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Modal styles matching verification modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  flex: 1;
+}
+
+.btn--primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: #45A049;
+}
+
+.btn--primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn--cancel {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.btn--cancel:hover {
+  background: #e0e0e0;
+}
+
+.btn--danger {
+  background: #f44336;
+  color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.btn--danger:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Category modal specific styles */
+.category-modal {
+  max-width: 500px;
+  width: 90vw;
+}
+
+.file-input {
+  padding: 6px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.file-input:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.file-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+  background-color: #fff;
+}
+
+.file-input::file-selector-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.file-input::file-selector-button:hover {
+  background-color: #5a6268;
+}
+
+.image-preview {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.preview-img {
+  max-width: 200px;
+  max-height: 150px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  object-fit: cover;
+}
+
+/* Product edit modal specific styles */
+.product-edit-modal {
+  max-width: 600px;
+  width: 90vw;
+}
+
+/* Delete confirmation modal specific styles */
+.delete-confirmation-modal {
+  max-width: 450px;
+  width: 90vw;
+}
+
+.confirmation-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.confirmation-text {
+  font-size: 1rem;
+  color: #424242;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.confirmation-text strong {
+  color: #f44336;
+  font-weight: 600;
+}
+
+/* Product selection modal specific styles */
+.product-selection-modal {
+  max-width: 800px;
+  width: 90vw;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0 0 8px 0;
+}
+
+.empty-subtext {
+  font-size: 0.9rem;
+  color: #999;
+  margin: 0;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.product-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fff;
+}
+
+.product-card:hover {
+  border-color: #4CAF50;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
+}
+
+.product-card.selected {
+  border-color: #4CAF50;
+  background-color: #f1f8e9;
+}
+
+.product-content {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.product-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border: 1px dashed #e0e0e0;
+}
+
+.product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.product-description {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-icon {
+  flex-shrink: 0;
+}
+
+.product-details {
+  margin-top: 20px;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 20px 0;
+}
+
+.details-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #424242; /* Mismo color que text-grey-darken-3 del título */
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.form-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.form-input::placeholder {
+  color: #9e9e9e; /* Color más visible para el placeholder */
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal {
+    margin: 20px;
+    padding: 24px 16px;
+    min-width: auto;
+    width: calc(100vw - 40px);
+  }
+  
+  .products-grid {
+    grid-template-columns: 1fr;
+    max-height: 250px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

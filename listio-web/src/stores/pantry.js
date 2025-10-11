@@ -1,7 +1,18 @@
 import { defineStore } from 'pinia'
 import pantryApi from '@/api/pantry'
 
-const STORAGE_KEY = 'listio:pantry'
+// Dynamic storage key based on user ID
+function getStorageKey() {
+  try {
+    const raw = localStorage.getItem('listio:user')
+    const userData = raw ? JSON.parse(raw) : null
+    const userId = userData?.profile?.id
+    return userId ? `listio:pantry:${userId}` : 'listio:pantry:anonymous'
+  } catch (e) {
+    console.error('Failed to get user ID for storage key', e)
+    return 'listio:pantry:anonymous'
+  }
+}
 
 export const usePantryStore = defineStore('pantry', {
   state: () => ({
@@ -24,7 +35,8 @@ export const usePantryStore = defineStore('pantry', {
   actions: {
     load() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY)
+        const storageKey = getStorageKey()
+        const raw = localStorage.getItem(storageKey)
         const data = raw ? JSON.parse(raw) : { pantries: [], currentPantryId: null, items: [] }
         this.pantries = data.pantries || []
         this.currentPantryId = data.currentPantryId
@@ -38,12 +50,13 @@ export const usePantryStore = defineStore('pantry', {
     },
     save() {
       try {
+        const storageKey = getStorageKey()
         const data = {
           pantries: this.pantries,
           currentPantryId: this.currentPantryId,
           items: this.items
         }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+        localStorage.setItem(storageKey, JSON.stringify(data))
       } catch (e) {
         console.error('Failed to save pantry', e)
       }
@@ -368,6 +381,24 @@ export const usePantryStore = defineStore('pantry', {
       await this.fetchPantriesRemote()
       if (this.currentPantryId) {
         await this.fetchPantryItemsRemote(this.currentPantryId)
+      }
+    },
+
+    // Clear pantry data for current user (useful when logging out)
+    clearUserData() {
+      this.pantries = []
+      this.currentPantryId = null
+      this.items = []
+      this.loading = false
+      this.error = null
+      this.lastSync = null
+      
+      // Clear localStorage for current user
+      try {
+        const storageKey = getStorageKey()
+        localStorage.removeItem(storageKey)
+      } catch (e) {
+        console.error('Failed to clear pantry data', e)
       }
     }
   }
