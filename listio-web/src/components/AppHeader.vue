@@ -7,19 +7,7 @@
   >
     <v-container class="d-flex align-center">
       <!-- Logo -->
-      <v-card
-        class="d-flex align-center px-4 py-2 mr-8"
-        color="white"
-        rounded="pill"
-        elevation="0"
-      >
-        <v-icon color="success" size="24" class="mr-2">
-          mdi-check-circle
-        </v-icon>
-        <span class="text-h6 font-weight-bold" style="color: #4caf50;">
-          Listio
-        </span>
-      </v-card>
+      <img src="/listio-logo.png" alt="Listio Logo" class="logo-image" @click="router.push('/listas')" />
 
       <!-- Navigation Buttons -->
       <div class="d-flex gap-2">
@@ -63,7 +51,9 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 
+const router = useRouter();
 const userStore = useUserStore()
 const { profile: userProfile } = storeToRefs(userStore)
 
@@ -77,5 +67,13 @@ const navigationItems = [
 <style scoped>
 .gap-2 > * + * {
   margin-left: 8px;
+}
+
+.logo-image {
+  width: 120px;
+  height: auto;
+  object-fit: contain;
+  margin-right: 15px;
+  border-radius: 10px;
 }
 </style>
