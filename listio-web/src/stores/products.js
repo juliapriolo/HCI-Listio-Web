@@ -50,10 +50,13 @@ export const useProductStore = defineStore('product', {
 
     updateLocal(id, patch) {
       const idx = this.products.findIndex((p) => p.id === id)
-      if (idx > -1) {
-        this.products[idx] = { ...this.products[idx], ...patch }
-        this.save()
-      }
+      if (idx === -1) return
+
+      const current = this.products[idx] || {}
+      const merged = { ...current, ...(patch || {}) }
+
+      this.products.splice(idx, 1, merged)
+      this.save()
     },
 
     deleteLocal(id) {
@@ -68,20 +71,12 @@ export const useProductStore = defineStore('product', {
     async fetchRemote(params = {}) {
       try {
         const data = await productsApi.getAll(params)
-
-        if (Array.isArray(data)) {
-          this.products = data.map(mapProduct)
-          this.save()
-          return { items: this.products }
-        }
-
-        const items = data?.data || data?.items || []
+        const items = Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
         this.products = Array.isArray(items) ? items.map(mapProduct) : []
         this.save()
         return { items: this.products }
       } catch (e) {
         console.error('Error al obtener productos del backend:', e)
-        // Si hay error, mantener productos locales si existen
         if (this.products.length === 0) {
           this.load()
         }
@@ -92,8 +87,11 @@ export const useProductStore = defineStore('product', {
     async createRemote(payload) {
       try {
         const created = await productsApi.add(payload)
-        if (created && created.id) {
-          this.addLocal(mapProduct(created))
+        const createdData = created?.data ?? created
+        if (createdData && createdData.id) {
+          this.addLocal(mapProduct(createdData))
+        } else {
+          await this.fetchRemote()
         }
         return created
       } catch (e) {
@@ -105,9 +103,14 @@ export const useProductStore = defineStore('product', {
     async updateRemote(id, patch) {
       try {
         const updated = await productsApi.update(id, patch)
-        if (updated && updated.id) {
-          this.updateLocal(id, mapProduct(updated))
+        const updatedData = updated?.data ?? updated
+
+        if (updatedData && updatedData.id) {
+          this.updateLocal(id, mapProduct(updatedData))
+        } else {
+          this.updateLocal(id, patch)
         }
+
         return updated
       } catch (e) {
         console.error('Error al actualizar producto:', e)
@@ -125,28 +128,20 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // Buscar productos
+    // --- búsquedas ---
     async searchRemote(query, params = {}) {
       try {
         const data = await productsApi.search(query, params)
-        
-        if (Array.isArray(data)) {
-          return data.map(mapProduct)
-        }
-        
-        const items = data?.data || data?.items || []
+        const items = Array.isArray(data) ? data : (data?.data ?? data?.items ?? [])
         return Array.isArray(items) ? items.map(mapProduct) : []
       } catch (e) {
         console.error('Error al buscar productos:', e)
-        // Fallback a búsqueda local
         return this.searchLocal(query)
       }
     },
 
-    // Búsqueda local
     searchLocal(query) {
       if (!query) return this.products
-      
       const q = query.toLowerCase()
       return this.products.filter(product => 
         product.name.toLowerCase().includes(q) ||
@@ -158,11 +153,9 @@ export const useProductStore = defineStore('product', {
     async init() {
       this.load()
       try {
-        // Intentar cargar desde el servidor
         await this.fetchRemote()
       } catch (e) {
         console.warn('No se pudo conectar con el servidor, usando datos locales')
-        // Si no hay productos locales, crear algunos de ejemplo
         if (this.products.length === 0) {
           this.products = []
         }
