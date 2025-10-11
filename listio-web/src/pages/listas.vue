@@ -3,9 +3,24 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Mis Listas
-        </h1>
+         <div class="d-flex align-items-center gap-3">
+           <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+             Listas
+           </h1>
+          
+          <!-- API Status Indicator -->
+          <v-chip 
+            v-if="isApiAvailable !== null"
+            :color="isApiAvailable ? 'success' : 'warning'"
+            size="small"
+            variant="outlined"
+          >
+            <v-icon size="12" class="mr-1">
+              {{ isApiAvailable ? 'mdi-cloud-check' : 'mdi-cloud-off' }}
+            </v-icon>
+            {{ isApiAvailable ? 'Online' : 'Offline' }}
+          </v-chip>
+        </div>
         
         <div class="search-wrapper">
             <SearchBar
@@ -43,8 +58,6 @@
         icon="mdi-format-list-bulleted"
         title="No tienes listas aún"
         description="Crea tu primera lista de compras"
-        action-text="Crear Lista"
-        @action="openNewListDialog"
       />
 
       <EmptyState
@@ -247,33 +260,6 @@ const checkApiAvailability = async () => {
   }
 }
 
-// If empty on first run, seed with sample data
-const sampleData = [
-  {
-    id: 1,
-    name: 'Supermercado',
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop',
-    itemCount: 8,
-    completedItems: 3,
-    lastUpdated: new Date('2025-09-27')
-  },
-  {
-    id: 2,
-    name: 'Verdulería',
-    image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=300&fit=crop',
-    itemCount: 5,
-    completedItems: 5,
-    lastUpdated: new Date('2025-09-26')
-  },
-  {
-    id: 3,
-    name: 'Farmacia',
-    image: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?w=400&h=300&fit=crop',
-    itemCount: 3,
-    completedItems: 1,
-    lastUpdated: new Date('2025-09-25')
-  }
-]
 
 // Computed properties
 const filteredLists = computed(() => {
@@ -471,10 +457,19 @@ onMounted(async () => {
   console.log('localStorage data for key:', localStorage.getItem(currentStorageKey))
   console.log('Current lists in store before load:', listsStore.lists)
   
-  // Load from localStorage first as immediate fallback
-  listsStore.load()
-  
-  console.log('Current lists in store after load:', listsStore.lists)
+   // Clear localStorage to remove any existing sample data
+   try {
+     localStorage.removeItem('listio:lists')
+     localStorage.removeItem(currentStorageKey)
+     console.log('Cleared localStorage for lists')
+   } catch (e) {
+     console.warn('Could not clear localStorage:', e)
+   }
+   
+   // Load from localStorage first as immediate fallback
+   listsStore.load()
+   
+   console.log('Current lists in store after load:', listsStore.lists)
   
   try {
     // Try to fetch from API to check availability and get latest data
@@ -485,11 +480,7 @@ onMounted(async () => {
     isApiAvailable.value = false
   }
   
-  // If no lists exist locally and API failed, seed with sample data
-  if (!listsStore.lists || listsStore.lists.length === 0) {
-    console.log('No lists found locally, seeding with sample data')
-    listsStore.seed(sampleData)
-  }
+   // No longer seeding with sample data - start with empty lists
   
   console.log('Final lists in store:', listsStore.lists)
   console.log('=== END DEBUGGING ===')
