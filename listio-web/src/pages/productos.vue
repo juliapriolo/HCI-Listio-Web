@@ -3,9 +3,7 @@
     <v-container>
       <!-- Page Header with Search -->
       <div class="d-flex align-center justify-space-between mb-6">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Productos
-        </h1>
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">Productos</h1>
 
         <div class="header-actions">
           <div class="search-wrapper">
@@ -75,7 +73,7 @@
     <div v-if="newProductDialog" class="modal-overlay">
       <div class="modal product-modal">
         <h2>Agregar Producto</h2>
-        
+
         <form @submit.prevent="addProduct(newProductForm)">
           <div class="form-group">
             <label for="productName">Nombre del producto</label>
@@ -89,7 +87,7 @@
               autofocus
             />
           </div>
-          
+
           <div class="form-group">
             <label for="productImage">Imagen del producto</label>
             <input
@@ -100,10 +98,14 @@
               @change="handleProductImageChange"
             />
             <div v-if="productImagePreview" class="image-preview">
-              <img :src="productImagePreview" alt="Vista previa" class="preview-img" />
+              <img
+                :src="productImagePreview"
+                alt="Vista previa"
+                class="preview-img"
+              />
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="productDescription">Descripción (opcional)</label>
             <textarea
@@ -114,17 +116,44 @@
               rows="3"
             ></textarea>
           </div>
-          
+
+          <div class="form-group">
+            <label for="productCategory">Categoría *</label>
+            <select
+              id="productCategory"
+              v-model="newProductForm.category"
+              class="form-input"
+              required
+            >
+              <option value="">Seleccione una categoría</option>
+              <option
+                v-for="category in categoryStore.categories"
+                :key="category.id"
+                :value="category"
+              >
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+
           <div class="modal-actions">
-            <button type="button" class="btn btn--cancel" @click="closeNewProductDialog">
+            <button
+              type="button"
+              class="btn btn--cancel"
+              @click="closeNewProductDialog"
+            >
               Cancelar
             </button>
             <button
               type="submit"
               class="btn btn--primary"
-              :disabled="!newProductForm.name?.trim() || isCreating"
+              :disabled="
+                !newProductForm.name?.trim() ||
+                !newProductForm.category ||
+                isCreating
+              "
             >
-              {{ isCreating ? 'Agregando...' : 'Agregar Producto' }}
+              {{ isCreating ? "Agregando..." : "Agregar Producto" }}
             </button>
           </div>
         </form>
@@ -143,25 +172,22 @@
     <!-- Diálogo de confirmación de eliminación -->
     <v-dialog v-model="deleteConfirmDialog" max-width="400">
       <v-card>
-        <v-card-title class="text-h6">
-          Confirmar eliminación
-        </v-card-title>
-        
+        <v-card-title class="text-h6"> Confirmar eliminación </v-card-title>
+
         <v-card-text>
-          <p>¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>?</p>
-          <p class="text-caption text-grey">Esta acción no se puede deshacer.</p>
+          <p>
+            ¿Estás seguro de que quieres eliminar el producto
+            <strong>"{{ productToDelete?.name }}"</strong>?
+          </p>
+          <p class="text-caption text-grey">
+            Esta acción no se puede deshacer.
+          </p>
         </v-card-text>
-        
+
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="deleteConfirmDialog = false">
-            Cancelar
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="elevated"
-            @click="executeDelete"
-          >
+          <v-btn @click="deleteConfirmDialog = false"> Cancelar </v-btn>
+          <v-btn color="error" variant="elevated" @click="executeDelete">
             Eliminar
           </v-btn>
         </v-card-actions>
@@ -171,218 +197,235 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useProductStore } from '@/stores/products'
-import SearchBar from '@/components/SearchBar.vue'
-import ProductCard from '@/components/ProductCard.vue'
-import EmptyState from '@/components/EmptyState.vue'
-import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
+import { ref, computed, onMounted } from "vue";
+import { useProductStore } from "@/stores/products";
+import { useCategoryStore } from "@/stores/category";
+import SearchBar from "@/components/SearchBar.vue";
+import ProductCard from "@/components/ProductCard.vue";
+import EmptyState from "@/components/EmptyState.vue";
+import ProductInfoDialog from "@/components/ProductInfoDialog.vue";
 
-const searchQuery = ref('')
-const snackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('success')
-const loading = ref(true)
+const searchQuery = ref("");
+const snackbar = ref(false);
+const snackbarText = ref("");
+const snackbarColor = ref("success");
+const loading = ref(true);
 
-const productInfoDialog = ref(false)
-const newProductDialog = ref(false)
-const deleteConfirmDialog = ref(false)
-const selectedProduct = ref(null)
-const productToDelete = ref(null)
-const isCreating = ref(false)
-const productImageFile = ref(null)
-const productImagePreview = ref('')
+const productInfoDialog = ref(false);
+const newProductDialog = ref(false);
+const deleteConfirmDialog = ref(false);
+const selectedProduct = ref(null);
+const productToDelete = ref(null);
+const isCreating = ref(false);
+const productImageFile = ref(null);
+const productImagePreview = ref("");
 
 const newProductForm = ref({
-  name: '',
-  description: '',
+  name: "",
+  description: "",
   image: null,
-})
+  category: null,
+});
 
-const productStore = useProductStore()
-
+const productStore = useProductStore();
+const categoryStore = useCategoryStore();
 
 const filteredProducts = computed(() => {
-  const list = productStore.products
-  if (!searchQuery.value) return list
+  const list = productStore.products;
+  if (!searchQuery.value) return list;
 
   // Usar búsqueda local del store
-  return productStore.searchLocal(searchQuery.value)
-})
+  return productStore.searchLocal(searchQuery.value);
+});
 
 const openNewProductDialog = () => {
-  newProductForm.value = { name: '', description: '', image: null }
-  productImageFile.value = null
-  productImagePreview.value = ''
-  newProductDialog.value = true
-}
+  newProductForm.value = {
+    name: "",
+    description: "",
+    image: null,
+    category: null,
+  };
+  productImageFile.value = null;
+  productImagePreview.value = "";
+  newProductDialog.value = true;
+};
 
 const closeNewProductDialog = () => {
-  newProductDialog.value = false
-  newProductForm.value = { name: '', description: '', image: null }
-  productImageFile.value = null
-  productImagePreview.value = ''
-}
+  newProductDialog.value = false;
+  newProductForm.value = {
+    name: "",
+    description: "",
+    image: null,
+    category: null,
+  };
+  productImageFile.value = null;
+  productImagePreview.value = "";
+};
 
 // Handle image file selection for new product
 const handleProductImageChange = (event) => {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    productImageFile.value = file
-    const reader = new FileReader()
+    productImageFile.value = file;
+    const reader = new FileReader();
     reader.onload = (e) => {
-      productImagePreview.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+      productImagePreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
-}
+};
 
 const openProductDialog = (product) => {
-  selectedProduct.value = { ...product }
-  productInfoDialog.value = true
-}
+  selectedProduct.value = { ...product };
+  productInfoDialog.value = true;
+};
 
 // --- Helper Functions ---
 const convertImageToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     if (!file) {
-      resolve(null)
-      return
+      resolve(null);
+      return;
     }
-    
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 // --- CRUD Actions ---
 const addProduct = async (formData) => {
-  if (!formData.name || isCreating.value) return
-  
-  isCreating.value = true
+  if (!formData.name || !formData.category || isCreating.value) return;
+
+  isCreating.value = true;
   try {
     // Convertir imagen a base64 si existe
-    let imageBase64 = null
+    let imageBase64 = null;
     if (productImageFile.value) {
-      imageBase64 = await convertImageToBase64(productImageFile.value)
+      imageBase64 = await convertImageToBase64(productImageFile.value);
     }
-    
+
     const payload = {
       name: formData.name.trim(),
       metadata: {
-        description: formData.description?.trim() || '',
+        description: formData.description?.trim() || "",
         image: imageBase64,
       },
-      category: { id: formData.category.id } 
-    }
-    
-    await productStore.createRemote(payload)
-    snackbarText.value = `${formData.name} agregado correctamente`
-    snackbarColor.value = 'success'
-    snackbar.value = true
-    closeNewProductDialog()
+      category: { id: formData.category.id },
+    };
+
+    await productStore.createRemote(payload);
+    snackbarText.value = `${formData.name} agregado correctamente`;
+    snackbarColor.value = "success";
+    snackbar.value = true;
+    closeNewProductDialog();
   } catch (error) {
-    console.error('Error al agregar producto:', error)
-    snackbarText.value = `Error al agregar ${formData.name}: ${error.message || 'Error desconocido'}`
-    snackbarColor.value = 'error'
-    snackbar.value = true
+    console.error("Error al agregar producto:", error);
+    snackbarText.value = `Error al agregar ${formData.name}: ${
+      error.message || "Error desconocido"
+    }`;
+    snackbarColor.value = "error";
+    snackbar.value = true;
   } finally {
-    isCreating.value = false
+    isCreating.value = false;
   }
-}
+};
 
 const updateProduct = async (updatedData) => {
   try {
     // Convertir imagen a base64 si existe
-    const imageBase64 = await convertImageToBase64(updatedData.image)
-    
+    const imageBase64 = await convertImageToBase64(updatedData.image);
+
     const payload = {
       name: updatedData.name,
       metadata: {
-        description: updatedData.description || '',
+        description: updatedData.description || "",
         image: imageBase64 || updatedData.metadata?.image, // Mantener imagen existente si no se sube nueva
       },
-      category: { id: updatedData.category?.id }
-    }
-    
-    await productStore.updateRemote(updatedData.id, payload)
-    snackbarText.value = `Producto actualizado correctamente`
-    snackbarColor.value = 'success'
-    snackbar.value = true
+      category: { id: updatedData.category?.id },
+    };
+
+    await productStore.updateRemote(updatedData.id, payload);
+    snackbarText.value = `Producto actualizado correctamente`;
+    snackbarColor.value = "success";
+    snackbar.value = true;
   } catch (error) {
-    console.error('Error al actualizar producto:', error)
-    snackbarText.value = `Error al actualizar producto: ${error.message || 'Error desconocido'}`
-    snackbarColor.value = 'error'
-    snackbar.value = true
+    console.error("Error al actualizar producto:", error);
+    snackbarText.value = `Error al actualizar producto: ${
+      error.message || "Error desconocido"
+    }`;
+    snackbarColor.value = "error";
+    snackbar.value = true;
   } finally {
-    productInfoDialog.value = false
+    productInfoDialog.value = false;
   }
-}
+};
 
 const deleteProduct = async (product) => {
   try {
-    await productStore.deleteRemote(product.id)
-    snackbarText.value = `Producto eliminado correctamente`
-    snackbarColor.value = 'success'
-    snackbar.value = true
+    await productStore.deleteRemote(product.id);
+    snackbarText.value = `Producto eliminado correctamente`;
+    snackbarColor.value = "success";
+    snackbar.value = true;
   } catch (error) {
-    console.error('Error al eliminar producto:', error)
-    snackbarText.value = `Error al eliminar producto: ${error.message || 'Error desconocido'}`
-    snackbarColor.value = 'error'
-    snackbar.value = true
+    console.error("Error al eliminar producto:", error);
+    snackbarText.value = `Error al eliminar producto: ${
+      error.message || "Error desconocido"
+    }`;
+    snackbarColor.value = "error";
+    snackbar.value = true;
   } finally {
-    productInfoDialog.value = false
+    productInfoDialog.value = false;
   }
-}
+};
 
 const addToList = (product) => {
-  snackbarText.value = `${product.name} añadido a la lista`
-  snackbarColor.value = 'success'
-  snackbar.value = true
-}
+  snackbarText.value = `${product.name} añadido a la lista`;
+  snackbarColor.value = "success";
+  snackbar.value = true;
+};
 
 // --- Menu Actions ---
 const editProduct = (product) => {
-  selectedProduct.value = { ...product }
-  productInfoDialog.value = true
-}
+  selectedProduct.value = { ...product };
+  productInfoDialog.value = true;
+};
 
 const confirmDeleteProduct = (product) => {
-  productToDelete.value = product
-  deleteConfirmDialog.value = true
-}
+  productToDelete.value = product;
+  deleteConfirmDialog.value = true;
+};
 
 const executeDelete = () => {
   if (productToDelete.value) {
-    deleteProduct(productToDelete.value)
-    deleteConfirmDialog.value = false
-    productToDelete.value = null
+    deleteProduct(productToDelete.value);
+    deleteConfirmDialog.value = false;
+    productToDelete.value = null;
   }
-}
+};
 
 onMounted(async () => {
   try {
-    loading.value = true
-    
-    // Cargar productos
-    await productStore.init()
-    
+    loading.value = true;
+
+    // Cargar productos y categorías
+    await Promise.all([productStore.init(), categoryStore.init()]);
+
     // Mostrar mensaje si no hay productos
     if (productStore.products.length === 0) {
-      console.log('No hay productos disponibles')
+      console.log("No hay productos disponibles");
     }
-    
   } catch (err) {
-    console.error('Error cargando datos:', err)
-    snackbarText.value = 'Error al cargar los datos. Verificando conexión...'
-    snackbarColor.value = 'warning'
-    snackbar.value = true
+    console.error("Error cargando datos:", err);
+    snackbarText.value = "Error al cargar los datos. Verificando conexión...";
+    snackbarColor.value = "warning";
+    snackbar.value = true;
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
+});
 </script>
 
 <style scoped>
@@ -429,7 +472,7 @@ onMounted(async () => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -439,7 +482,7 @@ onMounted(async () => {
 .modal {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   padding: 32px 24px;
   min-width: 400px;
   max-width: 90vw;
@@ -470,12 +513,12 @@ onMounted(async () => {
 }
 
 .btn--primary {
-  background: #4CAF50;
+  background: #4caf50;
   color: #fff;
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: #45A049;
+  background: #45a049;
 }
 
 .btn--primary:disabled {
@@ -514,7 +557,7 @@ onMounted(async () => {
 
 .file-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
   background-color: #fff;
 }
@@ -573,7 +616,7 @@ onMounted(async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
@@ -586,6 +629,18 @@ onMounted(async () => {
 .form-input::placeholder {
   color: #9e9e9e;
   opacity: 1;
+}
+
+/* Select styling */
+select.form-input {
+  cursor: pointer;
+  background-color: #fff;
+}
+
+select.form-input:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
 /* Responsive adjustments */
