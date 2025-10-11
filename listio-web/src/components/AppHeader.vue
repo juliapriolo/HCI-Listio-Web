@@ -7,7 +7,7 @@
   >
     <v-container class="d-flex align-center">
       <!-- Logo -->
-      <img src="/listio-logo.png" alt="Listio Logo" class="logo-image" />
+      <img src="/listio-logo.png" alt="Listio Logo" class="logo-image" @click="router.push('/listas')" />
 
       <!-- Navigation Buttons -->
       <div class="d-flex gap-2">
@@ -51,7 +51,9 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 
+const router = useRouter();
 const userStore = useUserStore()
 const { profile: userProfile } = storeToRefs(userStore)
 
