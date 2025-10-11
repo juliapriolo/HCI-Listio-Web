@@ -16,6 +16,7 @@
       </div>
       <div class="list-info">
         <h3 class="list-title">{{ list.name }}</h3>
+        <p v-if="list.description" class="list-description">{{ list.description }}</p>
         <div class="list-details">
           <span class="item-count">{{ list.itemCount || 0 }} productos</span>
           <span v-if="list.completedItems && list.itemCount" class="progress-info">
@@ -238,7 +239,7 @@ const formatDate = (date) => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 80px;
+  min-height: 80px;
 }
 
 .list-title {
@@ -247,6 +248,19 @@ const formatDate = (date) => {
   color: #424242;
   margin: 0 0 8px 0;
   line-height: 1.2;
+}
+
+.list-description {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+  max-height: 2.6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .list-details {
