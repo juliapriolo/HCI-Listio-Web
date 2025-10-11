@@ -83,8 +83,6 @@
         icon="mdi-format-list-bulleted"
         title="Lista vacía"
         description="Agrega tus primeros productos"
-        action-text="Agregar producto"
-        @action="openNewItemDialog"
       />
 
       <EmptyState

@@ -3,24 +3,9 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-         <div class="d-flex align-items-center gap-3">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-             Listas
-        </h1>
-          
-          <!-- API Status Indicator -->
-          <v-chip 
-            v-if="isApiAvailable !== null"
-            :color="isApiAvailable ? 'success' : 'warning'"
-            size="small"
-            variant="outlined"
-          >
-            <v-icon size="12" class="mr-1">
-              {{ isApiAvailable ? 'mdi-cloud-check' : 'mdi-cloud-off' }}
-            </v-icon>
-            {{ isApiAvailable ? 'Online' : 'Offline' }}
-          </v-chip>
-        </div>
+         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+           Listas
+         </h1>
         
         <div class="search-wrapper">
             <SearchBar
@@ -131,6 +116,17 @@
             ></textarea>
           </div>
           
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                v-model="newListForm.recurring"
+                class="checkbox-input"
+              />
+              <span class="checkbox-text">Lista recurrente</span>
+            </label>
+          </div>
+          
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
               Cancelar
@@ -191,6 +187,17 @@
             ></textarea>
           </div>
           
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                v-model="editListForm.recurring"
+                class="checkbox-input"
+              />
+              <span class="checkbox-text">Lista recurrente</span>
+            </label>
+          </div>
+          
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="editListDialog = false">
               Cancelar
@@ -233,6 +240,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Snackbar for notifications -->
+    <v-snackbar v-model="snackbar" :timeout="4000" :color="snackbarColor">
+      {{ snackbarText }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar = false">Cerrar</v-btn>
+      </template>
+    </v-snackbar>
   </div>
 </template>
 
@@ -261,16 +276,21 @@ const newImageFile = ref(null)
 const newImagePreview = ref('')
 const isLoading = ref(false)
 const isCreating = ref(false)
+const snackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref('success')
 
 
 const newListForm = ref({
   name: '',
-  description: ''
+  description: '',
+  recurring: false
 })
 
 const editListForm = ref({
   name: '',
   description: '',
+  recurring: false,
   image: ''
 })
 
@@ -284,12 +304,21 @@ const checkApiAvailability = async () => {
   try {
     // Try a simple GET request to see if API is available without overwriting local data
     console.log('Checking API availability...')
-    await listsApi.getAll()
+    const response = await listsApi.getAll({ limit: 1 })
     isApiAvailable.value = true
-    console.log('API is available')
+    console.log('API is available, response:', response)
+    
+    // If API is available, try to sync with remote data
+    try {
+      await listsStore.fetchRemote()
+      console.log('Successfully synced with remote data')
+    } catch (syncError) {
+      console.warn('Failed to sync with remote data, using local:', syncError)
+    }
+    
   } catch (error) {
     isApiAvailable.value = false
-    console.log('API is not available, using local storage')
+    console.log('API is not available, using local storage. Error:', error)
   }
 }
 
@@ -320,6 +349,7 @@ const editList = (listId) => {
     editListForm.value = {
       name: list.name,
       description: list.description || '',
+      recurring: list.recurring || false,
       image: list.image || ''
     }
     editImagePreview.value = list.image || ''
@@ -337,22 +367,50 @@ const deleteList = (listId) => {
 }
 
 const confirmDeleteList = async () => {
-  if (listToDelete.value) {
-    try {
-      await listsStore.deleteRemote(listToDelete.value.id)
-      deleteDialog.value = false
-      listToDelete.value = null
-    } catch (error) {
-      console.error('Error deleting list:', error)
-      alert('Error al eliminar la lista. Por favor, intenta de nuevo.')
+  if (!listToDelete.value) return
+  
+  try {
+    // Try API first if available
+    if (isApiAvailable.value !== false) {
+      try {
+        await listsStore.deleteRemote(listToDelete.value.id)
+        console.log('Successfully deleted list via API:', listToDelete.value.name)
+        isApiAvailable.value = true
+      } catch (apiError) {
+        console.warn('API delete failed, falling back to local:', apiError)
+        isApiAvailable.value = false
+        
+        // Fallback to local delete
+        listsStore.deleteList(listToDelete.value.id)
+        console.log('Deleted list locally:', listToDelete.value.name)
+      }
+    } else {
+      // API unavailable, delete locally
+      listsStore.deleteList(listToDelete.value.id)
+      console.log('Deleted list locally (API unavailable):', listToDelete.value.name)
     }
+    
+    deleteDialog.value = false
+    listToDelete.value = null
+    
+    // Show success message
+    snackbarText.value = `Lista "${listToDelete.value?.name}" eliminada exitosamente`
+    snackbarColor.value = 'success'
+    snackbar.value = true
+    
+  } catch (error) {
+    console.error('Error deleting list:', error)
+    snackbarText.value = 'Error al eliminar la lista. Por favor, intenta de nuevo.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
   }
 }
 
 const openNewListDialog = () => {
   newListForm.value = {
     name: '',
-    description: ''
+    description: '',
+    recurring: false
   }
   newImageFile.value = null
   newImagePreview.value = ''
@@ -363,7 +421,8 @@ const closeNewListDialog = () => {
   newListDialog.value = false
   newListForm.value = {
     name: '',
-    description: ''
+    description: '',
+    recurring: false
   }
   newImageFile.value = null
   newImagePreview.value = ''
@@ -397,17 +456,26 @@ const createNewList = async (formData) => {
     const payload = {
       name: formData.name.trim(),
       description: formData.description?.trim() || '',
-      image: imageData
+      recurring: formData.recurring || false,
+      metadata: {
+        image: imageData
+      }
     }
 
     console.log('Attempting to create list with payload:', payload)
     
-    // Check if API is available and try API first if we think it is
+    // Always try API first if we haven't confirmed it's unavailable
     if (isApiAvailable.value !== false) {
       try {
-        await listsStore.createRemote(payload)
-        console.log('Successfully created list via API:', payload.name)
+        const createdList = await listsStore.createRemote(payload)
+        console.log('Successfully created list via API:', createdList)
         isApiAvailable.value = true // Mark API as available for future calls
+        
+        // Show success message
+        snackbarText.value = `Lista "${payload.name}" creada exitosamente`
+        snackbarColor.value = 'success'
+        snackbar.value = true
+        
       } catch (apiError) {
         console.warn('API creation failed, falling back to local storage:', apiError)
         isApiAvailable.value = false // Mark API as unavailable
@@ -415,7 +483,10 @@ const createNewList = async (formData) => {
         // Fallback to local creation
         const newList = {
           id: Date.now(),
-          ...payload,
+          name: payload.name,
+          description: payload.description,
+          recurring: payload.recurring,
+          image: payload.metadata.image,
           itemCount: 0,
           completedItems: 0,
           lastUpdated: new Date()
@@ -423,26 +494,41 @@ const createNewList = async (formData) => {
         
         listsStore.addList(newList)
         console.log('Successfully created list locally:', payload.name)
+        
+        // Show success message for local creation
+        snackbarText.value = `Lista "${payload.name}" creada localmente`
+        snackbarColor.value = 'warning'
+        snackbar.value = true
       }
     } else {
       // API is known to be unavailable, create locally
-  const newList = {
-    id: Date.now(),
-        ...payload,
-    itemCount: 0,
-    completedItems: 0,
-    lastUpdated: new Date()
-  }
+      const newList = {
+        id: Date.now(),
+        name: payload.name,
+        description: payload.description,
+        recurring: payload.recurring,
+        image: payload.metadata.image,
+        itemCount: 0,
+        completedItems: 0,
+        lastUpdated: new Date()
+      }
 
   listsStore.addList(newList)
       console.log('Created list locally (API unavailable):', payload.name)
+      
+      // Show success message for local creation
+      snackbarText.value = `Lista "${payload.name}" creada localmente`
+      snackbarColor.value = 'warning'
+      snackbar.value = true
     }
     
-     closeNewListDialog()
+    closeNewListDialog()
     
   } catch (error) {
     console.error('Unexpected error creating list:', error)
-    alert('Error inesperado al crear la lista. Por favor, intenta de nuevo.')
+    snackbarText.value = 'Error inesperado al crear la lista. Por favor, intenta de nuevo.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
   } finally {
     isCreating.value = false
   }
@@ -486,16 +572,46 @@ const saveListEdit = async () => {
     const updateData = {
       name: editListForm.value.name.trim(),
       description: editListForm.value.description?.trim() || '',
-      image: imageData
+      recurring: editListForm.value.recurring || false,
+      metadata: {
+        image: imageData
+      }
     }
     
-    await listsStore.updateRemote(listToEdit.value.id, updateData)
+    // Try API first if available
+    if (isApiAvailable.value !== false) {
+      try {
+        await listsStore.updateRemote(listToEdit.value.id, updateData)
+        console.log('Successfully updated list via API:', updateData.name)
+        isApiAvailable.value = true
+      } catch (apiError) {
+        console.warn('API update failed, falling back to local:', apiError)
+        isApiAvailable.value = false
+        
+        // Fallback to local update
+        listsStore.updateList(listToEdit.value.id, updateData)
+        console.log('Updated list locally:', updateData.name)
+      }
+    } else {
+      // API unavailable, update locally
+      listsStore.updateList(listToEdit.value.id, updateData)
+      console.log('Updated list locally (API unavailable):', updateData.name)
+    }
+    
     editListDialog.value = false
     listToEdit.value = null
     console.log('Updated list:', updateData.name)
+    
+    // Show success message
+    snackbarText.value = `Lista "${updateData.name}" actualizada exitosamente`
+    snackbarColor.value = 'success'
+    snackbar.value = true
+    
   } catch (error) {
     console.error('Error updating list:', error)
-    alert('Error al actualizar la lista. Por favor, intenta de nuevo.')
+    snackbarText.value = 'Error al actualizar la lista. Por favor, intenta de nuevo.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
   }
 }
 
@@ -797,6 +913,25 @@ onMounted(async () => {
 .form-input::placeholder {
   color: #9e9e9e;
   opacity: 1;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.checkbox-input {
+  width: 16px;
+  height: 16px;
+  accent-color: #4CAF50;
+}
+
+.checkbox-text {
+  user-select: none;
 }
 
 /* Responsive adjustments */
