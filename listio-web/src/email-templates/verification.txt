@@ -1,0 +1,16 @@
+LISTIO - Código de verificación
+
+Hola,
+
+Recibimos una solicitud para verificar tu cuenta. Usá el siguiente código para completar el proceso:
+
+{{VERIFICATION_CODE}}
+
+El código expirará en {{EXPIRY_MINUTES}} minutos.
+
+Abrir la URL para verificar:
+{{ACTION_URL}}
+
+Si no solicitaste este código, podés ignorar este email.
+
+© {{YEAR}} LISTIO

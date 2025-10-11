@@ -66,6 +66,11 @@
           ¿Olvidó su contraseña?
         </a>
       </div>
+      
+      <!-- Link to register (styled like registro.vue) -->
+      <p class="redirect-text">
+        ¿No tenes una cuenta? <RouterLink to="/registro" class="redirect-link">Registrate</RouterLink>
+      </p>
     </form>
     
     <!-- Términos y condiciones -->
@@ -289,6 +294,24 @@ defineExpose({
 
 .terms-link:hover {
   color: #4CAF50;
+}
+
+.redirect-text {
+  margin-top: 24px;
+  text-align: center;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.redirect-link {
+  color: #2e7d32;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.redirect-link:hover {
+  text-decoration: underline;
 }
 
 /* Responsive styles for the card */

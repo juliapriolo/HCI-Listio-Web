@@ -41,14 +41,16 @@
           <p>Ingrese su email para recibir el código de recuperación:</p>
           <form @submit.prevent="sendRecoveryEmail">
             <div class="form-group">
-              <label for="recoveryEmail">Email</label>
               <input
                 id="recoveryEmail"
                 v-model="recoveryForm.email"
                 type="email"
                 class="form-input"
                 placeholder="Ingrese su email"
+                aria-label="Email de recuperación"
                 required
+                @invalid="onRecoveryEmailInvalid"
+                @input="onRecoveryEmailInput"
               />
             </div>
             <div class="modal-actions">
@@ -258,6 +260,9 @@ const getErrorMessage = (error, fallback) => {
   if (errorMsg.includes('missing email') || errorMsg.includes('email is required')) {
     return 'Por favor, ingrese su dirección de email'
   }
+  if (errorMsg.includes('invalid credentials') || errorMsg.includes('invalid credential') || errorMsg.includes('username or password') || errorMsg.includes('invalid username')) {
+    return 'Email o contraseña incorrectos'
+  }
   if (errorMsg.includes('missing password') || errorMsg.includes('password is required')) {
     return 'Por favor, ingrese su contraseña'
   }
@@ -317,6 +322,25 @@ const sendRecoveryEmail = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Maneja el mensaje de validación nativo del input de recuperación
+const onRecoveryEmailInvalid = (event) => {
+  const input = event.target
+  // Evitar el tooltip nativo en inglés
+  event.preventDefault()
+  if (!input.value || input.value.trim() === '') {
+    setRecoveryFeedback('error', 'Por favor, ingrese su dirección de email')
+  } else {
+    setRecoveryFeedback('error', 'Por favor, ingrese un email válido')
+  }
+}
+
+// Limpiar cualquier mensaje de validación personalizado cuando el usuario escribe
+const onRecoveryEmailInput = (event) => {
+  const input = event.target
+  input.setCustomValidity('')
+  clearRecoveryFeedback()
 }
 
 const resetPassword = async () => {
@@ -423,7 +447,7 @@ onMounted(() => {
   if (route.query.registered === '1') {
     setLoginFeedback(
       'success',
-      'Registro completado. Revisá tu email y verificá tu cuenta para iniciar sesión.',
+      'Revisá tu email y verificá tu cuenta para iniciar sesión.',
       { canResend: true, canVerify: true }
     )
     openVerificationModal()
@@ -565,6 +589,26 @@ html, body {
   color: #666;
   margin-bottom: 20px;
   line-height: 1.4;
+}
+
+.feedback-message {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  text-align: center;
+  font-weight: 500;
+}
+.feedback-message--success {
+  background-color: #e8f8ef;
+  border: 1px solid #b7e6c5;
+  color: #20603c;
+}
+.feedback-message--error {
+  background-color: #fdecea;
+  border: 1px solid #f5c6c6;
+  color: #b71c1c;
 }
 
 .modal-actions {

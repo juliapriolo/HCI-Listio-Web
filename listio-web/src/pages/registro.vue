@@ -12,6 +12,11 @@
 
     <div class="register-right">
       <div class="register-card">
+        <!-- Loading overlay -->
+        <div v-if="registerLoading" class="loading-overlay" role="status" aria-live="polite">
+          <div class="spinner" aria-hidden="true"></div>
+          <div class="loading-text">Cargando...</div>
+        </div>
         <h2 class="register-title">Crear Cuenta</h2>
 
         <form @submit.prevent="handleRegister" class="register-form">
@@ -24,6 +29,8 @@
               class="form-input"
               placeholder="Ingrese su nombre"
               required
+              @invalid="onRegisterInvalid"
+              @input="onRegisterInput"
             />
           </div>
 
@@ -36,6 +43,8 @@
               class="form-input"
               placeholder="Ingrese su apellido"
               required
+              @invalid="onRegisterInvalid"
+              @input="onRegisterInput"
             />
           </div>
 
@@ -48,6 +57,8 @@
               :class="['form-input', errors.email ? 'form-input--error' : '']"
               placeholder="Ingrese su email"
               required
+              @invalid="onRegisterInvalid"
+              @input="onRegisterInput"
             />
             <p v-if="errors.email" class="input-error-text">{{ errors.email }}</p>
           </div>
@@ -62,18 +73,28 @@
               placeholder="Cree una contraseña"
               minlength="6"
               required
+              @invalid="onRegisterInvalid"
+              @input="onRegisterInput"
             />
           </div>
 
-          <button type="submit" class="register-button">
-            Registrarme
+          <button type="submit" class="register-button" :disabled="registerLoading">
+            {{ registerLoading ? 'Procesando...' : 'Registrarme' }}
           </button>
-        </form>
 
-        <p class="redirect-text">
-          ¿Ya tienes cuenta?
-          <RouterLink to="/login" class="redirect-link">Inicia sesión</RouterLink>
-        </p>
+          <div
+            v-if="registerFeedback.text"
+            :class="['feedback-message', registerFeedback.type ? `feedback-message--${registerFeedback.type}` : '']"
+            role="alert"
+            aria-live="polite"
+          >
+            {{ registerFeedback.text }}
+          </div>
+
+          <p class="redirect-text">
+            ¿Ya tenes una cuenta? <RouterLink to="/login" class="redirect-link">Inicia sesión</RouterLink>
+          </p>
+        </form>
       </div>
     </div>
   </div>
@@ -98,6 +119,35 @@ const errors = ref({
   email: '',
 })
 
+const registerFeedback = ref({ type: '', text: '' })
+
+const registerLoading = ref(false)
+
+const setRegisterFeedback = (type, text) => {
+  registerFeedback.value = { type, text }
+}
+
+const clearRegisterFeedback = () => {
+  registerFeedback.value = { type: '', text: '' }
+}
+
+const onRegisterInvalid = (event) => {
+  // Prevent native browser tooltip and show our feedback message in Spanish
+  event.preventDefault()
+  const input = event.target
+  if (!input.value || input.value.trim() === '') {
+    setRegisterFeedback('error', 'Por favor, complete este campo')
+  } else {
+    setRegisterFeedback('error', 'Por favor, ingrese un valor válido')
+  }
+}
+
+const onRegisterInput = (event) => {
+  event.target.setCustomValidity('')
+  clearRegisterFeedback()
+  errors.value.email = ''
+}
+
 const handleRegister = async () => {
   errors.value.email = ''
 
@@ -109,8 +159,9 @@ const handleRegister = async () => {
   }
 
   try {
+    registerLoading.value = true
     await userStore.register(payload)
-    alert('Registro completado. Inicia sesión para continuar.')
+    // After successful registration, navigate to login and open verification
     router.push({ path: '/login', query: { registered: '1' } })
   } catch (error) {
     const message = error?.message || 'No se pudo registrar.'
@@ -118,7 +169,10 @@ const handleRegister = async () => {
       errors.value.email = 'Este email ya está registrado.'
       return
     }
-    alert(message)
+    // Show server error inside the register card feedback area
+    setRegisterFeedback('error', message)
+  } finally {
+    registerLoading.value = false
   }
 }
 </script>
@@ -200,6 +254,37 @@ const handleRegister = async () => {
   flex-direction: column;
   justify-content: space-between;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.register-card {
+  position: relative;
+}
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.85);
+  border-radius: 20px;
+  z-index: 20;
+}
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(0,0,0,0.08);
+  border-top-color: #4caf50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+.loading-text {
+  color: #333;
+  font-weight: 600;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .register-title {
