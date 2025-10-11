@@ -5,14 +5,14 @@
         <h1>LISTIO</h1>
       </div>
       <div class="illustrations">
-        <img src="@/assets/login_1.png" alt="Bolsa de compras" class="grocery-bag-image" />
-        <img src="@/assets/login_2.png" alt="Bolsas de colores" class="colored-bags-image" />
+        <img src="@/assets/login_1.png" :alt="t('register.groceryBagAlt')" class="grocery-bag-image" />
+        <img src="@/assets/login_2.png" :alt="t('register.coloredBagsAlt')" class="colored-bags-image" />
       </div>
     </div>
 
     <div class="register-right">
       <div class="register-card">
-        <h2 class="register-title">Crear Cuenta</h2>
+        <h2 class="register-title">{{ t('register.title') }}</h2>
 
         <form @submit.prevent="handleRegister" class="register-form">
           <div class="form-group">
@@ -74,7 +74,7 @@
           </div>
 
           <button type="submit" class="register-button">
-            Registrarme
+            {{ t('register.registerButton') }}
           </button>
 
           <div
@@ -92,8 +92,8 @@
         </form>
 
         <p class="redirect-text">
-          ¿Ya tienes cuenta?
-          <RouterLink to="/login" class="redirect-link">Inicia sesión</RouterLink>
+          {{ t('register.alreadyHaveAccount') }}
+          <RouterLink to="/login" class="redirect-link">{{ t('register.loginLink') }}</RouterLink>
         </p>
       </div>
     </div>
@@ -163,7 +163,7 @@ const handleRegister = async () => {
   try {
     registerLoading.value = true
     await userStore.register(payload)
-    alert('Registro completado. Inicia sesión para continuar.')
+    alert(t('register.registerComplete'))
     router.push({ path: '/login', query: { registered: '1' } })
   } catch (error) {
     const message = error?.message || ''
@@ -171,7 +171,7 @@ const handleRegister = async () => {
       errors.value.email = t('register.emailExists')
       return
     }
-    alert(message)
+    alert(t('register.genericError'))
   }
 }
 </script>

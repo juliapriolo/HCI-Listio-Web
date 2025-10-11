@@ -27,6 +27,7 @@
               :title="t('common.filter')"
             >
               <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
+              <span class="ml-1">{{ t('common.filter') }}</span>
             </v-btn>
 
             <v-btn
@@ -39,6 +40,7 @@
               :title="t('common.share')"
             >
               <v-icon color="grey-darken-2">mdi-export-variant</v-icon>
+              <span class="ml-1">{{ t('common.share') }}</span>
             </v-btn>
           </template>
         </div>

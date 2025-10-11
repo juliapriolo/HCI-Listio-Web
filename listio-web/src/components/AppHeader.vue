@@ -55,7 +55,7 @@ import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { useLanguage } from '@/composables/useLanguage'
 
-const router = useRouter();
+const router = useRouter()
 const userStore = useUserStore()
 const { profile: userProfile } = storeToRefs(userStore)
 const { t } = useLanguage()

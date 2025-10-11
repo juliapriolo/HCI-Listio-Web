@@ -1,15 +1,23 @@
 ﻿<template>
   <div class="login-container">
-    <!-- Lado izquierdo con fondo verde -->
+    <!-- Left side with green background -->
     <div class="login-left">
       <div class="logo"><h1>LISTIO</h1></div>
       <div class="illustrations">
-        <img src="@/assets/login_1.png" :alt="t('login.groceryBagAlt')" class="grocery-bag-image" />
-        <img src="@/assets/login_2.png" :alt="t('login.coloredBagsAlt')" class="colored-bags-image" />
+        <img
+          src="@/assets/login_1.png"
+          :alt="t('login.groceryBagAlt')"
+          class="grocery-bag-image"
+        />
+        <img
+          src="@/assets/login_2.png"
+          :alt="t('login.coloredBagsAlt')"
+          class="colored-bags-image"
+        />
       </div>
     </div>
 
-    <!-- Lado derecho con formulario -->
+    <!-- Right side with form -->
     <div class="login-right">
       <LoginCard
         :loading="loading"
@@ -23,7 +31,7 @@
       />
     </div>
 
-    <!-- Modal: Recuperar contraseña -->
+    <!-- Forgot password modal -->
     <div v-if="showForgotPassword" class="modal-overlay">
       <div class="modal">
         <h2>{{ t('login.forgotPasswordModal.title') }}</h2>
@@ -57,16 +65,31 @@
           </form>
         </div>
 
+        <!-- Step 2: Enter code and new password -->
         <div v-else>
           <p>{{ t('login.forgotPasswordModal.step2Description') }}</p>
           <form @submit.prevent="resetPassword">
             <div class="form-group">
               <label for="recoveryCode">{{ t('login.verificationCode') }}</label>
-              <input id="recoveryCode" v-model="recoveryForm.code" type="text" class="form-input" :placeholder="t('login.forgotPasswordModal.codePlaceholder')" required />
+              <input
+                id="recoveryCode"
+                v-model="recoveryForm.code"
+                type="text"
+                class="form-input"
+                :placeholder="t('login.forgotPasswordModal.codePlaceholder')"
+                required
+              />
             </div>
             <div class="form-group">
               <label for="newPassword">{{ t('login.forgotPasswordModal.newPasswordLabel') }}</label>
-              <input id="newPassword" v-model="recoveryForm.password" type="password" class="form-input" :placeholder="t('login.forgotPasswordModal.newPasswordPlaceholder')" required />
+              <input
+                id="newPassword"
+                v-model="recoveryForm.password"
+                type="password"
+                class="form-input"
+                :placeholder="t('login.forgotPasswordModal.newPasswordPlaceholder')"
+                required
+              />
             </div>
             <div class="modal-actions">
               <button type="submit" class="btn btn--primary" :disabled="loading">
@@ -84,7 +107,7 @@
       </div>
     </div>
 
-    <!-- Modal: Verificar cuenta -->
+    <!-- Account verification modal -->
     <div v-if="showVerificationModal" class="modal-overlay">
       <div class="modal">
         <h2>{{ t('login.verifyModal.title') }}</h2>
@@ -92,7 +115,14 @@
         <form @submit.prevent="verifyAccount">
           <div class="form-group">
             <label for="verificationCode">{{ t('login.verificationCode') }}</label>
-            <input id="verificationCode" v-model="verificationForm.code" type="text" class="form-input" :placeholder="t('login.verifyModal.codePlaceholder')" required />
+            <input
+              id="verificationCode"
+              v-model="verificationForm.code"
+              type="text"
+              class="form-input"
+              :placeholder="t('login.verifyModal.codePlaceholder')"
+              required
+            />
           </div>
           <div class="modal-actions">
             <button type="submit" class="btn btn--primary" :disabled="verificationLoading">
@@ -140,7 +170,12 @@ const showVerificationModal = ref(false)
 const verificationForm = ref({ code: '' })
 const verificationFeedback = ref({ type: '', text: '' })
 
-const loginFeedback = ref({ type: '', text: '', canResend: false, canVerify: false })
+const loginFeedback = ref({
+  type: '',
+  text: '',
+  canResend: false,
+  canVerify: false
+})
 
 const setRecoveryFeedback = (type, text) => { recoveryFeedback.value = { type, text } }
 const clearRecoveryFeedback = () => { setRecoveryFeedback('', '') }
@@ -165,6 +200,7 @@ const getErrorMessage = (error, fallbackKey) => {
   if (errorMsg.includes('code expired') || errorMsg.includes('expired')) return t('login.errors.codeExpired')
   if (errorMsg.includes('unauthorized')) return t('login.errors.unauthorized')
   if (errorMsg.includes('network') || errorMsg.includes('fetch')) return t('login.errors.network')
+  
   return error?.message || (fallbackKey ? t(fallbackKey) : t('errors.generic'))
 }
 
@@ -212,6 +248,7 @@ const onRecoveryEmailInput = (event) => { event.target.setCustomValidity(''); cl
 const resetPassword = async () => {
   if (loading.value) return
   clearRecoveryFeedback()
+
   loading.value = true
   try {
     await usersApi.resetPassword({ code: recoveryForm.value.code, password: recoveryForm.value.password })
@@ -310,3 +347,4 @@ html, body { margin: 0; padding: 0; background-color: #4CAF50; min-height: 100vh
 @media (max-width: 480px) { .login-container { min-height: 100vh; } .login-left { flex: 0.5; padding: 15px; min-height: 150px; } .logo h1 { font-size: 1.5rem; margin-bottom: 15px; } .login-right { padding: 10px; } .illustrations { min-height: 200px; } .modal { min-width: 320px; padding: 24px 20px; } .modal h2 { font-size: 1.3rem; } }
 @media (max-width: 360px) { .modal { min-width: 280px; padding: 20px 15px; } }
 </style>
+

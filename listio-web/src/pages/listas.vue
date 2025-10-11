@@ -129,18 +129,18 @@
             </label>
           </div>
           
-            <div class="modal-actions">
-              <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
-                {{ t('common.cancel') }}
-              </button>
-              <button
-                type="submit"
-                class="btn btn--primary"
-                :disabled="!newListForm.name?.trim() || isCreating"
-              >
-                {{ isCreating ? t('pages.lists.modals.new.creating') : t('pages.lists.modals.new.submit') }}
-              </button>
-            </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="closeNewListDialog">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              :disabled="!newListForm.name?.trim() || isCreating"
+            >
+              {{ isCreating ? 'Creando...' : 'Crear Lista' }}
+            </button>
+          </div>
         </form>
       </div>
     </div>
