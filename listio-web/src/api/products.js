@@ -5,10 +5,13 @@ const PRODUCTS_BASE = '/api/products'
 export const productsApi = {
   // Crear producto
   add(data) {
+    if (!data.category?.id) {
+      throw new Error('El producto debe tener una categoría con id definido.')
+    }
     const payload = {
       name: data.name,
       metadata: data.metadata || {},
-      category: data.category_id ? { id: data.category_id } : undefined,
+      category: { id: data.category?.id },
     }
     return api.post(PRODUCTS_BASE, payload)
   },
@@ -35,10 +38,13 @@ export const productsApi = {
 
   // Actualizar producto
   update(id, data) {
+    if (!data.category?.id) {
+      throw new Error('El producto debe tener una categoría con id definido.')
+    }
     const payload = {
       name: data.name,
       metadata: data.metadata || {},
-      category: data.category_id ? { id: data.category_id } : undefined,
+      category: { id: data.category?.id },
     }
     return api.put(`${PRODUCTS_BASE}/${id}`, payload)
   },
