@@ -3,9 +3,15 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          {{ currentListName }}
-        </h1>
+        <div>
+          <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+            {{ currentListName }}
+          </h1>
+          <p v-if="isSharedWithMe" class="shared-by">
+            <v-icon size="16" class="mr-1" color="#1976d2">mdi-account-multiple</v-icon>
+            Compartida por {{ ownerLabel }}
+          </p>
+        </div>
         
         <div class="header-actions">
           <div class="search-wrapper">
@@ -467,6 +473,7 @@ import listsApi from '@/api/lists'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
+import { useUserStore } from '@/stores/user'
 
 const { t } = useLanguage()
 // Use listItems store for per-list persistence
@@ -475,6 +482,7 @@ const listItemsStore = useListItemsStore()
 const listsStore = useListsStore()
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
+const userStore = useUserStore()
 
 const items = computed(() => listItemsStore.items)
 const availableProducts = computed(() => {
@@ -549,6 +557,50 @@ const isSharing = ref(false)
 const currentListId = computed(() => {
   const id = route.query.id || null
   return id ? (Number(id) || id) : null
+})
+
+// Shared/owner info for detail header
+const currentList = computed(() => {
+  const id = currentListId.value
+  return id ? listsStore.getById(id) : null
+})
+
+function getOwnerId(l) {
+  return (
+    l?.ownerId ?? l?.owner_id ?? l?.owner?.id ?? l?.createdBy?.id ?? l?.created_by?.id ?? null
+  )
+}
+function getSharedByInfo(l) {
+  return l?.sharedBy || l?.shared_by || null
+}
+function getOwnerInfo(l) {
+  return l?.owner || l?.createdBy || l?.created_by || null
+}
+
+const isSharedWithMe = computed(() => {
+  const l = currentList.value
+  if (!l) return false
+  const sharedFlag = l?.shared === true
+  const sharedBy = getSharedByInfo(l)
+  const ownerId = getOwnerId(l)
+  const me = userStore?.profile?.id
+  return Boolean(sharedFlag || sharedBy || (ownerId && me && String(ownerId) !== String(me)))
+})
+
+const ownerLabel = computed(() => {
+  const l = currentList.value
+  if (!l) return ''
+  const inviter = getSharedByInfo(l)
+  if (inviter) {
+    const name = [inviter.name, inviter.surname].filter(Boolean).join(' ').trim()
+    return name || inviter.email || inviter.username || 'alguien'
+  }
+  const info = getOwnerInfo(l)
+  if (info) {
+    const name = [info.name, info.surname].filter(Boolean).join(' ').trim()
+    return name || info.email || info.username || 'el propietario'
+  }
+  return 'el propietario'
 })
 
 const newItemForm = ref({
@@ -1084,6 +1136,15 @@ const toggleChecked = async (item) => {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
+}
+
+.shared-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0 0;
+  font-size: 0.9rem;
+  color: #1976d2;
 }
 
 @media (max-width: 600px) {

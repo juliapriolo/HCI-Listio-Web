@@ -331,9 +331,11 @@ import listItemsApi from '@/api/listItems'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const { t } = useLanguage()
+const userStore = useUserStore()
 
 // Reactive data
 const searchQuery = ref('')
@@ -449,6 +451,18 @@ const editList = (listId) => {
 const deleteList = (listId) => {
   const list = listsStore.lists.find(l => l.id === listId)
   if (list) {
+    // Determine if the list is shared with the current user (i.e., not owned by me)
+    const ownerId = list?.ownerId ?? list?.owner_id ?? list?.owner?.id ?? list?.createdBy?.id ?? list?.created_by?.id
+    const currentUserId = userStore?.profile?.id
+    const isSharedWithMe = ownerId && currentUserId && String(ownerId) !== String(currentUserId)
+
+    if (isSharedWithMe) {
+      snackbarText.value = 'No es posible eliminar una lista compartida. Pedile al creador que te cancele el acceso.'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+      return
+    }
+
     listToDelete.value = list
     deleteDialog.value = true
   }
