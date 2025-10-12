@@ -89,7 +89,7 @@
               autofocus
             />
           </div>
-          
+
           <div class="form-group">
             <label for="productImage">{{ t('pages.products.modals.common.imageLabel') }}</label>
             <input
@@ -103,7 +103,7 @@
               <img :src="productImagePreview" :alt="t('pages.products.modals.common.previewAlt')" class="preview-img" />
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="productDescription">{{ t('pages.products.modals.common.descriptionLabel') }}</label>
             <textarea
@@ -114,7 +114,40 @@
               rows="3"
             ></textarea>
           </div>
-          
+
+          <div class="form-group">
+            <label for="productCategory">Categoría *</label>
+            <div class="category-input-group">
+              <select
+                id="productCategory"
+                v-model="newProductForm.category"
+                class="form-input"
+                required
+              >
+                <option value="">Seleccione una categoría</option>
+                <option
+                  v-for="category in categoryStore.categories"
+                  :key="category.id"
+                  :value="category"
+                >
+                  {{ category.name }}
+                </option>
+                <option value="__new__">+ Crear nueva categoría</option>
+              </select>
+              
+              <!-- Campo para nueva categoría -->
+              <div v-if="newProductForm.category === '__new__'" class="new-category-field">
+                <input
+                  v-model="newProductForm.newCategoryName"
+                  type="text"
+                  class="form-input"
+                  placeholder="Nombre de la nueva categoría"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="closeNewProductDialog">
               {{ t('common.cancel') }}
@@ -122,7 +155,12 @@
             <button
               type="submit"
               class="btn btn--primary"
-              :disabled="!newProductForm.name?.trim() || isCreating"
+              :disabled="
+                !newProductForm.name?.trim() ||
+                !newProductForm.category ||
+                (newProductForm.category === '__new__' && !newProductForm.newCategoryName?.trim()) ||
+                isCreating
+              "
             >
               {{ isCreating ? t('pages.products.modals.new.creating') : t('pages.products.modals.new.submit') }}
             </button>
@@ -134,14 +172,13 @@
     <ProductInfoDialog
       v-model="productInfoDialog"
       :item="selectedProduct"
+      :categories="categoryStore.categories"
       @update="updateProduct"
-      @delete="deleteProduct"
-      @add-to-list="addToList"
       @cancel="productInfoDialog = false"
     />
 
     <!-- Delete confirmation dialog -->
-    <v-dialog v-model="deleteConfirmDialog" max-width="400">
+    <!-- <v-dialog v-model="deleteConfirmDialog" max-width="400">
       <v-card>
         <v-card-title class="text-h6">
           {{ t('pages.products.deleteConfirm.title') }}
@@ -166,13 +203,41 @@
           </v-btn>
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
+    
+    <!-- Diálogo de confirmación de eliminación -->
+    <div v-if="deleteConfirmDialog" class="modal-overlay">
+      <div class="modal delete-confirmation-modal">
+        <h2>Confirmar eliminación</h2>
+        
+        <div class="confirmation-content">
+          <p class="confirmation-text">
+            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>? 
+            Esta acción no se puede deshacer.
+          </p>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="deleteConfirmDialog = false">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger"
+            @click="executeDelete"
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/products'
+import { useCategoryStore } from "@/stores/category";
 import { useLanguage } from '@/composables/useLanguage'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
@@ -180,103 +245,149 @@ import EmptyState from '@/components/EmptyState.vue'
 import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
 const { t } = useLanguage()
 
-const searchQuery = ref('')
-const snackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('success')
-const loading = ref(true)
+const searchQuery = ref("");
+const snackbar = ref(false);
+const snackbarText = ref("");
+const snackbarColor = ref("success");
+const loading = ref(true);
 
-const productInfoDialog = ref(false)
-const newProductDialog = ref(false)
-const deleteConfirmDialog = ref(false)
-const selectedProduct = ref(null)
-const productToDelete = ref(null)
-const isCreating = ref(false)
-const productImageFile = ref(null)
-const productImagePreview = ref('')
+const productInfoDialog = ref(false);
+const newProductDialog = ref(false);
+const deleteConfirmDialog = ref(false);
+const selectedProduct = ref(null);
+const productToDelete = ref(null);
+const isCreating = ref(false);
+const productImageFile = ref(null);
+const productImagePreview = ref("");
 
 const newProductForm = ref({
-  name: '',
-  description: '',
+  name: "",
+  description: "",
   image: null,
-})
+  category: null,
+  newCategoryName: "",
+});
 
-const productStore = useProductStore()
-
+const productStore = useProductStore();
+const categoryStore = useCategoryStore();
 
 const filteredProducts = computed(() => {
-  const list = productStore.products
-  if (!searchQuery.value) return list
+  const list = productStore.products;
+  if (!searchQuery.value) return list;
 
   // Usar búsqueda local del store
-  return productStore.searchLocal(searchQuery.value)
-})
+  return productStore.searchLocal(searchQuery.value);
+});
 
-const openNewProductDialog = () => {
-  newProductForm.value = { name: '', description: '', image: null }
-  productImageFile.value = null
-  productImagePreview.value = ''
-  newProductDialog.value = true
-}
+const openNewProductDialog = async () => {
+  newProductForm.value = {
+    name: "",
+    description: "",
+    image: null,
+    category: null,
+    newCategoryName: "",
+  };
+  productImageFile.value = null;
+  productImagePreview.value = "";
+  
+  // Refrescar categorías para mostrar las más recientes
+  try {
+    await categoryStore.fetchRemote();
+  } catch (error) {
+    console.warn('No se pudieron refrescar las categorías:', error);
+  }
+  
+  newProductDialog.value = true;
+};
 
 const closeNewProductDialog = () => {
-  newProductDialog.value = false
-  newProductForm.value = { name: '', description: '', image: null }
-  productImageFile.value = null
-  productImagePreview.value = ''
-}
+  newProductDialog.value = false;
+  newProductForm.value = {
+    name: "",
+    description: "",
+    image: null,
+    category: null,
+    newCategoryName: "",
+  };
+  productImageFile.value = null;
+  productImagePreview.value = "";
+};
 
 // Handle image file selection for new product
 const handleProductImageChange = (event) => {
-  const file = event.target.files[0]
+  const file = event.target.files[0];
   if (file) {
-    productImageFile.value = file
-    const reader = new FileReader()
+    productImageFile.value = file;
+    const reader = new FileReader();
     reader.onload = (e) => {
-      productImagePreview.value = e.target.result
-    }
-    reader.readAsDataURL(file)
+      productImagePreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
   }
-}
+};
 
 const openProductDialog = (product) => {
-  selectedProduct.value = { ...product }
-  productInfoDialog.value = true
-}
+  selectedProduct.value = { ...product };
+  productInfoDialog.value = true;
+};
 
 // --- Helper Functions ---
 const convertImageToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     if (!file) {
-      resolve(null)
-      return
+      resolve(null);
+      return;
     }
-    
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};
 
 // --- CRUD Actions ---
 const addProduct = async (formData) => {
-  if (!formData.name || isCreating.value) return
-  
-  isCreating.value = true
+  if (!formData.name || !formData.category || isCreating.value) return;
+
+  isCreating.value = true;
   try {
-    // Convertir imagen a base64 si existe
-    let imageBase64 = null
-    if (productImageFile.value) {
-      imageBase64 = await convertImageToBase64(productImageFile.value)
+    let categoryToUse = formData.category;
+
+    // Si se seleccionó crear nueva categoría, crear la categoría primero
+    if (formData.category === '__new__') {
+      if (!formData.newCategoryName?.trim()) {
+        snackbarText.value = "Debe especificar un nombre para la nueva categoría";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
+
+      const newCategoryPayload = {
+        name: formData.newCategoryName.trim(),
+        metadata: {}
+      };
+
+      const createdCategory = await categoryStore.createRemote(newCategoryPayload);
+      categoryToUse = createdCategory;
+      
+      // Refrescar las categorías para que aparezcan en futuros formularios
+      await categoryStore.fetchRemote();
     }
-    
+
+    // Convertir imagen a base64 si existe
+    let imageBase64 = null;
+    if (productImageFile.value) {
+      imageBase64 = await convertImageToBase64(productImageFile.value);
+    }
+
     const payload = {
       name: formData.name.trim(),
       metadata: {
-        description: formData.description?.trim() || '',
+        description: formData.description?.trim() || "",
         image: imageBase64,
       },
+      category: { id: categoryToUse.id },
     }
     
   await productStore.createRemote(payload)
@@ -290,21 +401,45 @@ const addProduct = async (formData) => {
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
-    isCreating.value = false
+    isCreating.value = false;
   }
-}
+};
 
 const updateProduct = async (updatedData) => {
   try {
+    let categoryToUse = updatedData.category;
+
+    // Si se seleccionó crear nueva categoría, crear la categoría primero
+    if (updatedData.category === '__new__') {
+      if (!updatedData.newCategoryName?.trim()) {
+        snackbarText.value = "Debe especificar un nombre para la nueva categoría";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
+
+      const newCategoryPayload = {
+        name: updatedData.newCategoryName.trim(),
+        metadata: {}
+      };
+
+      const createdCategory = await categoryStore.createRemote(newCategoryPayload);
+      categoryToUse = createdCategory;
+      
+      // Refrescar las categorías para que aparezcan en futuros formularios
+      await categoryStore.fetchRemote();
+    }
+
     // Convertir imagen a base64 si existe
-    const imageBase64 = await convertImageToBase64(updatedData.image)
-    
+    const imageBase64 = await convertImageToBase64(updatedData.image);
+
     const payload = {
       name: updatedData.name,
       metadata: {
-        description: updatedData.description || '',
+        description: updatedData.description || "",
         image: imageBase64 || updatedData.metadata?.image, // Mantener imagen existente si no se sube nueva
       },
+      category: { id: categoryToUse.id },
     }
     
   await productStore.updateRemote(updatedData.id, payload)
@@ -317,9 +452,9 @@ const updateProduct = async (updatedData) => {
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
-    productInfoDialog.value = false
+    productInfoDialog.value = false;
   }
-}
+};
 
 const deleteProduct = async (product) => {
   try {
@@ -333,10 +468,11 @@ const deleteProduct = async (product) => {
     snackbarColor.value = 'error'
     snackbar.value = true
   } finally {
-    productInfoDialog.value = false
+    productInfoDialog.value = false;
   }
 }
 
+// -------------------- TODO !!!!!!!!!!!!!! --------------------------
 const addToList = (product) => {
   snackbarText.value = t('pages.products.messages.addedToList', { name: product.name })
   snackbarColor.value = 'success'
@@ -344,45 +480,50 @@ const addToList = (product) => {
 }
 
 // --- Menu Actions ---
-const editProduct = (product) => {
-  selectedProduct.value = { ...product }
-  productInfoDialog.value = true
-}
+const editProduct = async (product) => {
+  selectedProduct.value = { ...product };
+  // Refrescar categorías para mostrar las más recientes
+  try {
+    await categoryStore.fetchRemote();
+  } catch (error) {
+    console.warn('No se pudieron refrescar las categorías:', error);
+  }
+  productInfoDialog.value = true;
+};
 
 const confirmDeleteProduct = (product) => {
-  productToDelete.value = product
-  deleteConfirmDialog.value = true
-}
+  productToDelete.value = product;
+  deleteConfirmDialog.value = true;
+};
 
 const executeDelete = () => {
   if (productToDelete.value) {
-    deleteProduct(productToDelete.value)
-    deleteConfirmDialog.value = false
-    productToDelete.value = null
+    deleteProduct(productToDelete.value);
+    deleteConfirmDialog.value = false;
+    productToDelete.value = null;
   }
-}
+};
 
 onMounted(async () => {
   try {
-    loading.value = true
-    
-    // Cargar productos
-    await productStore.init()
-    
+    loading.value = true;
+
+    // Cargar productos y categorías
+    await Promise.all([productStore.init(), categoryStore.init()]);
+
     // Mostrar mensaje si no hay productos
     if (productStore.products.length === 0) {
-      console.log('No hay productos disponibles')
+      console.log("No hay productos disponibles");
     }
-    
   } catch (err) {
     console.error('Error cargando datos:', err)
-  snackbarText.value = t('pages.products.messages.loadError')
+    snackbarText.value = t('pages.products.messages.loadError')
     snackbarColor.value = 'warning'
     snackbar.value = true
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-})
+});
 </script>
 
 <style scoped>
@@ -429,7 +570,7 @@ onMounted(async () => {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0, 0, 0, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -439,7 +580,7 @@ onMounted(async () => {
 .modal {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
   padding: 32px 24px;
   min-width: 400px;
   max-width: 90vw;
@@ -470,12 +611,12 @@ onMounted(async () => {
 }
 
 .btn--primary {
-  background: #4CAF50;
+  background: #4caf50;
   color: #fff;
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: #45A049;
+  background: #45a049;
 }
 
 .btn--primary:disabled {
@@ -514,7 +655,7 @@ onMounted(async () => {
 
 .file-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
   background-color: #fff;
 }
@@ -573,7 +714,7 @@ onMounted(async () => {
 
 .form-input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
@@ -586,6 +727,78 @@ onMounted(async () => {
 .form-input::placeholder {
   color: #9e9e9e;
   opacity: 1;
+}
+
+/* Select styling */
+select.form-input {
+  cursor: pointer;
+  background-color: #fff;
+}
+
+select.form-input:focus {
+  outline: none;
+  border-color: #4caf50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+/* Category input group styles */
+.category-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-category-field {
+  margin-top: 8px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Delete confirmation modal specific styles */
+.delete-confirmation-modal {
+  max-width: 450px;
+  width: 90vw;
+}
+
+.confirmation-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.confirmation-text {
+  font-size: 1rem;
+  color: #424242;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.confirmation-text strong {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.btn--danger {
+  background: #f44336;
+  color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.btn--danger:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 /* Responsive adjustments */

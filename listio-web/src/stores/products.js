@@ -5,12 +5,24 @@ const STORAGE_KEY = 'listio:products'
 
 function mapProduct(data) {
   if (!data) return null
+  if (!data.category || !data.category.id) {
+    console.warn(`Producto ${data.name} no tiene categoría válida`, data)
+    return null
+  }
+
   return {
     id: data.id,
     name: data.name,
     metadata: data.metadata || {},
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+    category: {
+      id: data.category.id,
+      name: data.category.name,
+      metadata: data.category.metadata || {},
+      createdAt: data.category.createdAt,
+      updatedAt: data.category.updatedAt,
+    },
   }
 }
 
@@ -44,7 +56,7 @@ export const useProductStore = defineStore('product', {
     },
 
     addLocal(product) {
-      this.products.unshift(product)
+      this.products.push(product)
       this.save()
     },
 
@@ -64,27 +76,31 @@ export const useProductStore = defineStore('product', {
       }
     },
 
+    searchLocal(query) {
+      if (!query) return this.products
+      
+      const q = query.toLowerCase()
+      return this.products.filter(product => 
+        product.name.toLowerCase().includes(q) ||
+        (product.metadata?.description || '').toLowerCase().includes(q)
+      )
+    },
+
     // --- REMOTO ---
     async fetchRemote(params = {}) {
       try {
-        const data = await productsApi.getAll(params)
-
-        if (Array.isArray(data)) {
-          this.products = data.map(mapProduct)
-          this.save()
-          return { items: this.products }
-        }
-
-        const items = data?.data || data?.items || []
-        this.products = Array.isArray(items) ? items.map(mapProduct) : []
+        const res = await productsApi.getAll(params)
+    
+        const items = Array.isArray(res.data) ? res.data : []
+        this.products = items.map(mapProduct).filter(Boolean)
         this.save()
-        return { items: this.products }
+    
+        return {
+          items: this.products,
+        }
       } catch (e) {
         console.error('Error al obtener productos del backend:', e)
-        // Si hay error, mantener productos locales si existen
-        if (this.products.length === 0) {
-          this.load()
-        }
+        if (this.products.length === 0) this.load()
         throw e
       }
     },
@@ -106,7 +122,10 @@ export const useProductStore = defineStore('product', {
       try {
         const updated = await productsApi.update(id, patch)
         if (updated && updated.id) {
-          this.updateLocal(id, mapProduct(updated))
+          this.products = this.products.map(p =>
+            p.id === id ? mapProduct(updated) : p
+          )
+          this.save()
         }
         return updated
       } catch (e) {
@@ -128,30 +147,13 @@ export const useProductStore = defineStore('product', {
     // Buscar productos
     async searchRemote(query, params = {}) {
       try {
-        const data = await productsApi.search(query, params)
-        
-        if (Array.isArray(data)) {
-          return data.map(mapProduct)
-        }
-        
-        const items = data?.data || data?.items || []
-        return Array.isArray(items) ? items.map(mapProduct) : []
+        const res = await productsApi.search(query, params)
+        const items = Array.isArray(res.data) ? res.data : []
+        return items.map(mapProduct).filter(Boolean)
       } catch (e) {
         console.error('Error al buscar productos:', e)
-        // Fallback a búsqueda local
         return this.searchLocal(query)
       }
-    },
-
-    // Búsqueda local
-    searchLocal(query) {
-      if (!query) return this.products
-      
-      const q = query.toLowerCase()
-      return this.products.filter(product => 
-        product.name.toLowerCase().includes(q) ||
-        (product.metadata?.description || '').toLowerCase().includes(q)
-      )
     },
 
     // --- INIT ---
