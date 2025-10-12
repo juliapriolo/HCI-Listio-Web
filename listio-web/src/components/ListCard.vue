@@ -12,8 +12,8 @@
       
       <div class="list-image">
         <img 
-          v-if="list.image" 
-          :src="list.image" 
+          v-if="listImage" 
+          :src="listImage" 
           :alt="list.name" 
         />
         <div v-else class="image-placeholder">
@@ -116,6 +116,11 @@ const { t } = useLanguage()
 const userStore = useUserStore()
 
 const showMenu = ref(false)
+
+// Get image from metadata.image or fallback to list.image
+const listImage = computed(() => {
+  return props.list.metadata?.image || props.list.image || ''
+})
 
 const toggleMenu = (event) => {
   event.stopPropagation()

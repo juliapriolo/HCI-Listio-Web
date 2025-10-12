@@ -447,13 +447,15 @@ const editList = (listId) => {
   const list = listsStore.lists.find(l => l.id === listId)
   if (list) {
     listToEdit.value = list
+    // Get image from metadata.image or fallback to list.image
+    const currentImage = list.metadata?.image || list.image || ''
     editListForm.value = {
       name: list.name,
       description: list.description || '',
       recurring: list.recurring || false,
-      image: list.image || ''
+      image: currentImage
     }
-    editImagePreview.value = list.image || ''
+    editImagePreview.value = currentImage
     editImageFile.value = null
     editListDialog.value = true
   }
