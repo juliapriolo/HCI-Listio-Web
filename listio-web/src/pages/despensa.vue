@@ -670,11 +670,39 @@ const filteredCategories = computed(() => {
 
 const filteredProducts = computed(() => {
   let list = pantryItems.value || [];
+  
+  console.log('🔍 Filtrado de productos - Estado inicial:', {
+    totalItems: list.length,
+    filterCategoryId: filters.value.categoryId,
+    searchQuery: searchQuery.value,
+    firstItemStructure: list[0] ? {
+      name: list[0].name,
+      categoryId: list[0].category?.id,
+      categoryName: list[0].category?.name,
+      fullCategory: list[0].category
+    } : 'No hay items'
+  });
 
   // Filtro por categoría
   if (filters.value.categoryId) {
     const wantedId = Number(filters.value.categoryId);
-    list = list.filter(p => Number(p?.category?.id) === wantedId);
+    console.log('🏷️ Aplicando filtro de categoría:', wantedId);
+    
+    const beforeFilter = list.length;
+    list = list.filter(p => {
+      const itemCategoryId = Number(p?.category?.id);
+      const matches = itemCategoryId === wantedId;
+      
+      if (!matches) {
+        console.log('  ❌ No coincide:', p.name, 'categoryId:', itemCategoryId, 'vs', wantedId);
+      } else {
+        console.log('  ✅ Coincide:', p.name, 'categoryId:', itemCategoryId);
+      }
+      
+      return matches;
+    });
+    
+    console.log(`📊 Resultado del filtro: ${beforeFilter} → ${list.length} items`);
   }
 
   // Filtro por búsqueda
@@ -686,6 +714,7 @@ const filteredProducts = computed(() => {
     );
   }
 
+  console.log('✅ Productos filtrados final:', list.length);
   return list;
 });
 
@@ -887,7 +916,10 @@ const addSelectedProductToPantry = async () => {
       name: newProduct.product?.name || selectedProduct.value.name,
       quantity: newProduct.quantity,
       unit: newProduct.unit,
-      category: newProduct.product?.category?.name || 'Sin categoría',
+      category: {
+        id: newProduct.product?.category?.id || selectedProduct.value.category?.id || null,
+        name: newProduct.product?.category?.name || selectedProduct.value.category?.name || 'Sin categoría'
+      },
       image: newProduct.product?.metadata?.image || selectedProduct.value.metadata?.image || '',
       description: newProduct.product?.metadata?.description || selectedProduct.value.metadata?.description || '',
       stock: newProduct.quantity, // Use quantity as stock for display
@@ -994,6 +1026,11 @@ const openCategory = async (category) => {
   console.log('Opening category:', category.name)
   selectedCategory.value = category
   currentView.value = 'products'
+  
+  // Reset filters when opening a category
+  filters.value = { categoryId: '' }
+  filterCategoryDialog.value = ''
+  searchQuery.value = ''
 
   // Load items for this pantry/category
   loadingItems.value = true
@@ -1012,7 +1049,10 @@ const openCategory = async (category) => {
       name: item.product?.name || item.metadata?.name || item.name || 'Producto sin nombre',
       quantity: item.quantity || 0,
       unit: item.unit || 'unidad',
-      category: item.product?.category?.name || item.metadata?.category || item.category || 'Sin categoría',
+      category: {
+        id: item.product?.category?.id || item.metadata?.categoryId || null,
+        name: item.product?.category?.name || item.metadata?.category || item.category || 'Sin categoría'
+      },
       expiryDate: item.metadata?.expiryDate || item.expiryDate || '',
       image: item.product?.metadata?.image || item.metadata?.image || item.image || '',
       description: item.product?.metadata?.description || item.metadata?.description || '',
@@ -1032,6 +1072,11 @@ const goBackToCategories = () => {
   currentView.value = 'categories'
   selectedCategory.value = null
   pantryItems.value = []
+  
+  // Reset filters when going back to categories
+  filters.value = { categoryId: '' }
+  filterCategoryDialog.value = ''
+  searchQuery.value = ''
 }
 
 // Product management functions
