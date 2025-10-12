@@ -76,7 +76,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import { useLanguage } from '@/composables/useLanguage'
 
 const props = defineProps({
@@ -108,14 +108,19 @@ const hideMenu = () => {
 }
 
 const handleMenuAction = (action, listId) => {
+  // Close menu immediately to prevent z-index conflicts
   showMenu.value = false
-  if (action === 'edit') {
-    emit('edit', listId)
-  } else if (action === 'delete') {
-    emit('delete', listId)
-  } else if (action === 'share') {
-    emit('share', listId)
-  }
+  
+  // Use nextTick to ensure the menu is closed before emitting the event
+  nextTick(() => {
+    if (action === 'edit') {
+      emit('edit', listId)
+    } else if (action === 'delete') {
+      emit('delete', listId)
+    } else if (action === 'share') {
+      emit('share', listId)
+    }
+  })
 }
 
 const formatDate = (date) => {

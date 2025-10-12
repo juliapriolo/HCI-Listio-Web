@@ -842,11 +842,12 @@ onMounted(async () => {
   isLoading.value = false
 
   // After lists are loaded, compute item counts
-  try {
-    await updateAllListItemCounts()
-  } catch (e) {
-    console.warn('Failed to update item counts on mount:', e)
-  }
+  // Commented out to avoid unnecessary API calls when just viewing the lists page
+  // try {
+  //   await updateAllListItemCounts()
+  // } catch (e) {
+  //   console.warn('Failed to update item counts on mount:', e)
+  // }
 
   // Listen to localStorage changes for list items to keep counts in sync
   window.addEventListener('storage', onListItemsStorage)
@@ -882,6 +883,12 @@ async function getRemoteListItemCount(listId) {
     if (Array.isArray(data?.items)) return data.items.length
     return null
   } catch (e) {
+    // Silently handle 404 errors for lists that don't exist on the server
+    if (e?.status === 404) {
+      console.log(`List ${listId} not found on server, using local count`)
+      return null
+    }
+    console.warn(`Error fetching remote item count for list ${listId}:`, e)
     return null
   }
 }
@@ -891,8 +898,15 @@ async function updateAllListItemCounts() {
   if (!lists.length) return
   const useRemote = isApiAvailable.value !== false
 
+  // Only try remote count for lists that likely exist on the server
+  // Skip lists with very high IDs (likely local-only) or non-numeric IDs
+  const listsToCheck = lists.filter(list => {
+    const id = Number(list.id)
+    return !isNaN(id) && id < 1000 // Assume server IDs are reasonable
+  })
+
   await Promise.all(
-    lists.map(async (list) => {
+    listsToCheck.map(async (list) => {
       let count = null
       if (useRemote) {
         count = await getRemoteListItemCount(list.id)
@@ -905,6 +919,19 @@ async function updateAllListItemCounts() {
       }
     })
   )
+
+  // For lists that we skipped (likely local-only), just use local count
+  const skippedLists = lists.filter(list => {
+    const id = Number(list.id)
+    return isNaN(id) || id >= 1000
+  })
+
+  skippedLists.forEach(list => {
+    const count = getLocalListItemCount(list.id)
+    if ((list.itemCount || 0) !== count) {
+      listsStore.updateList(list.id, { itemCount: count })
+    }
+  })
 }
 
 function onListItemsStorage(e) {
@@ -970,7 +997,7 @@ function onListItemsStorage(e) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10002;
 }
 
 .modal {
