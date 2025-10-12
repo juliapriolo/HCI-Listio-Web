@@ -14,6 +14,60 @@
               :placeholder="t('pages.products.searchPlaceholder')"
             />
           </div>
+
+          <v-btn
+            icon
+            variant="text"
+            class="action-btn"
+            size="large"
+            @click="openFilterDialog"
+          >
+            <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
+          </v-btn>
+          
+          <div v-if="filterDialog" class="modal-overlay">
+            <div class="modal">
+              <h2>Filtrar Items</h2>
+
+              <form @submit.prevent="applyFilters">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="filterCategoryDialog">{{ t('common.category') }}</label>
+                    <select
+                      id="filterCategoryDialog"
+                      v-model="filterCategoryDialog"
+                      class="form-input"
+                    >
+                      <option value="">Seleccione una categoría</option>
+                      <option
+                        v-for="category in categoryStore.categories"
+                        :key="category.id"
+                        :value="category.id"
+                      >
+                        {{ category.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button type="button" class="btn btn--cancel" @click="filterDialog = false">
+                    Cancelar
+                  </button>
+                  <button type="button" class="btn btn--cancel" @click="resetFilters">
+                    Limpiar
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn--primary"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -372,12 +426,26 @@ const listsStore = useListsStore();
 const listItemsStore = useListItemsStore();
 
 const filteredProducts = computed(() => {
-  const list = productStore.products;
-  if (!searchQuery.value) return list;
+  let list = productStore.products || [];
 
-  // Usar búsqueda local del store
-  return productStore.searchLocal(searchQuery.value);
+  // Filtro por categoría
+  if (filters.value.categoryId) {
+    const wantedId = Number(filters.value.categoryId);
+    list = list.filter(p => Number(p?.category?.id) === wantedId);
+  }
+
+  // Filtro por búsqueda
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      p.metadata?.description?.toLowerCase().includes(query)
+    );
+  }
+
+  return list;
 });
+
 
 const openNewProductDialog = async () => {
   newProductForm.value = {
@@ -438,7 +506,7 @@ const convertImageToBase64 = (file) => {
       resolve(null);
       return;
     }
-
+    
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
     reader.onerror = reject;
@@ -449,11 +517,11 @@ const convertImageToBase64 = (file) => {
 // --- CRUD Actions ---
 const addProduct = async (formData) => {
   if (!formData.name || !formData.category || isCreating.value) return;
-
+  
   isCreating.value = true;
   try {
     let categoryToUse = formData.category;
-
+    
     // Si se seleccionó crear nueva categoría, crear la categoría primero
     if (formData.category === '__new__') {
       if (!formData.newCategoryName?.trim()) {
@@ -463,19 +531,19 @@ const addProduct = async (formData) => {
         isCreating.value = false;
         return;
       }
-
+      
       const newCategoryPayload = {
         name: formData.newCategoryName.trim(),
         metadata: {}
       };
-
+      
       const createdCategory = await categoryStore.createRemote(newCategoryPayload);
       categoryToUse = createdCategory;
       
       // Refrescar las categorías para que aparezcan en futuros formularios
       await categoryStore.fetchRemote();
     }
-
+    
     // Ensure categoryToUse is an object with id property
     if (typeof categoryToUse === 'string') {
       // If it's a string (categoryId), find the category object
@@ -485,13 +553,13 @@ const addProduct = async (formData) => {
       }
       categoryToUse = categoryObj;
     }
-
+    
     // Convertir imagen a base64 si existe
     let imageBase64 = null;
     if (productImageFile.value) {
       imageBase64 = await convertImageToBase64(productImageFile.value);
     }
-
+    
     const payload = {
       name: formData.name.trim(),
       metadata: {
@@ -501,12 +569,12 @@ const addProduct = async (formData) => {
       category: { id: categoryToUse.id },
     }
     
-  await productStore.createRemote(payload)
-  
-  // Refrescar la lista de productos para mostrar el nuevo producto inmediatamente
-  await productStore.fetchRemote()
-  
-  snackbarText.value = t('pages.products.messages.added', { name: formData.name })
+    await productStore.createRemote(payload)
+    
+    // Refrescar la lista de productos para mostrar el nuevo producto inmediatamente
+    await productStore.fetchRemote()
+    
+    snackbarText.value = t('pages.products.messages.added', { name: formData.name })
     snackbarColor.value = 'success'
     snackbar.value = true
     closeNewProductDialog()
@@ -523,7 +591,7 @@ const addProduct = async (formData) => {
 const updateProduct = async (updatedData) => {
   try {
     let categoryToUse = updatedData.category;
-
+    
     // Si se seleccionó crear nueva categoría, crear la categoría primero
     if (updatedData.category === '__new__') {
       if (!updatedData.newCategoryName?.trim()) {
@@ -532,19 +600,19 @@ const updateProduct = async (updatedData) => {
         snackbar.value = true;
         return;
       }
-
+      
       const newCategoryPayload = {
         name: updatedData.newCategoryName.trim(),
         metadata: {}
       };
-
+      
       const createdCategory = await categoryStore.createRemote(newCategoryPayload);
       categoryToUse = createdCategory;
       
       // Refrescar las categorías para que aparezcan en futuros formularios
       await categoryStore.fetchRemote();
     }
-
+    
     // Ensure categoryToUse is an object with id property
     if (typeof categoryToUse === 'string') {
       // If it's a string (categoryId), find the category object
@@ -554,10 +622,10 @@ const updateProduct = async (updatedData) => {
       }
       categoryToUse = categoryObj;
     }
-
+    
     // Convertir imagen a base64 si existe
     const imageBase64 = await convertImageToBase64(updatedData.image);
-
+    
     const payload = {
       name: updatedData.name,
       metadata: {
@@ -567,12 +635,12 @@ const updateProduct = async (updatedData) => {
       category: { id: categoryToUse.id },
     }
     
-  await productStore.updateRemote(updatedData.id, payload)
-  
-  // Refrescar la lista de productos para mostrar los cambios inmediatamente
-  await productStore.fetchRemote()
-  
-  snackbarText.value = t('pages.products.messages.updated')
+    await productStore.updateRemote(updatedData.id, payload)
+    
+    // Refrescar la lista de productos para mostrar los cambios inmediatamente
+    await productStore.fetchRemote()
+    
+    snackbarText.value = t('pages.products.messages.updated')
     snackbarColor.value = 'success'
     snackbar.value = true
   } catch (error) {
@@ -734,13 +802,38 @@ const editProduct = async (product) => {
   productInfoDialog.value = true;
 };
 
+//Filter
+const filterDialog = ref(false)
+const filterCategoryDialog = ref('')
+
+const filters = ref({
+  categoryId: '',
+})
+
+const openFilterDialog = () => {
+  filterCategoryDialog.value = filters.value.categoryId ?? ''
+  filterDialog.value = true
+}
+
+const applyFilters = () => {
+  filters.value = {
+    categoryId: filterCategoryDialog.value || '',
+  }
+  filterDialog.value = false
+}
+
+const resetFilters = () => {
+  filters.value = { categoryId: '' }
+  filterCategoryDialog.value = ''
+}
+
 onMounted(async () => {
   try {
     loading.value = true;
-
+    
     // Cargar productos y categorías
     await Promise.all([productStore.init(), categoryStore.init()]);
-
+    
     // Mostrar mensaje si no hay productos
     if (productStore.products.length === 0) {
       console.log("No hay productos disponibles");
@@ -1138,5 +1231,11 @@ select.form-input:focus {
   font-size: 0.95rem;
   color: #666;
   font-style: italic;
+}
+
+.category-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 </style>

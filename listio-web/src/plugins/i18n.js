@@ -98,7 +98,7 @@ const messages = {
 		nav: {
 			lists: 'Listas',
 			products: 'Productos',
-			pantry: 'Despensa'
+			pantry: 'Despensas'
 		},
 		profile: {
 			title: 'Mi perfil',

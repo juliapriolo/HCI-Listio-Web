@@ -1,6 +1,6 @@
 <template>
   <v-card
-    class="product-card"
+    :class="['product-card', { 'menu-open': showMenu }]"
     hover
     color="grey-darken-3"
     @click="$emit('click', product)"
@@ -94,6 +94,7 @@
 import { useLanguage } from '@/composables/useLanguage'
 const { t } = useLanguage()
 import { computed, ref } from 'vue'
+import { getDefaultCategoryImageForProduct } from '@/utils/category-images'
 
 const props = defineProps({
   product: {
@@ -133,12 +134,14 @@ const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000
 
 const imageSrc = computed(() => {
   const p = props.product || {}
-  return (
-    p.image ||
-    p.metadata?.image ||
-    p.metadata?.imageUrl ||
-    defaultImage
-  )
+  // 1) product own image
+  const direct = p.image || p.metadata?.image || p.metadata?.imageUrl
+  if (direct) return direct
+  // 2) category default image
+  const categoryImg = getDefaultCategoryImageForProduct(p)
+  if (categoryImg) return categoryImg
+  // 3) final fallback svg
+  return defaultImage
 })
 
 const categoryName = computed(() => {
@@ -166,11 +169,17 @@ const getStockText = (stock) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
+  position: relative; /* allow z-index to work */
+  z-index: 1;
 }
 
 .product-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.product-card.menu-open {
+  z-index: 1000; /* ensure dropdown stays above neighbor cards */
 }
 
 .category-chip {
@@ -218,7 +227,7 @@ const getStockText = (stock) => {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  z-index: 9999;
+  z-index: 2000;
   min-width: 140px;
   overflow: hidden;
 }

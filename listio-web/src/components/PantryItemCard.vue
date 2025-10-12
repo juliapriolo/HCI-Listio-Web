@@ -1,6 +1,6 @@
 <template>
   <v-card
-    class="product-card"
+    :class="['product-card', { 'menu-open': showMenu }]"
     hover
     color="grey-darken-3"
   >
@@ -95,6 +95,7 @@
 import { computed, ref } from 'vue'
 import { useLanguage } from '@/composables/useLanguage'
 const { t } = useLanguage()
+import { getDefaultCategoryImageForItem } from '@/utils/category-images'
 
 const props = defineProps({
   item: {
@@ -134,12 +135,11 @@ const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000
 
 const imageSrc = computed(() => {
   const item = props.item || {}
-  return (
-    item.image ||
-    item.metadata?.image ||
-    item.metadata?.imageUrl ||
-    defaultImage
-  )
+  const direct = item.image || item.metadata?.image || item.metadata?.imageUrl
+  if (direct) return direct
+  const byCategory = getDefaultCategoryImageForItem(item)
+  if (byCategory) return byCategory
+  return defaultImage
 })
 
 const getStatusColor = (status) => {
@@ -174,11 +174,17 @@ const formatDate = (dateString) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
+  position: relative;
+  z-index: 1;
 }
 
 .product-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.product-card.menu-open {
+  z-index: 1000;
 }
 
 .category-chip {
@@ -239,7 +245,7 @@ const formatDate = (dateString) => {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  z-index: 9999;
+  z-index: 2000;
   min-width: 140px;
   overflow: hidden;
 }
