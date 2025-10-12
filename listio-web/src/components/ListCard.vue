@@ -1,6 +1,7 @@
 <template>
   <v-card
     class="list-card"
+    :class="{ 'menu-open': showMenu }"
     elevation="2"
   >
     <div class="list-content" @click="$emit('click')">
@@ -145,6 +146,11 @@ const formatDate = (date) => {
   border: 0.5px solid #9e9e9e;
   box-shadow: none;
   overflow: visible; /* ensure dropdown menu is not clipped by card */
+  z-index: 1;
+}
+
+.list-card.menu-open {
+  z-index: 10000;
 }
 
 .list-card:hover {
@@ -164,7 +170,7 @@ const formatDate = (date) => {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 10;
+  z-index: 10000;
 }
 
 /* Custom menu styles for lists */
@@ -192,7 +198,7 @@ const formatDate = (date) => {
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 10001;
   min-width: 120px;
   overflow: hidden;
 }
