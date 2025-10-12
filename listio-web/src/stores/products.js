@@ -180,11 +180,7 @@ export const useProductStore = defineStore('product', {
             await this.updateRemote(existingDeleted.id, payload)
           }
           
-          try {
-            const { useHistoryStore } = await import('@/stores/history')
-            const history = useHistoryStore()
-            history.recordEvent('product.restore', 'product', existingDeleted.id, { name: existingDeleted.name }, { meta: { source: 'remote' } })
-          } catch (e) { /* ignore history errors */ }
+          // Note: No need to record product restoration in history - history is only for deleted items
           
           return existingDeleted
         }
@@ -194,11 +190,7 @@ export const useProductStore = defineStore('product', {
           const created = await productsApi.add(payload)
           if (created && created.id) {
             this.addLocal(mapProduct(created))
-            try {
-              const { useHistoryStore } = await import('@/stores/history')
-              const history = useHistoryStore()
-              history.recordEvent('product.create', 'product', created.id, { name: created.name }, { meta: { source: 'remote' } })
-            } catch (e) { /* ignore history errors */ }
+            // Note: No need to record product creation in history - history is only for deleted items
           }
           return created
         } catch (apiError) {
@@ -286,11 +278,7 @@ export const useProductStore = defineStore('product', {
         const updated = await productsApi.update(id, patch)
         if (updated && updated.id) {
           this.updateLocal(id, mapProduct(updated))
-          try {
-            const { useHistoryStore } = await import('@/stores/history')
-            const history = useHistoryStore()
-            history.recordEvent('product.update', 'product', id, { patch }, { meta: { source: 'remote' } })
-          } catch (e) { /* ignore */ }
+          // Note: No need to record product updates in history - history is only for deleted items
         }
         return updated
       } catch (e) {

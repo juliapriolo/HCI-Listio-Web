@@ -121,14 +121,7 @@ export const useListItemsStore = defineStore('listItems', {
       const newItem = { id: Date.now(), ...item }
       this.items.unshift(newItem)
       this.save()
-      // record history event (best-effort dynamic import to avoid cycles)
-      // record history event asynchronously (non-blocking)
-      import('@/stores/history').then(mod => {
-        try {
-          const history = mod.useHistoryStore()
-          history.recordEvent('listItem.create', 'listItem', newItem.id, { name: newItem.name, quantity: newItem.quantity, unit: newItem.unit }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
-        } catch (e) { /* ignore */ }
-      }).catch(() => {})
+      // Note: No need to record item creation in history - history is only for deleted items
       // Commented out to prevent constant API calls
       // if (remote && this.listId) this._enqueueOutbox({ op: 'create', listId: this.listId, payload: newItem })
       return newItem
@@ -139,12 +132,7 @@ export const useListItemsStore = defineStore('listItems', {
       if (idx > -1) {
         this.items[idx] = { ...this.items[idx], ...patch }
         this.save()
-        import('@/stores/history').then(mod => {
-          try {
-            const history = mod.useHistoryStore()
-            history.recordEvent('listItem.update', 'listItem', id, { patch }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
-          } catch (e) { /* ignore */ }
-        }).catch(() => {})
+        // Note: No need to record item updates in history - history is only for deleted items
         // Commented out to prevent constant API calls
         // if (remote && this.listId) this._enqueueOutbox({ op: 'update', listId: this.listId, itemId: id, payload: patch })
       }

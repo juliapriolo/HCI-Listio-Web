@@ -3,21 +3,9 @@
     <v-container>
       <!-- Page Header -->
       <div class="d-flex align-center justify-space-between mb-6">
-        <div class="d-flex align-center" style="margin-left: -12px;">
-          <v-btn
-            icon
-            size="small"
-            variant="text"
-            color="black"
-            @click="router.back()"
-            class="mr-1"
-          >
-            <v-icon>mdi-arrow-left</v-icon>
-          </v-btn>
-          <h1 class="text-h4 font-weight-bold text-grey-darken-3 mb-0">
-            Historial
-          </h1>
-        </div>
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+          Historial
+        </h1>
         
         <div class="search-wrapper">
           <v-text-field
@@ -30,6 +18,22 @@
             hide-details
           />
         </div>
+
+        <!-- Empty space to match the layout of listas.vue -->
+        <div class="ml-4"></div>
+      </div>
+
+      <!-- Back Button -->
+      <div class="mb-4">
+        <v-btn
+          icon="mdi-arrow-left"
+          variant="text"
+          color="grey-darken-3"
+          @click="router.back()"
+          class="back-btn"
+        >
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
       </div>
 
       <!-- Tabs -->
@@ -102,8 +106,10 @@
       <!-- Clear History Action -->
       <div v-if="allEvents.length > 0" class="text-center mt-6">
         <v-btn
-          variant="text"
-          color="error"
+          color="#f44336"
+          variant="elevated"
+          class="text-none"
+          min-width="100"
           @click="clearHistory"
         >
           Limpiar historial
@@ -119,42 +125,36 @@
     />
 
     <!-- Confirm Clear History Dialog -->
-    <v-dialog
-      v-model="showClearConfirm"
-      max-width="450"
-    >
-      <v-card>
-        <v-card-title class="text-h6">
-          Confirmar acción
-        </v-card-title>
-
-        <v-card-text>
-          ¿Está seguro que desea borrar todo el historial? Esta acción no se puede deshacer.
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn
-            @click="showClearConfirm = false"
-          >
+    <div v-if="showClearConfirm" class="modal-overlay">
+      <div class="modal delete-confirmation-modal">
+        <h2>Confirmar acción</h2>
+        
+        <div class="confirmation-content">
+          <p class="confirmation-text">
+            ¿Está seguro que desea borrar todo el historial? Esta acción no se puede deshacer.
+          </p>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="showClearConfirm = false">
             Cancelar
-          </v-btn>
-          <v-btn
-            color="error"
-            variant="elevated"
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger"
             @click="confirmClearHistory"
           >
             Borrar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Snackbar for notifications -->
     <v-snackbar
       v-model="snackbar"
       :timeout="3000"
-      color="info"
+      color="success"
       location="bottom"
     >
       {{ snackbarText }}
@@ -203,9 +203,9 @@ onMounted(() => {
 
 const allEvents = computed(() => history.events || [])
 
-// Filter events by resource type
+// Filter events by resource type - only show deleted lists
 const listEvents = computed(() => {
-  let events = allEvents.value.filter(e => e.resource === 'list' || e.type.includes('list'))
+  let events = allEvents.value.filter(e => e.type === 'list.delete')
   
   // Apply text filter if present
   if (filterText.value) {
@@ -230,7 +230,7 @@ const listEvents = computed(() => {
 })
 
 const itemEvents = computed(() => {
-  let events = allEvents.value.filter(e => e.resource === 'listItem' || e.type.includes('item'))
+  let events = allEvents.value.filter(e => e.type === 'listItem.delete')
   
   // Apply text filter if present
   if (filterText.value) {
@@ -272,7 +272,7 @@ function mapEventToList(ev) {
     itemCount: ev.data?.itemCount || 0,
     completedItems: 0,
     lastUpdated: new Date(ev.ts),
-    recurring: ev.data?.recurring || false,
+    recurring: false, // Always false for deleted lists
     isDeleted: true // Mark as deleted for visual indication
   }
 }
@@ -292,13 +292,16 @@ function openListHistory(ev) {
   
   // Filter items from the same list
   const itemsFromList = allEvents.value.filter(e => 
-    (e.resource === 'listItem' || e.type.includes('item')) && 
+    e.type === 'listItem.delete' && 
     e.listId === listId
   )
   
   if (itemsFromList.length === 0) {
-    snackbarText.value = 'Esta lista no tenía productos'
-    snackbar.value = true
+    // Always show dialog, even if no items found
+    // The dialog will show appropriate empty state
+    selectedListName.value = listName
+    selectedListItems.value = []
+    showListDialog.value = true
   } else {
     selectedListName.value = listName
     selectedListItems.value = itemsFromList
@@ -359,5 +362,104 @@ function confirmClearHistory() {
   .search-wrapper {
     max-width: 100%;
   }
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px;
+  min-width: 400px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  flex: 1;
+}
+
+.btn--primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: #45A049;
+}
+
+.btn--primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.btn--cancel {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.btn--cancel:hover {
+  background: #e0e0e0;
+}
+
+.btn--danger {
+  background: #f44336;
+  color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.btn--danger:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Delete confirmation modal specific styles */
+.delete-confirmation-modal {
+  max-width: 550px;
+}
+
+.confirmation-content {
+  margin: 20px 0;
+}
+
+.confirmation-text {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 16px;
 }
 </style>

@@ -3,9 +3,15 @@
     <!-- Page Header -->
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
-        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          {{ currentListName }}
-        </h1>
+        <div>
+          <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+            {{ currentListName }}
+          </h1>
+          <p v-if="isSharedWithMe" class="shared-by">
+            <v-icon size="16" class="mr-1" color="#1976d2">mdi-account-multiple</v-icon>
+            Compartida por {{ ownerLabel }}
+          </p>
+        </div>
         
         <div class="header-actions">
           <div class="search-wrapper">
@@ -23,6 +29,56 @@
           >
             <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
           </v-btn>
+          
+          <div v-if="filterDialog" class="modal-overlay">
+            <div class="modal">
+              <h2>Filtrar Items</h2>
+
+              <form @submit.prevent="applyFilters">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="filterCategoryDialog">{{ t('common.category') }}</label>
+                    <select
+                      id="filterCategoryDialog"
+                      v-model="filterCategoryDialog"
+                      class="form-input"
+                    >
+                      <option value="">Seleccione una categoría</option>
+                      <option
+                        v-for="category in categoryStore.categories"
+                        :key="category.id"
+                        :value="category.id"
+                      >
+                        {{ category.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="filterPurchasedDialog">Comprados</label>
+                    <select id="filterPurchasedDialog" v-model="filterPurchasedDialog" class="form-input">
+                      <option :value="true">Si</option>
+                      <option :value="false">No</option>
+                      <option :value="''">Todos</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button type="button" class="btn btn--cancel" @click="filterDialog = false">
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn--primary"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
 
           <v-btn
             icon
@@ -171,17 +227,6 @@
         </div>
         
         <form @submit.prevent="saveItemEdit">
-          <div class="form-group">
-            <label for="editItemName">{{t('common.name')}}</label>
-            <input
-              id="editItemName"
-              v-model="editItemName"
-              type="text"
-              class="form-input"
-              required
-            />
-          </div>
-          
           <div class="form-row">
             <div class="form-group">
               <label for="editItemQuantity">Cantidad</label>
@@ -450,13 +495,6 @@
         </div>
       </div>
     </div>
-
-    <FilterList
-      v-model="filterDialog"
-      :filters="filters"
-      :categories="categories"
-      @apply="applyFilters"
-    />
   </div>
 </template>
 
@@ -472,6 +510,7 @@ import listsApi from '@/api/lists'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
+import { useUserStore } from '@/stores/user'
 
 const { t } = useLanguage()
 // Use listItems store for per-list persistence
@@ -480,6 +519,7 @@ const listItemsStore = useListItemsStore()
 const listsStore = useListsStore()
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
+const userStore = useUserStore()
 
 const items = computed(() => listItemsStore.items)
 const availableProducts = computed(() => {
@@ -526,7 +566,6 @@ const newItemDialog = ref(false)
 const itemMenuDialog = ref(false)
 const selectedItem = ref(null)
 const shareListDialog = ref(false)
-const filterDialog = ref(false)
 const productSelectionDialog = ref(false)
 const selectedProduct = ref(null)
 const productQuantity = ref(1)
@@ -551,9 +590,58 @@ const shareEmailTouched = ref(false)
 const shareEmailServerError = ref('')
 const isSharing = ref(false)
 
+// Filter
+const filterDialog = ref(false)
+const filterCategoryDialog = ref('')
+const filterPurchasedDialog = ref('')
+
 const currentListId = computed(() => {
   const id = route.query.id || null
   return id ? (Number(id) || id) : null
+})
+
+// Shared/owner info for detail header
+const currentList = computed(() => {
+  const id = currentListId.value
+  return id ? listsStore.getById(id) : null
+})
+
+function getOwnerId(l) {
+  return (
+    l?.ownerId ?? l?.owner_id ?? l?.owner?.id ?? l?.createdBy?.id ?? l?.created_by?.id ?? null
+  )
+}
+function getSharedByInfo(l) {
+  return l?.sharedBy || l?.shared_by || null
+}
+function getOwnerInfo(l) {
+  return l?.owner || l?.createdBy || l?.created_by || null
+}
+
+const isSharedWithMe = computed(() => {
+  const l = currentList.value
+  if (!l) return false
+  const sharedFlag = l?.shared === true
+  const sharedBy = getSharedByInfo(l)
+  const ownerId = getOwnerId(l)
+  const me = userStore?.profile?.id
+  return Boolean(sharedFlag || sharedBy || (ownerId && me && String(ownerId) !== String(me)))
+})
+
+const ownerLabel = computed(() => {
+  const l = currentList.value
+  if (!l) return ''
+  const inviter = getSharedByInfo(l)
+  if (inviter) {
+    const name = [inviter.name, inviter.surname].filter(Boolean).join(' ').trim()
+    return name || inviter.email || inviter.username || 'alguien'
+  }
+  const info = getOwnerInfo(l)
+  if (info) {
+    const name = [info.name, info.surname].filter(Boolean).join(' ').trim()
+    return name || info.email || info.username || 'el propietario'
+  }
+  return 'el propietario'
 })
 
 const newItemForm = ref({
@@ -562,8 +650,8 @@ const newItemForm = ref({
 })
 
 const filters = ref({
-  name: '',
-  category: ''
+  categoryId: '',
+  onlyPurchased: '',
 })
 
 
@@ -591,10 +679,24 @@ const isShareEmailValid = computed(() => {
 
 // Computed
 const filteredItems = computed(() => {
-  if (!searchQuery.value) return items.value
-  return items.value.filter(i =>
-    i.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  let list = items.value || []
+  console.log('FILTROOOOOOS',filters)
+
+  //Filtro por categoría
+  if (filters.value.categoryId) {
+    const wantedId = Number(filters.value.categoryId)
+    list = list.filter(i => Number(i?.product?.category?.id) === wantedId)
+  }
+
+  //Filtro por estado "purchased"
+  if (filters.value.onlyPurchased === true) {
+    list = list.filter(i => i.purchased === true)
+  } else if (filters.value.onlyPurchased === false) {
+    list = list.filter(i => i.purchased === false)
+  }
+
+  console.log('ITEEEEEEEMSS', list)
+  return list
 })
 
 // Helper functions for category icons
@@ -640,6 +742,11 @@ const openShareListDialog = () => {
 }
 
 const openFilterDialog = () => {
+  filterCategoryDialog.value = filters.value.categoryId ?? ''
+  // si filters.value.onlyPurchased es booleano, convertir a booleano; si '' mantener ''
+  filterPurchasedDialog.value =
+    filters.value.onlyPurchased === true ? true :
+    filters.value.onlyPurchased === false ? false : ''
   filterDialog.value = true
 }
 
@@ -783,6 +890,7 @@ function clearShareEmailErrors() {
 
 // Product selection functions
 const openProductSelectionDialog = async () => {
+  //Reset del estado completo
   productSelectionDialog.value = true
   selectedProduct.value = null
   productQuantity.value = 1
@@ -791,25 +899,27 @@ const openProductSelectionDialog = async () => {
   creatingNewProduct.value = false
   creatingNewProductLoading.value = false
   newProductForm.value = { name: '', description: '', category: '', newCategoryName: '' }
-  
-  // Cargar productos y categorías del servidor si no están disponibles
-  try {
-    const promises = []
-    
-    if (!productStore.products || productStore.products.length === 0) {
-      promises.push(productStore.fetchRemote())
-    }
-    
-    if (!categoryStore.categories || categoryStore.categories.length === 0) {
-      promises.push(categoryStore.fetchRemote())
-    }
-    
-    if (promises.length > 0) {
+
+  // 🔹 Carga inteligente
+  const needsProducts = !productStore.products?.length
+  const needsCategories = !categoryStore.categories?.length
+
+  if (needsProducts || needsCategories) {
+    try {
+      const promises = []
+      if (needsProducts) promises.push(productStore.fetchRemote())
+      if (needsCategories) promises.push(categoryStore.fetchRemote())
       await Promise.all(promises)
-      console.log('Productos y categorías cargados desde el servidor para selección')
+      console.log('Datos cargados desde el servidor.')
+    } catch (error) {
+      console.error('Error al cargar productos o categorías:', error)
     }
-  } catch (error) {
-    console.error('Error al cargar productos y categorías:', error)
+  } else {
+    // 🔹 Refresca sin bloquear el diálogo
+    Promise.allSettled([
+      productStore.fetchRemote(),
+      categoryStore.fetchRemote(),
+    ])
   }
 }
 
@@ -991,8 +1101,20 @@ const goBackToLists = () => {
 }
 
 
-const applyFilters = (appliedFilters) => {
-  filters.value = { ...appliedFilters }
+const applyFilters = () => {
+  filters.value = {
+    categoryId: filterCategoryDialog.value || '',
+    onlyPurchased:
+      filterPurchasedDialog.value === true ? true :
+      filterPurchasedDialog.value === false ? false : ''
+  }
+  filterDialog.value = false
+}
+
+const resetFilters = () => {
+  filters.value = { categoryId: '', onlyPurchased: '' }
+  filterCategoryDialog.value = ''
+  filterPurchasedDialog.value = ''
 }
 
 // Toggle purchased state and persist
@@ -1110,6 +1232,15 @@ const toggleChecked = async (item) => {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
+}
+
+.shared-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0 0;
+  font-size: 0.9rem;
+  color: #1976d2;
 }
 
 @media (max-width: 600px) {
@@ -1508,5 +1639,15 @@ const toggleChecked = async (item) => {
     grid-template-columns: 1fr;
     max-height: 250px;
   }
+}
+
+.category-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.muted {
+  color: black;
 }
 </style>

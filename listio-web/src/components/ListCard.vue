@@ -5,10 +5,15 @@
     elevation="2"
   >
     <div class="list-content" @click="$emit('click')">
+      <!-- Recurring indicator -->
+      <div v-if="list.recurring" class="recurring-indicator">
+        <v-icon size="20" color="#4CAF50">mdi-heart</v-icon>
+      </div>
+      
       <div class="list-image">
         <img 
-          v-if="list.image" 
-          :src="list.image" 
+          v-if="listImage" 
+          :src="listImage" 
           :alt="list.name" 
         />
         <div v-else class="image-placeholder">
@@ -17,6 +22,11 @@
       </div>
       <div class="list-info">
         <h3 class="list-title">{{ list.name }}</h3>
+        <!-- Shared indicator -->
+        <p v-if="isSharedWithMe" class="shared-by">
+          <v-icon size="16" class="mr-1" color="#1976d2">mdi-account-multiple</v-icon>
+          Compartida por {{ ownerLabel }}
+        </p>
         <p v-if="list.description" class="list-description">{{ list.description }}</p>
         <div class="list-details">
           <span class="item-count">{{ list.itemCount || 0 }} productos</span>
@@ -61,7 +71,12 @@
           </svg>
           <span>{{ t('common.edit') }}</span>
         </div>
-        <div class="menu-item delete-item" @click="handleMenuAction('delete', list.id)">
+        <div 
+          class="menu-item delete-item"
+          :class="{ disabled: isSharedWithMe }"
+          :title="isSharedWithMe ? 'No es posible eliminar una lista compartida' : ''"
+          @click="handleMenuAction('delete', list.id)"
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
             <polyline points="3,6 5,6 21,6"/>
             <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
@@ -78,6 +93,7 @@
 <script setup>
 import { computed, ref, nextTick } from 'vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { useUserStore } from '@/stores/user'
 
 const props = defineProps({
   list: {
@@ -97,8 +113,14 @@ const props = defineProps({
 const emit = defineEmits(['click', 'edit', 'delete', 'share'])
 
 const { t } = useLanguage()
+const userStore = useUserStore()
 
 const showMenu = ref(false)
+
+// Get image from metadata.image or fallback to list.image
+const listImage = computed(() => {
+  return props.list.metadata?.image || props.list.image || ''
+})
 
 const toggleMenu = (event) => {
   event.stopPropagation()
@@ -120,6 +142,7 @@ const handleMenuAction = (action, listId) => {
     if (action === 'edit') {
       emit('edit', listId)
     } else if (action === 'delete') {
+      // Always notify parent; parent decides whether to show snackbar or dialog
       emit('delete', listId)
     } else if (action === 'share') {
       emit('share', listId)
@@ -143,6 +166,52 @@ const formatDate = (date) => {
     month: 'short' 
   })
 }
+
+// --- Shared ownership helpers ---
+const currentUserId = computed(() => userStore?.profile?.id || null)
+
+function getOwnerId(l) {
+  // Try common owner fields
+  return (
+    l?.ownerId ?? l?.owner_id ?? l?.owner?.id ?? l?.createdBy?.id ?? l?.created_by?.id ?? null
+  )
+}
+
+function getSharedByInfo(l) {
+  // Prefer the inviter if present
+  return l?.sharedBy || l?.shared_by || null
+}
+
+function getOwnerInfo(l) {
+  return l?.owner || l?.createdBy || l?.created_by || null
+}
+
+const isSharedWithMe = computed(() => {
+  const sharedFlag = props.list?.shared === true
+  const sharedBy = getSharedByInfo(props.list)
+  const ownerId = getOwnerId(props.list)
+  const me = currentUserId.value
+  return Boolean(
+    sharedFlag || sharedBy || (ownerId && me && String(ownerId) !== String(me))
+  )
+})
+
+const ownerLabel = computed(() => {
+  // Prefer showing who shared it with me
+  const inviter = getSharedByInfo(props.list)
+  if (inviter) {
+    const name = [inviter.name, inviter.surname].filter(Boolean).join(' ').trim()
+    return name || inviter.email || inviter.username || 'alguien'
+  }
+  // Fallback to list owner
+  const info = getOwnerInfo(props.list)
+  if (info) {
+    const name = [info.name, info.surname].filter(Boolean).join(' ').trim()
+    return name || info.email || info.username || 'el propietario'
+  }
+  // If we only know it's shared but lack details
+  return 'el propietario'
+})
 </script>
 
 <style scoped>
@@ -173,6 +242,18 @@ const formatDate = (date) => {
   padding: 20px;
   gap: 20px;
   height: 140px;
+  position: relative;
+}
+
+.recurring-indicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .list-menu {
@@ -248,6 +329,10 @@ const formatDate = (date) => {
   flex: 1;
 }
 
+.menu-item.disabled {
+  opacity: 0.7;
+}
+
 .list-image {
   width: 80px;
   height: 80px;
@@ -287,6 +372,15 @@ const formatDate = (date) => {
   color: #424242;
   margin: 0 0 8px 0;
   line-height: 1.2;
+}
+
+.shared-by {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px 0;
+  font-size: 0.9rem;
+  color: #1976d2;
 }
 
 .list-description {

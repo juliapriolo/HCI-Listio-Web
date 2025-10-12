@@ -16,10 +16,10 @@
 
         <!-- History page button -->
         <v-btn
-          color="primary"
-          variant="tonal"
-          size="small"
-          class="ml-4"
+          color="success"
+          variant="elevated"
+          class="text-none ml-4"
+          min-width="100"
           @click="() => router.push({ path: '/historial' })"
           title="Historial"
         >
@@ -57,8 +57,6 @@
         icon="mdi-format-list-bulleted"
         :title="t('pages.lists.noListsTitle')"
         :description="t('pages.lists.noListsDescription')"
-        :action-text="t('pages.lists.createListAction')"
-        @action="openNewListDialog"
       />
 
       <EmptyState
@@ -331,9 +329,11 @@ import listItemsApi from '@/api/listItems'
 import ListCard from '@/components/ListCard.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const { t } = useLanguage()
+const userStore = useUserStore()
 
 // Reactive data
 const searchQuery = ref('')
@@ -413,11 +413,24 @@ const checkApiAvailability = async () => {
 
 // Computed properties
 const filteredLists = computed(() => {
-  if (!searchQuery.value) return listsStore.lists
+  let lists = listsStore.lists
   
-  return listsStore.lists.filter(list =>
-    list.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  // Apply search filter if present
+  if (searchQuery.value) {
+    lists = lists.filter(list =>
+      list.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  }
+  
+  // Sort lists: recurrent lists first, then by name
+  return lists.sort((a, b) => {
+    // First, sort by recurring status (recurring lists first)
+    if (a.recurring && !b.recurring) return -1
+    if (!a.recurring && b.recurring) return 1
+    
+    // If both have same recurring status, sort by name
+    return a.name.localeCompare(b.name)
+  })
 })
 
 const totalPages = computed(() => {
@@ -434,13 +447,15 @@ const editList = (listId) => {
   const list = listsStore.lists.find(l => l.id === listId)
   if (list) {
     listToEdit.value = list
+    // Get image from metadata.image or fallback to list.image
+    const currentImage = list.metadata?.image || list.image || ''
     editListForm.value = {
       name: list.name,
       description: list.description || '',
       recurring: list.recurring || false,
-      image: list.image || ''
+      image: currentImage
     }
-    editImagePreview.value = list.image || ''
+    editImagePreview.value = currentImage
     editImageFile.value = null
     editListDialog.value = true
   }
@@ -449,6 +464,18 @@ const editList = (listId) => {
 const deleteList = (listId) => {
   const list = listsStore.lists.find(l => l.id === listId)
   if (list) {
+    // Determine if the list is shared with the current user (i.e., not owned by me)
+    const ownerId = list?.ownerId ?? list?.owner_id ?? list?.owner?.id ?? list?.createdBy?.id ?? list?.created_by?.id
+    const currentUserId = userStore?.profile?.id
+    const isSharedWithMe = ownerId && currentUserId && String(ownerId) !== String(currentUserId)
+
+    if (isSharedWithMe) {
+      snackbarText.value = 'No es posible eliminar una lista compartida. Pedile al creador que te cancele el acceso.'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+      return
+    }
+
     listToDelete.value = list
     deleteDialog.value = true
   }
@@ -470,12 +497,12 @@ const confirmDeleteList = async () => {
         isApiAvailable.value = false
         
         // Fallback to local delete (don't skip history since API failed)
-        listsStore.deleteList(listToDelete.value.id, false)
+        await listsStore.deleteList(listToDelete.value.id, false)
         console.log('Deleted list locally:', listToDelete.value.name)
       }
     } else {
       // API unavailable, delete locally (don't skip history)
-      listsStore.deleteList(listToDelete.value.id, false)
+      await listsStore.deleteList(listToDelete.value.id, false)
       console.log('Deleted list locally (API unavailable):', listToDelete.value.name)
     }
     
