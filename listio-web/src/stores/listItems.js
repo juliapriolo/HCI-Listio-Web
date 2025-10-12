@@ -85,6 +85,14 @@ export const useListItemsStore = defineStore('listItems', {
       const newItem = { id: Date.now(), ...item }
       this.items.unshift(newItem)
       this.save()
+      // record history event (best-effort dynamic import to avoid cycles)
+      // record history event asynchronously (non-blocking)
+      import('@/stores/history').then(mod => {
+        try {
+          const history = mod.useHistoryStore()
+          history.recordEvent('listItem.create', 'listItem', newItem.id, { name: newItem.name, quantity: newItem.quantity, unit: newItem.unit }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
+        } catch (e) { /* ignore */ }
+      }).catch(() => {})
       // Commented out to prevent constant API calls
       // if (remote && this.listId) this._enqueueOutbox({ op: 'create', listId: this.listId, payload: newItem })
       return newItem
@@ -95,6 +103,12 @@ export const useListItemsStore = defineStore('listItems', {
       if (idx > -1) {
         this.items[idx] = { ...this.items[idx], ...patch }
         this.save()
+        import('@/stores/history').then(mod => {
+          try {
+            const history = mod.useHistoryStore()
+            history.recordEvent('listItem.update', 'listItem', id, { patch }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
+          } catch (e) { /* ignore */ }
+        }).catch(() => {})
         // Commented out to prevent constant API calls
         // if (remote && this.listId) this._enqueueOutbox({ op: 'update', listId: this.listId, itemId: id, payload: patch })
       }
@@ -103,8 +117,53 @@ export const useListItemsStore = defineStore('listItems', {
     deleteItem(id, { remote = true } = {}) {
       const idx = this.items.findIndex(i => i.id === id)
       if (idx > -1) {
+        // Capture item data before deletion
+        const deletedItem = this.items[idx]
+        
+        // Get list name
+        let listName = ''
+        try {
+          import('@/stores/lists').then(mod => {
+            const listsStore = mod.useListsStore()
+            const list = listsStore.getById(this.listId)
+            listName = list?.name || `List ${this.listId}`
+          }).catch(() => {})
+        } catch (e) { /* ignore */ }
+        
         this.items.splice(idx, 1)
         this.save()
+        
+        // Record history event with item details
+        import('@/stores/history').then(mod => {
+          try {
+            const history = mod.useHistoryStore()
+            // Get list name synchronously from lists store
+            import('@/stores/lists').then(listsModule => {
+              const listsStore = listsModule.useListsStore()
+              const list = listsStore.getById(this.listId)
+              const listName = list?.name || `List ${this.listId}`
+              
+              history.recordEvent('listItem.delete', 'listItem', id, {
+                name: deletedItem.name,
+                quantity: deletedItem.quantity,
+                unit: deletedItem.unit,
+                checked: deletedItem.checked,
+                listName: listName,
+                listId: this.listId
+              }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
+            }).catch(() => {
+              // Fallback if lists store fails
+              history.recordEvent('listItem.delete', 'listItem', id, {
+                name: deletedItem.name,
+                quantity: deletedItem.quantity,
+                unit: deletedItem.unit,
+                checked: deletedItem.checked,
+                listName: `List ${this.listId}`,
+                listId: this.listId
+              }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
+            })
+          } catch (e) { /* ignore */ }
+        }).catch(() => {})
         // Commented out to prevent constant API calls
         // if (remote && this.listId) this._enqueueOutbox({ op: 'delete', listId: this.listId, itemId: id })
       }

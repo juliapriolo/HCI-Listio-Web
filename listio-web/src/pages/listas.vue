@@ -13,6 +13,19 @@
               :placeholder="t('pages.lists.searchPlaceholder')"
             />
           </div>
+
+        <!-- History page button -->
+        <v-btn
+          color="primary"
+          variant="tonal"
+          size="small"
+          class="ml-4"
+          @click="() => router.push({ path: '/historial' })"
+          title="Historial"
+        >
+          <v-icon left>mdi-clock</v-icon>
+          Historial
+        </v-btn>
       </div>
 
       <!-- Loading State -->

@@ -72,8 +72,24 @@ export const useListsStore = defineStore('lists', {
     deleteList(id) {
       const idx = this.lists.findIndex(l => l.id === id)
       if (idx > -1) {
+        const deletedList = this.lists[idx]
         this.lists.splice(idx, 1)
         this.save()
+        
+        // Record in history with list name
+        try {
+          import('@/stores/history').then(({ useHistoryStore }) => {
+            const history = useHistoryStore()
+            history.recordEvent('list.delete', 'list', id, {
+              name: deletedList.name,
+              description: deletedList.description,
+              image: deletedList.image,
+              itemCount: deletedList.itemCount,
+              recurring: deletedList.recurring,
+              metadata: deletedList.metadata
+            }, { meta: { source: 'local' } })
+          })
+        } catch (e) { /* ignore */ }
       }
     },
     seed(sample) {
@@ -131,6 +147,11 @@ export const useListsStore = defineStore('lists', {
         // created might be the created resource; ensure it exists locally
         if (created && created.id) {
           this.addList(created)
+          try {
+            const { useHistoryStore } = await import('@/stores/history')
+            const history = useHistoryStore()
+            history.recordEvent('list.create', 'list', created.id, { name: created.name }, { meta: { source: 'remote' } })
+          } catch (e) { /* ignore */ }
         }
         return created
       } catch (e) {
@@ -147,6 +168,11 @@ export const useListsStore = defineStore('lists', {
         const updated = await listsApi.update(id, patch)
         if (updated && updated.id) {
           this.updateList(id, updated)
+          try {
+            const { useHistoryStore } = await import('@/stores/history')
+            const history = useHistoryStore()
+            history.recordEvent('list.update', 'list', id, { patch }, { meta: { source: 'remote' } })
+          } catch (e) { /* ignore */ }
         }
         return updated
       } catch (e) {
@@ -156,8 +182,24 @@ export const useListsStore = defineStore('lists', {
 
     async deleteRemote(id) {
       try {
+        // Get list data before deleting
+        const listToDelete = this.lists.find(l => l.id === id)
+        
         await listsApi.delete(id)
         this.deleteList(id)
+        
+        try {
+          const { useHistoryStore } = await import('@/stores/history')
+          const history = useHistoryStore()
+          history.recordEvent('list.delete', 'list', id, {
+            name: listToDelete?.name || 'Lista sin nombre',
+            description: listToDelete?.description,
+            image: listToDelete?.image,
+            itemCount: listToDelete?.itemCount,
+            recurring: listToDelete?.recurring,
+            metadata: listToDelete?.metadata
+          }, { meta: { source: 'remote' } })
+        } catch (e) { /* ignore */ }
       } catch (e) {
         throw e
       }

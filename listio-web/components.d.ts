@@ -11,6 +11,7 @@ declare module 'vue' {
     AppFooter: typeof import('./src/components/AppFooter.vue')['default']
     AppHeader: typeof import('./src/components/AppHeader.vue')['default']
     DebugPanel: typeof import('./src/components/DebugPanel.vue')['default']
+    DeletedListItemsDialog: typeof import('./src/components/DeletedListItemsDialog.vue')['default']
     EmptyState: typeof import('./src/components/EmptyState.vue')['default']
     FilterList: typeof import('./src/components/FilterList.vue')['default']
     ItemMenuDialog: typeof import('./src/components/ItemMenuDialog.vue')['default']

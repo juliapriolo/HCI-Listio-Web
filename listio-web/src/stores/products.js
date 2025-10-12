@@ -94,6 +94,11 @@ export const useProductStore = defineStore('product', {
         const created = await productsApi.add(payload)
         if (created && created.id) {
           this.addLocal(mapProduct(created))
+          try {
+            const { useHistoryStore } = await import('@/stores/history')
+            const history = useHistoryStore()
+            history.recordEvent('product.create', 'product', created.id, { name: created.name }, { meta: { source: 'remote' } })
+          } catch (e) { /* ignore history errors */ }
         }
         return created
       } catch (e) {
@@ -107,6 +112,11 @@ export const useProductStore = defineStore('product', {
         const updated = await productsApi.update(id, patch)
         if (updated && updated.id) {
           this.updateLocal(id, mapProduct(updated))
+          try {
+            const { useHistoryStore } = await import('@/stores/history')
+            const history = useHistoryStore()
+            history.recordEvent('product.update', 'product', id, { patch }, { meta: { source: 'remote' } })
+          } catch (e) { /* ignore */ }
         }
         return updated
       } catch (e) {
@@ -119,6 +129,11 @@ export const useProductStore = defineStore('product', {
       try {
         await productsApi.remove(id)
         this.deleteLocal(id)
+        try {
+          const { useHistoryStore } = await import('@/stores/history')
+          const history = useHistoryStore()
+          history.recordEvent('product.delete', 'product', id, null, { meta: { source: 'remote' } })
+        } catch (e) { /* ignore */ }
       } catch (e) {
         console.error('Error al eliminar producto:', e)
         throw e
