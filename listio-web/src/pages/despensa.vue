@@ -15,31 +15,60 @@
         />
       </div>
 
-          <!-- Filter and Share buttons (only in products view) -->
+          <!-- Filter buttons (only in products view) -->
           <template v-if="currentView === 'products'">
             <v-btn
-              icon
-              variant="text"
-              class="action-btn"
-              size="large"
-              @click="openFilterDialog"
-              :aria-label="t('common.filter')"
-              :title="t('common.filter')"
-            >
-              <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
-            </v-btn>
+            icon
+            variant="text"
+            class="action-btn"
+            size="large"
+            @click="openFilterDialog"
+          >
+            <v-icon color="grey-darken-2">mdi-filter-outline</v-icon>
+          </v-btn>
+          
+          <div v-if="filterDialog" class="modal-overlay">
+            <div class="modal">
+              <h2>Filtrar Items</h2>
 
-            <v-btn
-              icon
-              variant="text"
-              class="action-btn"
-              size="large"
-              @click="openShareDialog"
-              :aria-label="t('common.share')"
-              :title="t('common.share')"
-            >
-              <v-icon color="grey-darken-2">mdi-export-variant</v-icon>
-            </v-btn>
+              <form @submit.prevent="applyFilters">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="filterCategoryDialog">{{ t('common.category') }}</label>
+                    <select
+                      id="filterCategoryDialog"
+                      v-model="filterCategoryDialog"
+                      class="form-input"
+                    >
+                      <option value="">Seleccione una categoría</option>
+                      <option
+                        v-for="category in categoryStore.categories"
+                        :key="category.id"
+                        :value="category.id"
+                      >
+                        {{ category.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="modal-actions">
+                  <button type="button" class="btn btn--cancel" @click="filterDialog = false">
+                    Cancelar
+                  </button>
+                  <button type="button" class="btn btn--cancel" @click="resetFilters">
+                    Limpiar
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn--primary"
+                  >
+                    Guardar
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
           </template>
         </div>
       </div>
@@ -472,76 +501,6 @@
       </div>
     </div>
 
-    <!-- Filter Dialog -->
-    <v-dialog v-model="filterDialog" max-width="500">
-      <v-card>
-        <v-card-title class="text-h6">
-          {{ t('common.filter') }} {{ t('nav.products') }}
-        </v-card-title>
-        <v-card-text>
-          <v-select
-            v-model="filterStatus"
-            :items="statusOptions"
-            :label="t('pages.pantry.statusLabel') || 'Estado del producto'"
-            variant="outlined"
-            clearable
-          />
-          <v-select
-            v-model="filterCategory"
-            :items="categoryOptions"
-            :label="t('common.category')"
-            variant="outlined"
-            clearable
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="clearFilters">
-            {{ t('pages.lists.filters.clear') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            @click="applyFilters"
-          >
-            {{ t('pages.lists.filters.apply') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <!-- Share Dialog -->
-    <v-dialog v-model="shareDialog" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">
-          {{ t('pages.pantry.share.title') || 'Compartir despensa' }}
-        </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="shareEmail"
-            :label="t('pages.pantry.share.emailLabel') || 'Correo electrónico'"
-            type="email"
-            variant="outlined"
-            :placeholder="t('pages.pantry.share.emailPlaceholder') || 'usuario@ejemplo.com'"
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="shareDialog = false">
-            {{ t('common.cancel') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            @click="sharePantry"
-            :disabled="!shareEmail"
-          >
-            {{ t('common.share') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
     <!-- Floating Action Button -->
     <v-btn
       color="success"
@@ -565,6 +524,7 @@ import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import { getDefaultCategoryImage } from '@/utils/category-images'
+import { useCategoryStore } from "@/stores/category";
 
 const { t } = useLanguage()
 
@@ -588,18 +548,25 @@ const selectedProduct = ref(null)
 const productQuantity = ref(1)
 const productUnit = ref('unidad')
 const productSearchQuery = ref('')
-const filterDialog = ref(false)
-const shareDialog = ref(false)
 const currentView = ref('categories') // 'categories' or 'products'
 const selectedCategory = ref(null)
 const pantryItems = ref([])
 const loadingItems = ref(false)
 const searchQuery = ref('')
-const filterStatus = ref('')
 const filterCategory = ref('')
-const shareEmail = ref('')
 const imagePreview = ref('')
 const activeCategoryMenu = ref(null)
+
+const categoryStore = useCategoryStore();
+
+//Filter
+const filterDialog = ref(false)
+const filterCategoryDialog = ref('')
+
+const filters = ref({
+  categoryId: '',
+})
+
 
 // Form data
 const categoryForm = ref({
@@ -702,30 +669,54 @@ const filteredCategories = computed(() => {
 })
 
 const filteredProducts = computed(() => {
-  let filtered = pantryItems.value
+  let list = pantryItems.value || [];
+  
+  console.log('🔍 Filtrado de productos - Estado inicial:', {
+    totalItems: list.length,
+    filterCategoryId: filters.value.categoryId,
+    searchQuery: searchQuery.value,
+    firstItemStructure: list[0] ? {
+      name: list[0].name,
+      categoryId: list[0].category?.id,
+      categoryName: list[0].category?.name,
+      fullCategory: list[0].category
+    } : 'No hay items'
+  });
 
-  // Apply search filter
+  // Filtro por categoría
+  if (filters.value.categoryId) {
+    const wantedId = Number(filters.value.categoryId);
+    console.log('🏷️ Aplicando filtro de categoría:', wantedId);
+    
+    const beforeFilter = list.length;
+    list = list.filter(p => {
+      const itemCategoryId = Number(p?.category?.id);
+      const matches = itemCategoryId === wantedId;
+      
+      if (!matches) {
+        console.log('  ❌ No coincide:', p.name, 'categoryId:', itemCategoryId, 'vs', wantedId);
+      } else {
+        console.log('  ✅ Coincide:', p.name, 'categoryId:', itemCategoryId);
+      }
+      
+      return matches;
+    });
+    
+    console.log(`📊 Resultado del filtro: ${beforeFilter} → ${list.length} items`);
+  }
+
+  // Filtro por búsqueda
   if (searchQuery.value) {
-    filtered = filtered.filter(item =>
-      item.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    const query = searchQuery.value.toLowerCase();
+    list = list.filter(p =>
+      p.name.toLowerCase().includes(query) ||
+      p.metadata?.description?.toLowerCase().includes(query)
+    );
   }
 
-  // Apply status filter
-  if (filterStatus.value) {
-    filtered = filtered.filter(item => {
-      const status = getItemStatus(item)
-      return status === filterStatus.value
-    })
-  }
-
-  // Apply category filter
-  if (filterCategory.value) {
-    filtered = filtered.filter(item => item.category === filterCategory.value)
-  }
-
-  return filtered
-})
+  console.log('✅ Productos filtrados final:', list.length);
+  return list;
+});
 
 
 // Methods
@@ -925,7 +916,10 @@ const addSelectedProductToPantry = async () => {
       name: newProduct.product?.name || selectedProduct.value.name,
       quantity: newProduct.quantity,
       unit: newProduct.unit,
-      category: newProduct.product?.category?.name || 'Sin categoría',
+      category: {
+        id: newProduct.product?.category?.id || selectedProduct.value.category?.id || null,
+        name: newProduct.product?.category?.name || selectedProduct.value.category?.name || 'Sin categoría'
+      },
       image: newProduct.product?.metadata?.image || selectedProduct.value.metadata?.image || '',
       description: newProduct.product?.metadata?.description || selectedProduct.value.metadata?.description || '',
       stock: newProduct.quantity, // Use quantity as stock for display
@@ -956,7 +950,7 @@ const addSelectedProductToPantry = async () => {
     // Check if it's a 400 error (bad request)
     if (error.response && error.response.status === 400) {
       // Show error message to user
-  alert(t('pages.pantry.messages.invalidQuantityUnit'))
+      alert(t('pages.pantry.messages.invalidQuantityUnit'))
       return
     }
     
@@ -1032,6 +1026,11 @@ const openCategory = async (category) => {
   console.log('Opening category:', category.name)
   selectedCategory.value = category
   currentView.value = 'products'
+  
+  // Reset filters when opening a category
+  filters.value = { categoryId: '' }
+  filterCategoryDialog.value = ''
+  searchQuery.value = ''
 
   // Load items for this pantry/category
   loadingItems.value = true
@@ -1050,7 +1049,10 @@ const openCategory = async (category) => {
       name: item.product?.name || item.metadata?.name || item.name || 'Producto sin nombre',
       quantity: item.quantity || 0,
       unit: item.unit || 'unidad',
-      category: item.product?.category?.name || item.metadata?.category || item.category || 'Sin categoría',
+      category: {
+        id: item.product?.category?.id || item.metadata?.categoryId || null,
+        name: item.product?.category?.name || item.metadata?.category || item.category || 'Sin categoría'
+      },
       expiryDate: item.metadata?.expiryDate || item.expiryDate || '',
       image: item.product?.metadata?.image || item.metadata?.image || item.image || '',
       description: item.product?.metadata?.description || item.metadata?.description || '',
@@ -1070,6 +1072,11 @@ const goBackToCategories = () => {
   currentView.value = 'categories'
   selectedCategory.value = null
   pantryItems.value = []
+  
+  // Reset filters when going back to categories
+  filters.value = { categoryId: '' }
+  filterCategoryDialog.value = ''
+  searchQuery.value = ''
 }
 
 // Product management functions
@@ -1278,36 +1285,22 @@ const getItemStatus = (item) => {
   return 'available'
 }
 
-// Filter and share functions
+// Filter functions
 const openFilterDialog = () => {
+  filterCategoryDialog.value = filters.value.categoryId ?? ''
   filterDialog.value = true
 }
 
 const applyFilters = () => {
+  filters.value = {
+    categoryId: filterCategoryDialog.value || '',
+  }
   filterDialog.value = false
 }
 
-const clearFilters = () => {
-  filterStatus.value = ''
-  filterCategory.value = ''
-}
-
-const openShareDialog = () => {
-  shareEmail.value = ''
-  shareDialog.value = true
-}
-
-const sharePantry = async () => {
-  if (!selectedCategory.value || !shareEmail.value) return
-  
-  try {
-    await pantryStore.sharePantryRemote(selectedCategory.value.id, shareEmail.value)
-    console.log('Pantry shared successfully')
-    shareDialog.value = false
-    shareEmail.value = ''
-  } catch (error) {
-    console.error('Failed to share pantry:', error)
-  }
+const resetFilters = () => {
+  filters.value = { categoryId: '' }
+  filterCategoryDialog.value = ''
 }
 
 // Load persisted pantry and seed sample data on first run
@@ -1330,6 +1323,13 @@ onMounted(async () => {
   // Initialize empty pantry if none exist
   if (!pantryStore.pantries || pantryStore.pantries.length === 0) {
     pantryStore.seed([], [])
+  }
+
+  try {
+    // Initialize category store
+    await categoryStore.init()
+  } catch (error) {
+    console.log('Failed to initialize category store:', error)
   }
   
   // Load items for the first pantry (if any)
@@ -2010,5 +2010,11 @@ onMounted(() => {
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+.category-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 </style>
