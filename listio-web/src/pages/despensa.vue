@@ -473,42 +473,48 @@
     </div>
 
     <!-- Filter Dialog -->
-    <v-dialog v-model="filterDialog" max-width="500">
-      <v-card>
-        <v-card-title class="text-h6">
-          {{ t('common.filter') }} {{ t('nav.products') }}
-        </v-card-title>
-        <v-card-text>
-          <v-select
-            v-model="filterStatus"
-            :items="statusOptions"
-            :label="t('pages.pantry.statusLabel') || 'Estado del producto'"
-            variant="outlined"
-            clearable
-          />
-          <v-select
-            v-model="filterCategory"
-            :items="categoryOptions"
-            :label="t('common.category')"
-            variant="outlined"
-            clearable
-          />
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="clearFilters">
-            {{ t('pages.lists.filters.clear') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            @click="applyFilters"
-          >
-            {{ t('pages.lists.filters.apply') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <div v-if="filterDialog" class="modal-overlay">
+      <div class="modal">
+        <h2>Filtrar Productos</h2>
+
+        <form @submit.prevent="applyFilters">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="filterCategoryDialog">Categoría</label>
+              <select
+                id="filterCategoryDialog"
+                v-model="filterCategory"
+                class="form-input"
+              >
+                <option value="">Seleccione una categoría</option>
+                <option
+                  v-for="category in categoryOptions"
+                  :key="category.value"
+                  :value="category.value"
+                >
+                  {{ category.title }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="filterDialog = false">
+              Cancelar
+            </button>
+            <button type="button" class="btn btn--cancel" @click="clearFilters">
+              Limpiar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Share Dialog -->
     <v-dialog v-model="shareDialog" max-width="400">
@@ -560,6 +566,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePantryStore } from '@/stores/pantry'
 import { useProductStore } from '@/stores/products'
+import { useCategoryStore } from '@/stores/category'
 import { useLanguage } from '@/composables/useLanguage'
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -595,7 +602,6 @@ const selectedCategory = ref(null)
 const pantryItems = ref([])
 const loadingItems = ref(false)
 const searchQuery = ref('')
-const filterStatus = ref('')
 const filterCategory = ref('')
 const shareEmail = ref('')
 const imagePreview = ref('')
@@ -662,16 +668,8 @@ const productFields = [
 ]
 
 // Filter options
-const statusOptions = computed(() => [
-  { title: t('pages.pantry.status.available'), value: 'available' },
-  { title: t('pages.pantry.status.low'), value: 'low' },
-  { title: t('pages.pantry.status.expiring'), value: 'expiring' },
-  { title: t('pages.pantry.status.expired'), value: 'expired' }
-])
-
 const categoryOptions = computed(() => {
-  const categories = [...new Set(pantryItems.value.map(item => item.category).filter(Boolean))]
-  return categories.map(cat => ({ title: cat, value: cat }))
+  return categoryStore.categories.map(cat => ({ title: cat.name, value: cat.name }))
 })
 
 const availableProducts = computed(() => {
@@ -692,6 +690,7 @@ const filteredAvailableProducts = computed(() => {
 // Use stores
 const pantryStore = usePantryStore()
 const productStore = useProductStore()
+const categoryStore = useCategoryStore()
 
 // Computed properties for filtering
 const filteredCategories = computed(() => {
@@ -711,14 +710,6 @@ const filteredProducts = computed(() => {
     )
   }
 
-  // Apply status filter
-  if (filterStatus.value) {
-    filtered = filtered.filter(item => {
-      const status = getItemStatus(item)
-      return status === filterStatus.value
-    })
-  }
-
   // Apply category filter
   if (filterCategory.value) {
     filtered = filtered.filter(item => item.category === filterCategory.value)
@@ -726,7 +717,6 @@ const filteredProducts = computed(() => {
 
   return filtered
 })
-
 
 // Helper function to process items for display
 const processItemsForDisplay = (items) => {
@@ -1069,6 +1059,8 @@ const goBackToCategories = () => {
   currentView.value = 'categories'
   selectedCategory.value = null
   pantryItems.value = []
+  // Clear filter when exiting pantry
+  filterCategory.value = ''
 }
 
 // Product management functions
@@ -1291,7 +1283,6 @@ const applyFilters = () => {
 }
 
 const clearFilters = () => {
-  filterStatus.value = ''
   filterCategory.value = ''
 }
 
@@ -1328,6 +1319,13 @@ onMounted(async () => {
     await productStore.init()
   } catch (error) {
     console.log('Failed to initialize product store:', error)
+  }
+  
+  try {
+    // Initialize category store
+    await categoryStore.init()
+  } catch (error) {
+    console.log('Failed to initialize category store:', error)
   }
   
   // Initialize empty pantry if none exist
