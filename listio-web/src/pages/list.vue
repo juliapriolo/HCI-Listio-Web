@@ -278,22 +278,38 @@
     <!-- Product Selection Dialog -->
     <div v-if="productSelectionDialog" class="modal-overlay">
       <div class="modal product-selection-modal">
-        <h2>Seleccionar Producto</h2>
-        
-        <div v-if="availableProducts.length === 0" class="empty-state">
-          <div class="empty-icon">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
-              <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-            </svg>
+  <h2>{{ t('pages.pantry.productSelection.title') || t('pages.list.productSelection.title') }}</h2>
+
+        <!-- Search and quick create toggle -->
+        <div class="form-row" style="align-items: end; margin-bottom: 12px;">
+          <div class="form-group" style="flex:2">
+            <label for="productSearch">{{ t('pages.list.productSelection.searchLabel') }}</label>
+            <input id="productSearch" v-model="productSearchQuery" type="text" class="form-input" :placeholder="t('pages.products.searchPlaceholder') || 'Buscar producto'" />
           </div>
-          <p class="empty-text">No hay productos disponibles</p>
-          <p class="empty-subtext">Ve a la sección de productos para agregar algunos</p>
+          <div class="form-group" style="flex:1">
+            <label>&nbsp;</label>
+            <button type="button" class="btn btn--primary" @click="startCreateNewProduct">{{ t('pages.list.productSelection.createNew') }}</button>
+          </div>
         </div>
-        
-        <div v-else>
-          <div class="products-grid">
+
+        <!-- Products list or empty state -->
+        <div v-if="!creatingNewProduct">
+          <div v-if="filteredAvailableProducts.length === 0" class="empty-state">
+            <div class="empty-icon">
+              <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+                <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+              </svg>
+            </div>
+            <p class="empty-text">{{ t('pages.list.productSelection.empty.noMatchesTitle') }}</p>
+            <p class="empty-subtext">{{ t('pages.list.productSelection.empty.createSuggestion') }}</p>
+            <div class="modal-actions" style="justify-content:center">
+              <button type="button" class="btn btn--primary" @click="startCreateNewProduct">{{ t('pages.list.productSelection.empty.createAction', { name: productSearchQuery || t('pages.list.productSelection.empty.newProductFallback') }) }}</button>
+            </div>
+          </div>
+
+          <div v-else class="products-grid">
             <div
-              v-for="product in availableProducts"
+              v-for="product in filteredAvailableProducts"
               :key="product.id"
               class="product-card"
               :class="{ 'selected': selectedProduct?.id === product.id }"
@@ -324,13 +340,13 @@
               </div>
             </div>
           </div>
-          
+
           <div v-if="selectedProduct" class="product-details">
             <div class="divider"></div>
-            <h4 class="details-title">Detalles del Producto</h4>
+            <h4 class="details-title">{{ t('pages.list.productSelection.detailsTitle') }}</h4>
             <div class="form-row">
               <div class="form-group">
-                <label for="productQuantity">Cantidad</label>
+                <label for="productQuantity">{{ t('pages.list.productSelection.createForm.quantityLabel') || t('common.quantity') }}</label>
                 <input
                   id="productQuantity"
                   v-model="productQuantity"
@@ -340,7 +356,7 @@
                 />
               </div>
               <div class="form-group">
-                <label for="productUnit">Unidad</label>
+                <label for="productUnit">{{ t('pages.list.productSelection.createForm.unitLabel') || 'Unidad' }}</label>
                 <select id="productUnit" v-model="productUnit" class="form-input">
                   <option value="unidad">Unidad</option>
                   <option value="kg">Kilogramo</option>
@@ -354,19 +370,78 @@
             </div>
           </div>
         </div>
+
+        <!-- Create new product form -->
+        <div v-else class="product-details">
+          <div class="divider"></div>
+          <h4 class="details-title">{{ t('pages.list.productSelection.createForm.title') }}</h4>
+          <form @submit.prevent="createAndAddNewProduct">
+            <div class="form-group">
+              <label for="newProductName">{{ t('pages.list.productSelection.createForm.nameLabel') }}</label>
+              <input id="newProductName" v-model="newProductForm.name" type="text" class="form-input" :placeholder="t('pages.list.productSelection.createForm.namePlaceholder')" required />
+            </div>
+            <div class="form-group">
+              <label for="newProductDesc">{{ t('pages.list.productSelection.createForm.descriptionLabel') }}</label>
+              <input id="newProductDesc" v-model="newProductForm.description" type="text" class="form-input" :placeholder="t('pages.list.productSelection.createForm.descriptionPlaceholder')" />
+            </div>
+            <div class="form-group">
+              <label for="newProductCategory">{{ t('pages.list.productSelection.createForm.categoryLabel') }}</label>
+              <select id="newProductCategory" v-model="newProductForm.category" class="form-input" required>
+                <option disabled value="">{{ t('pages.list.productSelection.createForm.categoryPlaceholder') }}</option>
+                <option v-for="cat in categoryStore.categories" :key="cat.id" :value="cat">{{ cat.name }}</option>
+                <option value="__new__">{{ t('pages.list.productSelection.createForm.newCategoryOption') }}</option>
+              </select>
+            </div>
+            <div v-if="newProductForm.category === '__new__'" class="form-group">
+              <label for="newCategoryName">{{ t('pages.list.productSelection.createForm.newCategoryNameLabel') }}</label>
+              <input id="newCategoryName" v-model="newProductForm.newCategoryName" type="text" class="form-input" :placeholder="t('pages.list.productSelection.createForm.newCategoryNamePlaceholder')" />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="newProdQty">{{ t('pages.list.productSelection.createForm.quantityLabel') || t('common.quantity') }}</label>
+                <input id="newProdQty" v-model="productQuantity" type="number" min="1" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label for="newProdUnit">{{ t('pages.list.productSelection.createForm.unitLabel') }}</label>
+                <select id="newProdUnit" v-model="productUnit" class="form-input">
+                  <option value="unidad">Unidad</option>
+                  <option value="kg">Kilogramo</option>
+                  <option value="g">Gramo</option>
+                  <option value="l">Litro</option>
+                  <option value="ml">Mililitro</option>
+                  <option value="paquete">Paquete</option>
+                  <option value="caja">Caja</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </div>
         
         <div class="modal-actions">
-          <button type="button" class="btn btn--cancel" @click="productSelectionDialog = false">
-            Cancelar
+          <button type="button" class="btn btn--cancel" @click="productSelectionDialog = false; creatingNewProduct = false">
+            {{ t('common.cancel') }}
           </button>
-          <button
-            type="button"
-            class="btn btn--primary"
-            :disabled="!selectedProduct"
-            @click="addSelectedProductToList"
-          >
-            Agregar a Lista
-          </button>
+          <template v-if="!creatingNewProduct">
+            <button
+              type="button"
+              class="btn btn--primary"
+              :disabled="!selectedProduct"
+              @click="addSelectedProductToList"
+            >
+              {{ t('pages.list.productSelection.addToList') }}
+            </button>
+          </template>
+          <template v-else>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              :disabled="!newProductForm.name || !newProductForm.category || creatingNewProductLoading"
+              @click="createAndAddNewProduct"
+            >
+              {{ creatingNewProductLoading ? t('pages.list.productSelection.createForm.creating') : t('pages.list.productSelection.createForm.submit') }}
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -452,6 +527,11 @@ const selectedProduct = ref(null)
 const productQuantity = ref(1)
 const productUnit = ref('g')
 const activeItemMenu = ref(null)
+// Product selection helpers
+const productSearchQuery = ref('')
+const creatingNewProduct = ref(false)
+const creatingNewProductLoading = ref(false)
+const newProductForm = ref({ name: '', description: '', category: '', newCategoryName: '' })
 
 // Item edit modal state
 const editItemQuantity = ref(1)
@@ -681,6 +761,10 @@ const openProductSelectionDialog = async () => {
   selectedProduct.value = null
   productQuantity.value = 1
   productUnit.value = 'unidad'
+  productSearchQuery.value = ''
+  creatingNewProduct.value = false
+  creatingNewProductLoading.value = false
+  newProductForm.value = { name: '', description: '', category: '', newCategoryName: '' }
   
   // Cargar productos y categorías del servidor si no están disponibles
   try {
@@ -709,6 +793,9 @@ const selectProduct = (product) => {
 
 const addSelectedProductToList = async () => {
   if (!selectedProduct.value) return
+  if (!listItemsStore.listId && currentListId.value) {
+    listItemsStore.load(currentListId.value)
+  }
   
   try {
     // Crear payload según el nuevo formato requerido
@@ -737,6 +824,19 @@ const addSelectedProductToList = async () => {
   }
 }
 
+// Start create-new flow and prefill name from current search
+const startCreateNewProduct = () => {
+  creatingNewProduct.value = true
+  if (!newProductForm.value.name && productSearchQuery.value) {
+    newProductForm.value.name = productSearchQuery.value.trim()
+  }
+  // focus name input on next tick
+  nextTick(() => {
+    const el = document.getElementById('newProductName')
+    if (el) el.focus()
+  })
+}
+
 // Item menu functions
 const toggleItemMenu = (itemId, event) => {
   if (activeItemMenu.value === itemId) {
@@ -760,6 +860,103 @@ const hideItemMenu = () => {
   setTimeout(() => {
     activeItemMenu.value = null
   }, 150)
+}
+
+// Filter available products by search query
+const filteredAvailableProducts = computed(() => {
+  const list = availableProducts.value || []
+  const q = (productSearchQuery.value || '').trim().toLowerCase()
+  if (!q) return list
+  return list.filter(p => p.name?.toLowerCase().includes(q) || (p.metadata?.description || '').toLowerCase().includes(q))
+})
+
+// Create a new product and immediately add it to the current list
+const createAndAddNewProduct = async () => {
+  if (creatingNewProductLoading.value) return
+  if (!newProductForm.value.name || !newProductForm.value.category) return
+  try {
+    creatingNewProductLoading.value = true
+
+    // Ensure list context loaded
+    if (!listItemsStore.listId && currentListId.value) {
+      listItemsStore.load(currentListId.value)
+    }
+
+    // 1) Optimistic local add so the user sees it immediately
+    const tempId = Date.now()
+    const optimisticItem = {
+      id: tempId,
+      name: newProductForm.value.name.trim(),
+      quantity: parseInt(productQuantity.value) || 1,
+      unit: productUnit.value || 'unidad',
+      purchased: false,
+      metadata: {}
+    }
+    listItemsStore.addItem(optimisticItem, { remote: false })
+    // Close dialog right away for perceived performance
+    productSelectionDialog.value = false
+
+    // Ensure categories are available
+    if (!categoryStore.categories || categoryStore.categories.length === 0) {
+      try { await categoryStore.fetchRemote() } catch (e) { /* ignore */ }
+    }
+
+    // Create category if needed
+    let categoryToUse = newProductForm.value.category
+    if (categoryToUse === '__new__') {
+      const name = (newProductForm.value.newCategoryName || '').trim()
+      if (!name) { creatingNewProductLoading.value = false; return }
+      const createdCat = await categoryStore.createRemote({ name, metadata: {} })
+      categoryToUse = createdCat
+      try { await categoryStore.fetchRemote() } catch (e) { /* ignore */ }
+    }
+
+    // Create product
+    const payload = {
+      name: newProductForm.value.name.trim(),
+      metadata: { description: (newProductForm.value.description || '').trim() },
+      category: { id: categoryToUse.id }
+    }
+    const created = await productStore.createRemote(payload)
+    // Refresh list of products (optional to ensure it appears)
+    try { await productStore.fetchRemote() } catch (e) { /* ignore */ }
+
+    // 2) Add to current list on server
+    if (created && created.id) {
+      const liPayload = {
+        product: { id: created.id },
+        quantity: parseInt(productQuantity.value) || 1,
+        unit: productUnit.value || 'unidad',
+        metadata: {}
+      }
+      try {
+        await listItemsStore.createRemote(liPayload)
+      } catch (e) {
+        // If server add fails, remove optimistic item and rethrow
+        listItemsStore.deleteItem(tempId, { remote: false })
+        throw e
+      }
+      // Refresh from server to reconcile ids and product info
+      await listItemsStore.fetchRemote()
+    }
+
+    // 3) Reset local state
+    creatingNewProduct.value = false
+    newProductForm.value = { name: '', description: '', category: '', newCategoryName: '' }
+    selectedProduct.value = null
+    productQuantity.value = 1
+    productUnit.value = 'unidad'
+  } catch (e) {
+    console.error('Error creando y agregando producto:', e)
+    // Rollback optimistic add if still present
+    try {
+      // If item with tempId exists, remove it
+      const exists = (listItemsStore.items || []).some(i => i.id === tempId)
+      if (exists) listItemsStore.deleteItem(tempId, { remote: false })
+    } catch (er) { /* ignore */ }
+  } finally {
+    creatingNewProductLoading.value = false
+  }
 }
 
 const goBackToLists = () => {

@@ -626,6 +626,22 @@ const handleNewImageChange = (event) => {
 
 const createNewList = async (formData) => {
   if (isCreating.value) return // Prevent double submission
+
+  const trimmedName = formData.name?.trim() || ''
+  if (!trimmedName) {
+    snackbarText.value = 'La lista debe tener un nombre.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+    return
+  }
+
+  const duplicate = listsStore.lists.some(list => list.name?.trim().toLowerCase() === trimmedName.toLowerCase())
+  if (duplicate) {
+    snackbarText.value = `Ya existe una lista llamada "${trimmedName}". Usa otro nombre o edita la lista existente.`
+    snackbarColor.value = 'error'
+    snackbar.value = true
+    return
+  }
   
   isCreating.value = true
   try {
@@ -637,7 +653,7 @@ const createNewList = async (formData) => {
     }
     
     const payload = {
-      name: formData.name.trim(),
+      name: trimmedName,
       description: formData.description?.trim() || '',
       recurring: formData.recurring || false,
       metadata: {
@@ -660,22 +676,32 @@ const createNewList = async (formData) => {
         snackbar.value = true
         
       } catch (apiError) {
-        console.warn('API creation failed, falling back to local storage:', apiError)
+        console.warn('API creation failed:', apiError)
+
+        if (apiError?.status === 409) {
+          snackbarText.value = `Ya existe una lista llamada "${trimmedName}". Cambia el nombre para poder crearla.`
+          snackbarColor.value = 'error'
+          snackbar.value = true
+          isCreating.value = false
+          return
+        }
+
+        console.warn('Falling back to local storage after API failure (non-409).')
         isApiAvailable.value = false // Mark API as unavailable
         
         // Fallback to local creation
-  const newList = {
-    id: Date.now(),
+        const newList = {
+          id: Date.now(),
           name: payload.name,
           description: payload.description,
           recurring: payload.recurring,
           image: payload.metadata.image,
-    itemCount: 0,
-    completedItems: 0,
-    lastUpdated: new Date()
-  }
+          itemCount: 0,
+          completedItems: 0,
+          lastUpdated: new Date()
+        }
 
-  listsStore.addList(newList)
+        listsStore.addList(newList)
         console.log('Successfully created list locally:', payload.name)
         
         // Show success message for local creation
