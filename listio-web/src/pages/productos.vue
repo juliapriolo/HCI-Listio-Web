@@ -391,6 +391,10 @@ const addProduct = async (formData) => {
     }
     
   await productStore.createRemote(payload)
+  
+  // Refrescar la lista de productos para mostrar el nuevo producto inmediatamente
+  await productStore.fetchRemote()
+  
   snackbarText.value = t('pages.products.messages.added', { name: formData.name })
     snackbarColor.value = 'success'
     snackbar.value = true
@@ -443,6 +447,10 @@ const updateProduct = async (updatedData) => {
     }
     
   await productStore.updateRemote(updatedData.id, payload)
+  
+  // Refrescar la lista de productos para mostrar los cambios inmediatamente
+  await productStore.fetchRemote()
+  
   snackbarText.value = t('pages.products.messages.updated')
     snackbarColor.value = 'success'
     snackbar.value = true
@@ -459,6 +467,10 @@ const updateProduct = async (updatedData) => {
 const deleteProduct = async (product) => {
   try {
   await productStore.deleteRemote(product.id)
+  
+  // Refrescar la lista de productos para mostrar los cambios inmediatamente
+  await productStore.fetchRemote()
+  
   snackbarText.value = t('pages.products.messages.deleted')
     snackbarColor.value = 'success'
     snackbar.value = true
