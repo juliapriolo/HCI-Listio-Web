@@ -57,8 +57,6 @@
         icon="mdi-format-list-bulleted"
         :title="t('pages.lists.noListsTitle')"
         :description="t('pages.lists.noListsDescription')"
-        :action-text="t('pages.lists.createListAction')"
-        @action="openNewListDialog"
       />
 
       <EmptyState
