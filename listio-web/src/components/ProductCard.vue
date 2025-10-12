@@ -22,7 +22,7 @@
 
       <v-chip
         class="category-chip"
-        color="primary"
+        color="success"
         size="small"
         variant="elevated"
       >
