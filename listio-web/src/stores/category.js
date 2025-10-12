@@ -111,10 +111,31 @@ export const useCategoryStore = defineStore('category', {
     },
 
     // --- INIT ---
+    // --- INIT sincrónico con API ---
     async init() {
-      this.load()
-      if (!this.categories || this.categories.length === 0) {
-        await this.fetchRemote()
+      try {
+        // 1️⃣ Cargar lo que haya en localStorage primero (cache)
+        this.load()
+
+        // 2️⃣ Obtener datos actualizados de la API
+        const remoteData = await this.fetchRemote() // this.categories se actualiza y guarda en localStorage
+
+        // 3️⃣ Comparar localStorage anterior con la API
+        const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+
+        const newItems = remoteData.items.filter(r => !localData.some(l => l.id === r.id))
+        const removedItems = localData.filter(l => !remoteData.items.some(r => r.id === l.id))
+
+        if (newItems.length > 0) {
+          console.log('Nuevas categorías desde la API:', newItems)
+        }
+
+        if (removedItems.length > 0) {
+          console.log('Categorías eliminadas desde la API:', removedItems)
+        }
+
+      } catch (e) {
+        console.error('Error inicializando categorías:', e)
       }
     }
   }

@@ -67,7 +67,7 @@
 
                 <div class="item-buttons">
                   <v-checkbox
-                    :model-value="item.checked"
+                    :model-value="item.purchased"
                     @click="toggleChecked(item)"
                     :ripple="false"
                     color="black"
@@ -159,9 +159,15 @@
       <div class="modal item-edit-modal">
         <h2>Editar Producto</h2>
         
+        <!-- Mostrar información del producto (solo lectura) -->
+        <div v-if="selectedItem" class="product-info">
+          <h3>{{ selectedItem.name }}</h3>
+          <p v-if="selectedItem.product?.metadata?.description">{{ selectedItem.product.metadata.description }}</p>
+        </div>
+        
         <form @submit.prevent="saveItemEdit">
           <div class="form-group">
-            <label for="editItemName">Nombre</label>
+            <label for="editItemName">{{t('common.name')}}</label>
             <input
               id="editItemName"
               v-model="editItemName"
@@ -196,7 +202,6 @@
               </select>
             </div>
           </div>
-          
           
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="itemMenuDialog = false">
@@ -382,6 +387,7 @@ import { useRoute } from 'vue-router'
 import { useListItemsStore } from '@/stores/listItems'
 import { useListsStore } from '@/stores/lists'
 import { useProductStore } from '@/stores/products'
+import { useCategoryStore } from '@/stores/category'
 import listsApi from '@/api/lists'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -393,6 +399,7 @@ const route = useRoute()
 const listItemsStore = useListItemsStore()
 const listsStore = useListsStore()
 const productStore = useProductStore()
+const categoryStore = useCategoryStore()
 
 const items = computed(() => listItemsStore.items)
 const availableProducts = computed(() => {
@@ -401,22 +408,34 @@ const availableProducts = computed(() => {
 
 // Load the items for the requested list id (query param `id`). If no id
 // present, keep items empty.
-const loadForRoute = () => {
+const loadForRoute = async () => {
   const id = route.query.id || null
   // route.query values are strings; try to coerce numeric ids
   const listId = id ? (Number(id) || id) : null
-  listItemsStore.load(listId)
+  
+  if (listId) {
+    // Cargar desde localStorage primero (para mostrar datos inmediatamente)
+    listItemsStore.load(listId)
+    
+    // Luego intentar obtener datos actualizados del servidor
+    try {
+      await listItemsStore.fetchRemote()
+      console.log('Items cargados desde el servidor para lista:', listId)
+    } catch (error) {
+      console.warn('No se pudieron cargar items desde el servidor, usando datos locales:', error)
+    }
+  }
 }
 
 const currentListName = computed(() => {
   const id = route.query.id || null
   const listId = id ? (Number(id) || id) : null
   const list = listId ? listsStore.getById(listId) : null
-  return list ? `Mi Lista: ${list.name}` : 'My List'
+  return list ? `Lista: ${list.name}` : 'My List'
 })
 
-onMounted(() => loadForRoute())
-watch(() => route.fullPath, () => loadForRoute())
+onMounted(async () => await loadForRoute())
+watch(() => route.fullPath, async () => await loadForRoute())
 onBeforeUnmount(() => {
   // stop storage event listening when component unmounts
   try { listItemsStore.stopListening() } catch (e) {}
@@ -435,9 +454,8 @@ const productUnit = ref('g')
 const activeItemMenu = ref(null)
 
 // Item edit modal state
-const editItemName = ref('')
 const editItemQuantity = ref(1)
-const editItemUnit = ref('g')
+const editItemUnit = ref('unidad')
 
 // Share modal state
 const shareEmail = ref('')
@@ -502,9 +520,8 @@ const openNewItemDialog = () => {
 
 const openEditDialog = (item) => {
   selectedItem.value = { ...item }
-  editItemName.value = item.name || ''
   editItemQuantity.value = item.quantity || 1
-  editItemUnit.value = item.unit || 'g'
+  editItemUnit.value = item.unit || 'unidad'
   itemMenuDialog.value = true
 }
 
@@ -527,32 +544,68 @@ const addItem = (formData) => {
     category: formData.category || t('common.noCategory'),
     quantity: formData.quantity || 1,
     unit: formData.unit || 'g',
-    checked: false
+    purchased: false
   })
   newItemDialog.value = false
 }
 
-const saveItemEdit = () => {
+const saveItemEdit = async () => {
   if (!selectedItem.value) return
   
-  const updatedItem = {
-    ...selectedItem.value,
-    name: editItemName.value,
-    quantity: parseInt(editItemQuantity.value),
-    unit: editItemUnit.value
+  try {
+    // Crear payload según el formato requerido
+    const payload = {
+      quantity: parseInt(editItemQuantity.value),
+      unit: editItemUnit.value,
+      metadata: {}
+    }
+    
+    // Actualizar en el servidor usando el endpoint correcto
+    await listItemsStore.updateRemote(selectedItem.value.id, payload)
+    console.log('Item actualizado en el servidor:', selectedItem.value.name)
+  } catch (error) {
+    console.error('Error al actualizar item en el servidor:', error)
+    // Fallback: actualizar localmente si falla el servidor (sin cambiar el nombre)
+    const updatedItem = {
+      ...selectedItem.value,
+      quantity: parseInt(editItemQuantity.value),
+      unit: editItemUnit.value
+    }
+    listItemsStore.updateItem(selectedItem.value.id, updatedItem)
   }
-  
-  listItemsStore.updateItem(selectedItem.value.id, updatedItem)
   itemMenuDialog.value = false
 }
 
-const updateItem = (updated) => {
-  listItemsStore.updateItem(updated.id, updated)
+const updateItem = async (updated) => {
+  try {
+    // Crear payload según el formato requerido
+    const payload = {
+      quantity: parseInt(updated.quantity) || 1,
+      unit: updated.unit || 'unidad',
+      metadata: {}
+    }
+    
+    // Actualizar en el servidor usando el endpoint correcto
+    await listItemsStore.updateRemote(updated.id, payload)
+    console.log('Item actualizado en el servidor:', updated.name)
+  } catch (error) {
+    console.error('Error al actualizar item en el servidor:', error)
+    // Fallback: actualizar localmente si falla el servidor
+    listItemsStore.updateItem(updated.id, updated)
+  }
   itemMenuDialog.value = false
 }
 
-const deleteItem = (item) => {
-  listItemsStore.deleteItem(item.id)
+const deleteItem = async (item) => {
+  try {
+    // Eliminar del servidor usando el endpoint correcto
+    await listItemsStore.deleteRemote(item.id)
+    console.log('Item eliminado del servidor:', item.name)
+  } catch (error) {
+    console.error('Error al eliminar item del servidor:', error)
+    // Fallback: eliminar localmente si falla el servidor
+    listItemsStore.deleteItem(item.id)
+  }
   itemMenuDialog.value = false
 }
 
@@ -623,11 +676,31 @@ function clearShareEmailErrors() {
 }
 
 // Product selection functions
-const openProductSelectionDialog = () => {
+const openProductSelectionDialog = async () => {
   productSelectionDialog.value = true
   selectedProduct.value = null
   productQuantity.value = 1
-  productUnit.value = 'g'
+  productUnit.value = 'unidad'
+  
+  // Cargar productos y categorías del servidor si no están disponibles
+  try {
+    const promises = []
+    
+    if (!productStore.products || productStore.products.length === 0) {
+      promises.push(productStore.fetchRemote())
+    }
+    
+    if (!categoryStore.categories || categoryStore.categories.length === 0) {
+      promises.push(categoryStore.fetchRemote())
+    }
+    
+    if (promises.length > 0) {
+      await Promise.all(promises)
+      console.log('Productos y categorías cargados desde el servidor para selección')
+    }
+  } catch (error) {
+    console.error('Error al cargar productos y categorías:', error)
+  }
 }
 
 const selectProduct = (product) => {
@@ -637,21 +710,28 @@ const selectProduct = (product) => {
 const addSelectedProductToList = async () => {
   if (!selectedProduct.value) return
   
-  const itemData = {
-    name: selectedProduct.value.name,
-    description: selectedProduct.value.metadata?.description || '',
-    category: selectedProduct.value.metadata?.category || 'General',
-    quantity: parseInt(productQuantity.value),
-    unit: productUnit.value,
-    checked: false
-  }
-  
   try {
-    await addItem(itemData)
+    // Crear payload según el nuevo formato requerido
+    const payload = {
+      product: {
+        id: selectedProduct.value.id
+      },
+      quantity: parseInt(productQuantity.value),
+      unit: productUnit.value,
+      metadata: {}
+    }
+    
+    // Usar el store de listItems para agregar el producto
+    await listItemsStore.createRemote(payload)
+    
+    // Refrescar la lista para mostrar el nuevo producto inmediatamente
+    await listItemsStore.fetchRemote()
+    
     productSelectionDialog.value = false
     selectedProduct.value = null
     productQuantity.value = 1
-    productUnit.value = 'g'
+    productUnit.value = 'unidad'
+    
   } catch (error) {
     console.error('Error adding product to list:', error)
   }
@@ -692,9 +772,17 @@ const applyFilters = (appliedFilters) => {
   filters.value = { ...appliedFilters }
 }
 
-// Toggle checked state and persist
-const toggleChecked = (item) => {
-  listItemsStore.updateItem(item.id, { checked: !item.checked })
+// Toggle purchased state and persist
+const toggleChecked = async (item) => {
+  try {
+    // Usar el método específico para marcar como comprado
+    await listItemsStore.markAsPurchasedRemote(item.id, !item.purchased)
+    console.log('Estado purchased actualizado en el servidor:', item.name, 'purchased:', !item.purchased)
+  } catch (error) {
+    console.error('Error al actualizar estado purchased en el servidor:', error)
+    // Fallback: actualizar localmente si falla el servidor
+    listItemsStore.updateItem(item.id, { purchased: !item.purchased })
+  }
 }
 </script>
 

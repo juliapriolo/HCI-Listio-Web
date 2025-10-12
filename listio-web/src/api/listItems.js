@@ -2,24 +2,29 @@
 import api from './index'
 
 export default {
-  // GET /lists/:listId/items
+  // GET /api/shopping-lists/:listId/items
   getAll(listId, params) {
     const qs = params ? '?' + new URLSearchParams(params).toString() : ''
-    return api.get(`/lists/${listId}/items${qs}`)
+    return api.get(`/api/shopping-lists/${listId}/items${qs}`)
   },
 
-  // POST /lists/:listId/items
+  // POST /api/shopping-lists/:listId/items
   create(listId, payload) {
-    return api.post(`/lists/${listId}/items`, payload)
+    return api.post(`/api/shopping-lists/${listId}/items`, payload)
   },
 
-  // PATCH /lists/:listId/items/:itemId
+  // PUT /api/shopping-lists/:listId/items/:itemId - Para editar producto (quantity, unit, metadata)
   update(listId, itemId, payload) {
-    return api.patch(`/lists/${listId}/items/${itemId}`, payload)
+    return api.put(`/api/shopping-lists/${listId}/items/${itemId}`, payload)
   },
 
-  // DELETE /lists/:listId/items/:itemId
+  // PATCH /api/shopping-lists/:listId/items/:itemId - Para marcar como comprado (purchased)
+  markAsPurchased(listId, itemId, payload) {
+    return api.patch(`/api/shopping-lists/${listId}/items/${itemId}`, payload)
+  },
+
+  // DELETE /api/shopping-lists/:listId/items/:itemId
   delete(listId, itemId) {
-    return api.delete(`/lists/${listId}/items/${itemId}`)
+    return api.delete(`/api/shopping-lists/${listId}/items/${itemId}`)
   }
 }
