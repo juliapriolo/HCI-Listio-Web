@@ -309,7 +309,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useListsStore } from '@/stores/lists'
 import { useLanguage } from '@/composables/useLanguage'
@@ -842,12 +842,11 @@ onMounted(async () => {
   isLoading.value = false
 
   // After lists are loaded, compute item counts
-  // Commented out to avoid unnecessary API calls when just viewing the lists page
-  // try {
-  //   await updateAllListItemCounts()
-  // } catch (e) {
-  //   console.warn('Failed to update item counts on mount:', e)
-  // }
+  try {
+    await updateAllListItemCounts()
+  } catch (e) {
+    console.warn('Failed to update item counts on mount:', e)
+  }
 
   // Listen to localStorage changes for list items to keep counts in sync
   window.addEventListener('storage', onListItemsStorage)
@@ -856,6 +855,16 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('storage', onListItemsStorage)
 })
+
+// Watcher para detectar cambios en las listas y actualizar conteos
+watch(() => listsStore.lists, (newLists) => {
+  if (newLists && newLists.length > 0) {
+    // Actualizar conteos para todas las listas cuando cambian
+    newLists.forEach(list => {
+      updateListItemCount(list.id)
+    })
+  }
+}, { deep: true })
 
 // --- Item count helpers ---
 const LIST_ITEMS_STORAGE_PREFIX = 'listio:list-items:'
@@ -873,22 +882,37 @@ function getLocalListItemCount(listId) {
 
 async function getRemoteListItemCount(listId) {
   try {
-    const data = await listItemsApi.getAll(listId, { limit: 1, page: 1 })
-    // Try common envelopes first for a total
+    // Primero intentar obtener solo la metadata para el conteo total
+    const data = await listItemsApi.getAll(listId, { limit: 0, page: 1 })
+    
+    // Intentar obtener el total de la metadata
     const meta = data?.meta || data?.data?.meta || null
-    if (meta && typeof meta.total === 'number') return meta.total
-    // Fall back to array lengths in various shapes
-    if (Array.isArray(data)) return data.length
-    if (Array.isArray(data?.data)) return data.data.length
-    if (Array.isArray(data?.items)) return data.items.length
-    return null
+    if (meta && typeof meta.total === 'number') {
+      console.log(`Lista ${listId} tiene ${meta.total} productos (desde metadata)`)
+      return meta.total
+    }
+    
+    // Si no hay metadata, obtener todos los items para contar
+    const allData = await listItemsApi.getAll(listId)
+    let count = 0
+    
+    if (Array.isArray(allData)) {
+      count = allData.length
+    } else if (Array.isArray(allData?.data)) {
+      count = allData.data.length
+    } else if (Array.isArray(allData?.items)) {
+      count = allData.items.length
+    }
+    
+    console.log(`Lista ${listId} tiene ${count} productos (contados manualmente)`)
+    return count
   } catch (e) {
     // Silently handle 404 errors for lists that don't exist on the server
     if (e?.status === 404) {
-      console.log(`List ${listId} not found on server, using local count`)
+      console.log(`Lista ${listId} no encontrada en el servidor, usando conteo local`)
       return null
     }
-    console.warn(`Error fetching remote item count for list ${listId}:`, e)
+    console.warn(`Error obteniendo conteo remoto de items para lista ${listId}:`, e)
     return null
   }
 }
@@ -943,6 +967,18 @@ function onListItemsStorage(e) {
   const idNum = isNaN(Number(listId)) ? listId : Number(listId)
   const list = listsStore.getById(idNum)
   if (list && (list.itemCount || 0) !== count) {
+    console.log(`Actualizando conteo para lista ${listId}: ${list.itemCount} -> ${count}`)
+    listsStore.updateList(idNum, { itemCount: count })
+  }
+}
+
+// Función para actualizar el conteo de una lista específica
+function updateListItemCount(listId) {
+  const count = getLocalListItemCount(listId)
+  const idNum = isNaN(Number(listId)) ? listId : Number(listId)
+  const list = listsStore.getById(idNum)
+  if (list && (list.itemCount || 0) !== count) {
+    console.log(`Actualizando conteo local para lista ${listId}: ${list.itemCount} -> ${count}`)
     listsStore.updateList(idNum, { itemCount: count })
   }
 }

@@ -431,7 +431,7 @@ const currentListName = computed(() => {
   const id = route.query.id || null
   const listId = id ? (Number(id) || id) : null
   const list = listId ? listsStore.getById(listId) : null
-  return list ? `Mi Lista: ${list.name}` : 'My List'
+  return list ? `Lista: ${list.name}` : 'My List'
 })
 
 onMounted(async () => await loadForRoute())
