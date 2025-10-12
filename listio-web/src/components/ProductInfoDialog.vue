@@ -19,21 +19,35 @@
 
         <div class="form-group">
           <label for="productCategory">Categoría *</label>
-          <select
-            id="productCategory"
-            v-model="localData.category"
-            class="form-input"
-            required
-          >
-            <option value="">Seleccione una categoría</option>
-            <option
-              v-for="category in categories"
-              :key="category.id"
-              :value="category"
+          <div class="category-input-group">
+            <select
+              id="productCategory"
+              v-model="localData.category"
+              class="form-input"
+              required
             >
-              {{ category.name }}
-            </option>
-          </select>
+              <option value="">Seleccione una categoría</option>
+              <option
+                v-for="category in categories"
+                :key="category.id"
+                :value="category"
+              >
+                {{ category.name }}
+              </option>
+              <option value="__new__">+ Crear nueva categoría</option>
+            </select>
+            
+            <!-- Campo para nueva categoría -->
+            <div v-if="localData.category === '__new__'" class="new-category-field">
+              <input
+                v-model="localData.newCategoryName"
+                type="text"
+                class="form-input"
+                placeholder="Nombre de la nueva categoría"
+                required
+              />
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -50,22 +64,6 @@
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="handleCancel">
             Cancelar
-          </button>
-
-          <button
-            type="button"
-            class="btn btn--error"
-            @click="handleDelete"
-          >
-            Eliminar
-          </button>
-
-          <button
-            type="button"
-            class="btn btn--primary"
-            @click="handleAddToList"
-          >
-            Añadir a lista
           </button>
 
           <button
@@ -93,35 +91,40 @@ const props = defineProps({
 const emit = defineEmits([
   'update:modelValue',
   'update',
-  'delete',
-  'add-to-list',
   'cancel',
 ])
 
-const localData = ref({ ...props.item })
+const localData = ref({ 
+  ...props.item, 
+  newCategoryName: "" 
+})
 
 watch(() => props.item, (newItem) => {
-  localData.value = { ...newItem }
+  localData.value = { 
+    ...newItem, 
+    newCategoryName: "" 
+  }
 })
 
 watch(() => props.modelValue, (open) => {
-  if (!open) localData.value = { ...props.item }
+  if (!open) {
+    localData.value = { 
+      ...props.item, 
+      newCategoryName: "" 
+    }
+  }
 })
 
-const isFormValid = computed(() => !!localData.value.name?.trim())
+const isFormValid = computed(() => {
+  const hasName = !!localData.value.name?.trim()
+  const hasCategory = !!localData.value.category
+  const hasNewCategoryName = localData.value.category !== '__new__' || !!localData.value.newCategoryName?.trim()
+  
+  return hasName && hasCategory && hasNewCategoryName
+})
 
 const handleSubmit = () => {
   emit('update', { ...localData.value })
-  emit('update:modelValue', false)
-}
-
-const handleDelete = () => {
-  emit('delete', props.item)
-  emit('update:modelValue', false)
-}
-
-const handleAddToList = () => {
-  emit('add-to-list', props.item)
   emit('update:modelValue', false)
 }
 
@@ -181,4 +184,27 @@ const handleCancel = () => {
 .btn--primary { background: #1976d2; color: #fff; }
 .btn--success { background: #4caf50; color: #fff; }
 .btn--error { background: #f44336; color: #fff; }
+
+/* Category input group styles */
+.category-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-category-field {
+  margin-top: 8px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 </style>

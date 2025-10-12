@@ -119,21 +119,35 @@
 
           <div class="form-group">
             <label for="productCategory">Categoría *</label>
-            <select
-              id="productCategory"
-              v-model="newProductForm.category"
-              class="form-input"
-              required
-            >
-              <option value="">Seleccione una categoría</option>
-              <option
-                v-for="category in categoryStore.categories"
-                :key="category.id"
-                :value="category"
+            <div class="category-input-group">
+              <select
+                id="productCategory"
+                v-model="newProductForm.category"
+                class="form-input"
+                required
               >
-                {{ category.name }}
-              </option>
-            </select>
+                <option value="">Seleccione una categoría</option>
+                <option
+                  v-for="category in categoryStore.categories"
+                  :key="category.id"
+                  :value="category"
+                >
+                  {{ category.name }}
+                </option>
+                <option value="__new__">+ Crear nueva categoría</option>
+              </select>
+              
+              <!-- Campo para nueva categoría -->
+              <div v-if="newProductForm.category === '__new__'" class="new-category-field">
+                <input
+                  v-model="newProductForm.newCategoryName"
+                  type="text"
+                  class="form-input"
+                  placeholder="Nombre de la nueva categoría"
+                  required
+                />
+              </div>
+            </div>
           </div>
 
           <div class="modal-actions">
@@ -150,6 +164,7 @@
               :disabled="
                 !newProductForm.name?.trim() ||
                 !newProductForm.category ||
+                (newProductForm.category === '__new__' && !newProductForm.newCategoryName?.trim()) ||
                 isCreating
               "
             >
@@ -163,36 +178,37 @@
     <ProductInfoDialog
       v-model="productInfoDialog"
       :item="selectedProduct"
+      :categories="categoryStore.categories"
       @update="updateProduct"
-      @delete="deleteProduct"
-      @add-to-list="addToList"
       @cancel="productInfoDialog = false"
     />
 
     <!-- Diálogo de confirmación de eliminación -->
-    <v-dialog v-model="deleteConfirmDialog" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6"> Confirmar eliminación </v-card-title>
-
-        <v-card-text>
-          <p>
-            ¿Estás seguro de que quieres eliminar el producto
-            <strong>"{{ productToDelete?.name }}"</strong>?
-          </p>
-          <p class="text-caption text-grey">
+    <div v-if="deleteConfirmDialog" class="modal-overlay">
+      <div class="modal delete-confirmation-modal">
+        <h2>Confirmar eliminación</h2>
+        
+        <div class="confirmation-content">
+          <p class="confirmation-text">
+            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>? 
             Esta acción no se puede deshacer.
           </p>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="deleteConfirmDialog = false"> Cancelar </v-btn>
-          <v-btn color="error" variant="elevated" @click="executeDelete">
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="deleteConfirmDialog = false">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger"
+            @click="executeDelete"
+          >
             Eliminar
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -225,6 +241,7 @@ const newProductForm = ref({
   description: "",
   image: null,
   category: null,
+  newCategoryName: "",
 });
 
 const productStore = useProductStore();
@@ -238,15 +255,24 @@ const filteredProducts = computed(() => {
   return productStore.searchLocal(searchQuery.value);
 });
 
-const openNewProductDialog = () => {
+const openNewProductDialog = async () => {
   newProductForm.value = {
     name: "",
     description: "",
     image: null,
     category: null,
+    newCategoryName: "",
   };
   productImageFile.value = null;
   productImagePreview.value = "";
+  
+  // Refrescar categorías para mostrar las más recientes
+  try {
+    await categoryStore.fetchRemote();
+  } catch (error) {
+    console.warn('No se pudieron refrescar las categorías:', error);
+  }
+  
   newProductDialog.value = true;
 };
 
@@ -257,6 +283,7 @@ const closeNewProductDialog = () => {
     description: "",
     image: null,
     category: null,
+    newCategoryName: "",
   };
   productImageFile.value = null;
   productImagePreview.value = "";
@@ -301,6 +328,29 @@ const addProduct = async (formData) => {
 
   isCreating.value = true;
   try {
+    let categoryToUse = formData.category;
+
+    // Si se seleccionó crear nueva categoría, crear la categoría primero
+    if (formData.category === '__new__') {
+      if (!formData.newCategoryName?.trim()) {
+        snackbarText.value = "Debe especificar un nombre para la nueva categoría";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
+
+      const newCategoryPayload = {
+        name: formData.newCategoryName.trim(),
+        metadata: {}
+      };
+
+      const createdCategory = await categoryStore.createRemote(newCategoryPayload);
+      categoryToUse = createdCategory;
+      
+      // Refrescar las categorías para que aparezcan en futuros formularios
+      await categoryStore.fetchRemote();
+    }
+
     // Convertir imagen a base64 si existe
     let imageBase64 = null;
     if (productImageFile.value) {
@@ -313,7 +363,7 @@ const addProduct = async (formData) => {
         description: formData.description?.trim() || "",
         image: imageBase64,
       },
-      category: { id: formData.category.id },
+      category: { id: categoryToUse.id },
     };
 
     await productStore.createRemote(payload);
@@ -335,6 +385,29 @@ const addProduct = async (formData) => {
 
 const updateProduct = async (updatedData) => {
   try {
+    let categoryToUse = updatedData.category;
+
+    // Si se seleccionó crear nueva categoría, crear la categoría primero
+    if (updatedData.category === '__new__') {
+      if (!updatedData.newCategoryName?.trim()) {
+        snackbarText.value = "Debe especificar un nombre para la nueva categoría";
+        snackbarColor.value = "error";
+        snackbar.value = true;
+        return;
+      }
+
+      const newCategoryPayload = {
+        name: updatedData.newCategoryName.trim(),
+        metadata: {}
+      };
+
+      const createdCategory = await categoryStore.createRemote(newCategoryPayload);
+      categoryToUse = createdCategory;
+      
+      // Refrescar las categorías para que aparezcan en futuros formularios
+      await categoryStore.fetchRemote();
+    }
+
     // Convertir imagen a base64 si existe
     const imageBase64 = await convertImageToBase64(updatedData.image);
 
@@ -344,7 +417,7 @@ const updateProduct = async (updatedData) => {
         description: updatedData.description || "",
         image: imageBase64 || updatedData.metadata?.image, // Mantener imagen existente si no se sube nueva
       },
-      category: { id: updatedData.category?.id },
+      category: { id: categoryToUse.id },
     };
 
     await productStore.updateRemote(updatedData.id, payload);
@@ -381,15 +454,15 @@ const deleteProduct = async (product) => {
   }
 };
 
-const addToList = (product) => {
-  snackbarText.value = `${product.name} añadido a la lista`;
-  snackbarColor.value = "success";
-  snackbar.value = true;
-};
-
 // --- Menu Actions ---
-const editProduct = (product) => {
+const editProduct = async (product) => {
   selectedProduct.value = { ...product };
+  // Refrescar categorías para mostrar las más recientes
+  try {
+    await categoryStore.fetchRemote();
+  } catch (error) {
+    console.warn('No se pudieron refrescar las categorías:', error);
+  }
   productInfoDialog.value = true;
 };
 
@@ -641,6 +714,66 @@ select.form-input:focus {
   outline: none;
   border-color: #4caf50;
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+/* Category input group styles */
+.category-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-category-field {
+  margin-top: 8px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Delete confirmation modal specific styles */
+.delete-confirmation-modal {
+  max-width: 450px;
+  width: 90vw;
+}
+
+.confirmation-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.confirmation-text {
+  font-size: 1rem;
+  color: #424242;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.confirmation-text strong {
+  color: #f44336;
+  font-weight: 600;
+}
+
+.btn--danger {
+  background: #f44336;
+  color: #fff;
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.btn--danger:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 /* Responsive adjustments */
