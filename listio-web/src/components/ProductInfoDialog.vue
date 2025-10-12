@@ -1,7 +1,7 @@
 <template>
   <div v-if="modelValue" class="modal-overlay">
     <div class="modal product-modal">
-      <h2 style="color: black;">{{ t('pages.products.dialog.title') }}</h2>
+      <h2 style="color: black;">Editar Producto</h2>
 
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
