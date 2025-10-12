@@ -272,7 +272,7 @@ function mapEventToList(ev) {
     itemCount: ev.data?.itemCount || 0,
     completedItems: 0,
     lastUpdated: new Date(ev.ts),
-    recurring: ev.data?.recurring || false,
+    recurring: false, // Always false for deleted lists
     isDeleted: true // Mark as deleted for visual indication
   }
 }

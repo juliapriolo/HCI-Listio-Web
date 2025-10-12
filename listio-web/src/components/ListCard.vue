@@ -5,10 +5,15 @@
     elevation="2"
   >
     <div class="list-content" @click="$emit('click')">
+      <!-- Recurring indicator -->
+      <div v-if="list.recurring" class="recurring-indicator">
+        <v-icon size="20" color="#4CAF50">mdi-heart</v-icon>
+      </div>
+      
       <div class="list-image">
         <img 
-          v-if="list.image" 
-          :src="list.image" 
+          v-if="listImage" 
+          :src="listImage" 
           :alt="list.name" 
         />
         <div v-else class="image-placeholder">
@@ -111,6 +116,11 @@ const { t } = useLanguage()
 const userStore = useUserStore()
 
 const showMenu = ref(false)
+
+// Get image from metadata.image or fallback to list.image
+const listImage = computed(() => {
+  return props.list.metadata?.image || props.list.image || ''
+})
 
 const toggleMenu = (event) => {
   event.stopPropagation()
@@ -232,6 +242,18 @@ const ownerLabel = computed(() => {
   padding: 20px;
   gap: 20px;
   height: 140px;
+  position: relative;
+}
+
+.recurring-indicator {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .list-menu {
