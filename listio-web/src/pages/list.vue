@@ -792,7 +792,7 @@ const isShareEmailValid = computed(() => {
 // Computed
 const filteredItems = computed(() => {
   let list = items.value || []
-  console.log('FILTROOOOOOS',filters)
+  console.log('Filtros',filters)
 
   //Filtro por categoría
   if (filters.value.categoryId) {
@@ -807,7 +807,7 @@ const filteredItems = computed(() => {
     list = list.filter(i => i.purchased === false)
   }
 
-  console.log('ITEEEEEEEMSS', list)
+  console.log('Items', list)
   return list
 })
 
