@@ -375,7 +375,7 @@ function confirmClearHistory() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10002;
+  z-index: 2000;
 }
 
 .modal {

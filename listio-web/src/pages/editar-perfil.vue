@@ -268,7 +268,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .modal {
@@ -530,7 +530,7 @@ onMounted(async () => {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 2000;
   animation: slideIn 0.3s ease-out;
 }
 

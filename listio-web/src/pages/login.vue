@@ -326,7 +326,7 @@ html, body { margin: 0; padding: 0; background-color: #4CAF50; min-height: 100vh
 .colored-bags-image { position: absolute; bottom: 15%; right: 15%; max-width: 350px; max-height: 450px; width: auto; height: auto; object-fit: contain; z-index: 1; }
 .login-right { flex: 1; background-color: #4CAF50; display: flex; align-items: stretch; justify-content: center; padding: 20px; }
 .form-input { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 1rem; color:black; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 2000; }
 .modal { background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); padding: 32px 24px; min-width: 400px; max-width: 90vw; }
 .modal h2 { margin: 0 0 20px 0; color: #333; font-size: 1.5rem; text-align: center; }
 .modal p { color: #666; margin-bottom: 20px; line-height: 1.4; }
