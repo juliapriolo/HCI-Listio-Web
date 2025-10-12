@@ -626,6 +626,22 @@ const handleNewImageChange = (event) => {
 
 const createNewList = async (formData) => {
   if (isCreating.value) return // Prevent double submission
+
+  const trimmedName = formData.name?.trim() || ''
+  if (!trimmedName) {
+    snackbarText.value = 'La lista debe tener un nombre.'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+    return
+  }
+
+  const duplicate = listsStore.lists.some(list => list.name?.trim().toLowerCase() === trimmedName.toLowerCase())
+  if (duplicate) {
+    snackbarText.value = `Ya existe una lista llamada "${trimmedName}". Usa otro nombre o edita la lista existente.`
+    snackbarColor.value = 'error'
+    snackbar.value = true
+    return
+  }
   
   isCreating.value = true
   try {
@@ -637,7 +653,7 @@ const createNewList = async (formData) => {
     }
     
     const payload = {
-      name: formData.name.trim(),
+      name: trimmedName,
       description: formData.description?.trim() || '',
       recurring: formData.recurring || false,
       metadata: {

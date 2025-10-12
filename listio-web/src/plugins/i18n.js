@@ -168,7 +168,36 @@ const messages = {
 					descriptionOptional: 'Descripción (opcional)'
 				},
 				addItem: { title: 'Agregar ítem', submit: 'Agregar' },
-				share: { title: 'Compartir lista', submit: 'Compartir', recipient: 'Destinatario' }
+				share: { title: 'Compartir lista', submit: 'Compartir', recipient: 'Destinatario' },
+				productSelection: {
+					title: 'Seleccionar Producto',
+					searchLabel: 'Buscar',
+					createNew: '+ Crear nuevo',
+					empty: {
+						noMatchesTitle: 'No encontramos productos que coincidan',
+						createSuggestion: 'Podés crearlo ahora mismo',
+						createAction: 'Crear “{name}”',
+						newProductFallback: 'nuevo producto'
+					},
+					detailsTitle: 'Detalles del Producto',
+					addToList: 'Agregar a Lista',
+					createForm: {
+						title: 'Crear nuevo producto',
+						nameLabel: 'Nombre',
+						namePlaceholder: 'Ej.: Arroz, Lavandina',
+						descriptionLabel: 'Descripción (opcional)',
+						descriptionPlaceholder: 'Marca, presentación, etc.',
+						categoryLabel: 'Categoría',
+						categoryPlaceholder: 'Seleccioná una categoría',
+						newCategoryOption: '+ Nueva categoría…',
+						newCategoryNameLabel: 'Nombre de la nueva categoría',
+						newCategoryNamePlaceholder: 'Ej.: Verduras',
+						quantityLabel: 'Cantidad',
+						unitLabel: 'Unidad',
+						creating: 'Creando…',
+						submit: 'Crear'
+					}
+				}
 			},
 			lists: {
 				title: 'Listas',
@@ -446,7 +475,36 @@ const messages = {
 				fields: { product: 'Product', descriptionOptional: 'Description (optional)' },
 				addItem: { title: 'Add item', submit: 'Add' },
 				share: { title: 'Share list', submit: 'Share', recipient: 'Recipient' },
-				itemMenu: { title: 'Product ' }
+				itemMenu: { title: 'Product ' },
+				productSelection: {
+					title: 'Select Product',
+					searchLabel: 'Search',
+					createNew: '+ Create new',
+					empty: {
+						noMatchesTitle: 'No matching products found',
+						createSuggestion: 'You can create it now',
+						createAction: 'Create “{name}”',
+						newProductFallback: 'new product'
+					},
+					detailsTitle: 'Product details',
+					addToList: 'Add to List',
+					createForm: {
+						title: 'Create new product',
+						nameLabel: 'Name',
+						namePlaceholder: 'e.g., Rice, Bleach',
+						descriptionLabel: 'Description (optional)',
+						descriptionPlaceholder: 'Brand, presentation, etc.',
+						categoryLabel: 'Category',
+						categoryPlaceholder: 'Select a category',
+						newCategoryOption: '+ New category…',
+						newCategoryNameLabel: 'New category name',
+						newCategoryNamePlaceholder: 'e.g., Vegetables',
+						quantityLabel: 'Quantity',
+						unitLabel: 'Unit',
+						creating: 'Creating…',
+						submit: 'Create'
+					}
+				}
 			},
 			lists: {
 				title: 'My lists',

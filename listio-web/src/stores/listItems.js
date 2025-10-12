@@ -329,7 +329,17 @@ export const useListItemsStore = defineStore('listItems', {
       const items = Array.isArray(data) ? data : data?.data || data?.items || []
       if (Array.isArray(items)) {
         const mappedItems = items.map(mapListItem).filter(Boolean)
-        this.setItems(mappedItems)
+        if (this.items && this.items.length > 0) {
+          // Merge por id, preservando elementos locales que aún no están en servidor
+          const byId = new Map(mappedItems.map(i => [i.id, i]))
+          const merged = [
+            ...this.items.filter(i => i && i.id && !byId.has(i.id)),
+            ...mappedItems
+          ]
+          this.setItems(merged)
+        } else {
+          this.setItems(mappedItems)
+        }
       }
       return items
     },
@@ -339,7 +349,17 @@ export const useListItemsStore = defineStore('listItems', {
       const created = await listItemsApi.create(this.listId, payload)
       if (created && created.id) {
         const mappedItem = mapListItem(created)
-        if (mappedItem) this.addItem(mappedItem)
+        if (mappedItem) {
+          // Evitar duplicado si ya hay un ítem optimista con el mismo nombre/cantidad/unidad
+          const idx = this.items.findIndex(i => !i.product?.id && i.name === (mappedItem.name || mappedItem.product?.name) && i.quantity === mappedItem.quantity && i.unit === mappedItem.unit)
+          if (idx > -1) {
+            // Reemplazar el optimista por el real
+            this.items[idx] = { ...mappedItem }
+            this.save()
+          } else {
+            this.addItem(mappedItem)
+          }
+        }
       }
       return created
     },
