@@ -68,6 +68,9 @@
                   <button type="button" class="btn btn--cancel" @click="filterDialog = false">
                     Cancelar
                   </button>
+                  <button type="button" class="btn btn--cancel" @click="resetFilters">
+                    Limpiar
+                  </button>
                   <button
                     type="submit"
                     class="btn btn--primary"
@@ -1487,6 +1490,7 @@ const addSelectedItemsToPantry = async () => {
 .btn--primary:hover:not(:disabled) { background: #45A049; }
 .btn--primary:disabled { background: #ccc; cursor: not-allowed; }
 .btn--cancel { background: #f5f5f5; color: #333; }
+.btn--resetFilter { background: #f5f5f5; color: #333; }
 .btn--cancel:hover { background: #e0e0e0; }
 .btn--danger { background: #f44336; color: #fff; }
 .btn--danger:hover:not(:disabled) { background: #d32f2f; }
