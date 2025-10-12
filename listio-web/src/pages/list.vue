@@ -79,6 +79,78 @@
             </div>
           </div>
 
+          <!-- Pantry Selection Dialog -->
+          <div v-if="pantrySelectionDialog" class="modal-overlay">
+            <div class="modal pantry-selection-modal">
+              <h2>Agregar productos a la despensa</h2>
+              
+              <div class="pantry-selection-content">
+                <p class="pantry-selection-description">
+                  Selecciona los productos que quieres agregar a tu despensa para tener un registro de lo que tienes en casa.
+                </p>
+                
+                <div class="pantry-selection">
+                  <h4>Productos comprados:</h4>
+                  <div class="products-selection">
+                    <div
+                      v-for="item in purchasedItems"
+                      :key="item.id"
+                      class="product-selection-item"
+                      :class="{ 'selected': selectedForPantry.includes(item.id) }"
+                      @click="togglePantrySelection(item.id)"
+                    >
+                      <div class="product-info">
+                        <v-avatar size="32" :color="getCategoryColor(item.categoryId)" class="mr-2">
+                          <v-icon :color="isDarkColor(getCategoryColor(item.categoryId)) ? 'white' : 'black'" size="16">
+                            {{ getCategoryIcon(item.categoryId) }}
+                          </v-icon>
+                        </v-avatar>
+                        <div>
+                          <span class="product-name">{{ item.name }}</span>
+                          <span class="product-quantity">{{ item.quantity || 1 }} {{ item.unit || 'g' }}</span>
+                        </div>
+                      </div>
+                      <v-checkbox
+                        :model-value="selectedForPantry.includes(item.id)"
+                        :ripple="false"
+                        color="success"
+                        hide-details
+                        @click.stop="togglePantrySelection(item.id)"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div v-if="selectedForPantry.length > 0" class="pantry-category-selection">
+                    <h4>Seleccionar categoría de despensa:</h4>
+                    <select v-model="selectedPantryCategory" class="form-input">
+                      <option value="">Seleccionar categoría...</option>
+                      <option
+                        v-for="category in pantryCategories"
+                        :key="category.id"
+                        :value="category.id"
+                      >
+                        {{ category.name }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="modal-actions">
+                <button type="button" class="btn btn--cancel" @click="pantrySelectionDialog = false">
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--primary"
+                  @click="confirmPantrySelection"
+                  :disabled="selectedForPantry.length > 0 && !selectedPantryCategory"
+                >
+                  Agregar a despensa
+                </button>
+              </div>
+            </div>
+          </div>
 
           <v-btn
             icon
@@ -104,6 +176,28 @@
         >
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
+      </div>
+
+      <!-- All Purchased Message -->
+      <div v-if="allItemsPurchased && items.length > 0" class="all-purchased-message mb-4">
+        <div class="purchased-card">
+          <div class="purchased-content">
+            <v-icon color="success" size="32" class="success-icon">mdi-check-circle</v-icon>
+            <div class="purchased-text">
+              <h3>¡Lista completada!</h3>
+              <p>Todos los productos han sido marcados como comprados.</p>
+            </div>
+          </div>
+          <v-btn
+            color="success"
+            variant="outlined"
+            @click="openPantrySelectionDialog"
+            class="add-to-pantry-btn"
+          >
+            <v-icon left>mdi-plus</v-icon>
+            Agregar a despensa
+          </v-btn>
+        </div>
       </div>
 
       <!-- Shopping List -->
@@ -519,11 +613,26 @@ const listItemsStore = useListItemsStore()
 const listsStore = useListsStore()
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
+
+// Bulk purchase functionality
+const pantrySelectionDialog = ref(false)
+const selectedForPantry = ref([])
+const selectedPantryCategory = ref('')
+const pantryCategories = ref([])
 const userStore = useUserStore()
 
 const items = computed(() => listItemsStore.items)
 const availableProducts = computed(() => {
   return productStore.products || []
+})
+
+// Pantry selection computed properties
+const purchasedItems = computed(() => {
+  return items.value.filter(item => item.purchased)
+})
+
+const allItemsPurchased = computed(() => {
+  return items.value.length > 0 && items.value.every(item => item.purchased)
 })
 
 // Load the items for the requested list id (query param `id`). If no id
@@ -1129,6 +1238,84 @@ const toggleChecked = async (item) => {
     listItemsStore.updateItem(item.id, { purchased: !item.purchased })
   }
 }
+
+// Pantry selection methods
+const openPantrySelectionDialog = async () => {
+  // Load pantry categories
+  try {
+    const { usePantryStore } = await import('@/stores/pantry')
+    const pantryStore = usePantryStore()
+    await pantryStore.fetchPantriesRemote()
+    pantryCategories.value = pantryStore.pantries || []
+  } catch (error) {
+    console.error('Error loading pantry categories:', error)
+    pantryCategories.value = []
+  }
+  
+  // Reset selections
+  selectedForPantry.value = []
+  selectedPantryCategory.value = ''
+  pantrySelectionDialog.value = true
+}
+
+const togglePantrySelection = (itemId) => {
+  const index = selectedForPantry.value.indexOf(itemId)
+  if (index > -1) {
+    selectedForPantry.value.splice(index, 1)
+  } else {
+    selectedForPantry.value.push(itemId)
+  }
+}
+
+const confirmPantrySelection = async () => {
+  try {
+    // Add selected items to pantry
+    if (selectedForPantry.value.length > 0 && selectedPantryCategory.value) {
+      await addSelectedItemsToPantry()
+    }
+    
+    console.log('Productos agregados a la despensa exitosamente')
+    pantrySelectionDialog.value = false
+    
+  } catch (error) {
+    console.error('Error al agregar productos a la despensa:', error)
+    alert('Error al agregar productos a la despensa. Inténtalo de nuevo.')
+  }
+}
+
+const addSelectedItemsToPantry = async () => {
+  try {
+    const { usePantryStore } = await import('@/stores/pantry')
+    const pantryStore = usePantryStore()
+    
+    const selectedItems = purchasedItems.value.filter(item => 
+      selectedForPantry.value.includes(item.id)
+    )
+    
+    for (const item of selectedItems) {
+      const productData = {
+        product: {
+          id: item.product?.id || null
+        },
+        quantity: parseInt(item.quantity) || 1,
+        unit: item.unit || 'unidad',
+        metadata: {
+          name: item.name,
+          description: item.product?.metadata?.description || '',
+          image: item.product?.metadata?.image || ''
+        }
+      }
+      
+      await pantryStore.createItemRemote(selectedPantryCategory.value, productData)
+    }
+    
+    console.log(`${selectedItems.length} productos agregados a la despensa`)
+    
+  } catch (error) {
+    console.error('Error al agregar productos a la despensa:', error)
+    throw error // Re-throw to be handled by the calling function
+  }
+}
 </script>
 
 <style scoped>
@@ -1649,5 +1836,171 @@ const toggleChecked = async (item) => {
 
 .muted {
   color: black;
+}
+
+/* All purchased message styles */
+.all-purchased-message {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.purchased-card {
+  background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+  border: 2px solid #4CAF50;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.15);
+}
+
+.purchased-content {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.success-icon {
+  margin-right: 16px;
+}
+
+.purchased-text h3 {
+  margin: 0 0 4px 0;
+  color: #2e7d32;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.purchased-text p {
+  margin: 0;
+  color: #388e3c;
+  font-size: 0.95rem;
+}
+
+.add-to-pantry-btn {
+  margin-left: 16px;
+  font-weight: 600;
+  text-transform: none;
+  border-radius: 8px;
+}
+
+.pantry-selection-modal {
+  max-width: 600px;
+  width: 90vw;
+}
+
+.pantry-selection-content {
+  margin-bottom: 20px;
+}
+
+.pantry-selection-description {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.pantry-selection h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+.products-selection {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.product-selection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.product-selection-item:last-child {
+  border-bottom: none;
+}
+
+.product-selection-item:hover {
+  background-color: #f8f9fa;
+}
+
+.product-selection-item.selected {
+  background-color: #e8f5e8;
+  border-left: 3px solid #4CAF50;
+}
+
+.product-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.product-name {
+  font-weight: 500;
+  color: #333;
+  margin-right: 8px;
+}
+
+.product-quantity {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.pantry-category-selection {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.pantry-category-selection h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 12px 0;
+}
+
+/* Responsive adjustments for pantry selection */
+@media (max-width: 768px) {
+  .purchased-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+  }
+  
+  .purchased-content {
+    margin-bottom: 16px;
+  }
+  
+  .add-to-pantry-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .pantry-selection-modal {
+    margin: 20px;
+    padding: 24px 16px;
+    width: calc(100vw - 40px);
+  }
+  
+  .products-selection {
+    max-height: 250px;
+  }
+  
+  .product-selection-item {
+    padding: 10px 12px;
+  }
 }
 </style>
