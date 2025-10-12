@@ -84,8 +84,8 @@
             <div class="category-content" @click="openCategory(category)">
               <div class="category-image">
                 <img 
-                  v-if="category.image" 
-                  :src="category.image" 
+                  v-if="category.image || getDefaultImageForCategory(category)" 
+                  :src="category.image || getDefaultImageForCategory(category)" 
                   :alt="category.name" 
                 />
                 <div v-else class="image-placeholder">
@@ -564,6 +564,7 @@ import { useLanguage } from '@/composables/useLanguage'
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import SearchBar from '@/components/SearchBar.vue'
+import { getDefaultCategoryImage } from '@/utils/category-images'
 
 const { t } = useLanguage()
 
@@ -736,6 +737,13 @@ const openAddCategoryDialog = () => {
   }
   imagePreview.value = ''
   categoryDialog.value = true
+}
+
+// Helper used in template to show a default image for known categories
+const getDefaultImageForCategory = (category) => {
+  if (!category) return ''
+  // Preferir nombre sobre ID (IDs pueden ser numéricos y no mapear a slugs)
+  return getDefaultCategoryImage(category.name || category.id)
 }
 
 const openAddProductDialog = () => {
