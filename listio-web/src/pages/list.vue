@@ -166,6 +166,17 @@
         </div>
         
         <form @submit.prevent="saveItemEdit">
+          <div class="form-group">
+            <label for="editItemName">{{t('common.name')}}</label>
+            <input
+              id="editItemName"
+              v-model="editItemName"
+              type="text"
+              class="form-input"
+              required
+            />
+          </div>
+          
           <div class="form-row">
             <div class="form-group">
               <label for="editItemQuantity">Cantidad</label>

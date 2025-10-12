@@ -1,65 +1,11 @@
 <template>
-  <!-- <v-dialog
-    :model-value="modelValue"
-    @update:model-value="$emit('update:modelValue', $event)"
-    max-width="500"
-  >
-    <v-card>
-      <v-card-title class="text-h6 font-weight-bold">
-        {{ t('pages.products.dialog.title') }}
-      </v-card-title>
-
-      <v-card-text>
-        <v-text-field
-          :label="t('common.name')"
-          variant="outlined"
-          v-model="localData.name"
-          required
-        />
-
-        <v-select
-          :label="t('common.category')"
-          variant="outlined"
-          v-model="localData.category_id"
-          :items="categories"
-          item-title="name"
-          item-value="id"
-          required
-        />
-      </v-card-text>
-
-      <v-card-actions class="flex-wrap">
-        <v-btn color="primary" variant="outlined" @click="handleAddToList">
-          {{ t('pages.products.dialog.addToList') }}
-        </v-btn>
-
-        <v-btn color="error" variant="outlined" @click="handleDelete">
-          {{ t('common.delete') }}
-        </v-btn>
-
-        <v-spacer />
-
-        <v-btn @click="handleCancel">
-          {{ t('common.cancel') }}
-        </v-btn>
-        <v-btn
-          color="success"
-          variant="elevated"
-          @click="handleSubmit"
-          :disabled="!isFormValid"
-        >
-          {{ t('common.save') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog> -->
   <div v-if="modelValue" class="modal-overlay">
     <div class="modal product-modal">
-      <h2 style="color: black;">Información del producto</h2>
+      <h2 style="color: black;">{{ t('pages.products.dialog.title') }}</h2>
 
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
-          <label for="productName">Nombre</label>
+          <label for="productName">{{t('common.name')}}</label>
           <input
             id="productName"
             v-model="localData.name"
@@ -72,7 +18,7 @@
         </div>
 
         <div class="form-group">
-          <label for="productCategory">Categoría *</label>
+          <label for="productCategory">{{t('common.category')}} *</label>
           <div class="category-input-group">
             <select
               id="productCategory"
@@ -117,7 +63,7 @@
 
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="handleCancel">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
 
           <button
@@ -125,7 +71,7 @@
             class="btn btn--success"
             :disabled="!isFormValid"
           >
-            Guardar
+            {{ t('common.save') }}
           </button>
         </div>
       </form>
@@ -135,6 +81,8 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
+const { t } = useLanguage()
 
 const props = defineProps({
   modelValue: Boolean,
