@@ -1311,4 +1311,8 @@ function updateListItemCount(listId) {
     width: calc(100vw - 40px);
   }
 }
+
+.muted {
+  color: black
+}
 </style>
