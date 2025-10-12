@@ -413,11 +413,24 @@ const checkApiAvailability = async () => {
 
 // Computed properties
 const filteredLists = computed(() => {
-  if (!searchQuery.value) return listsStore.lists
+  let lists = listsStore.lists
   
-  return listsStore.lists.filter(list =>
-    list.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  )
+  // Apply search filter if present
+  if (searchQuery.value) {
+    lists = lists.filter(list =>
+      list.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    )
+  }
+  
+  // Sort lists: recurrent lists first, then by name
+  return lists.sort((a, b) => {
+    // First, sort by recurring status (recurring lists first)
+    if (a.recurring && !b.recurring) return -1
+    if (!a.recurring && b.recurring) return 1
+    
+    // If both have same recurring status, sort by name
+    return a.name.localeCompare(b.name)
+  })
 })
 
 const totalPages = computed(() => {
