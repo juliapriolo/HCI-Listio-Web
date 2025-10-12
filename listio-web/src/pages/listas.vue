@@ -651,18 +651,18 @@ const createNewList = async (formData) => {
         isApiAvailable.value = false // Mark API as unavailable
         
         // Fallback to local creation
-        const newList = {
-          id: Date.now(),
+  const newList = {
+    id: Date.now(),
           name: payload.name,
           description: payload.description,
           recurring: payload.recurring,
           image: payload.metadata.image,
-          itemCount: 0,
-          completedItems: 0,
-          lastUpdated: new Date()
-        }
-        
-        listsStore.addList(newList)
+    itemCount: 0,
+    completedItems: 0,
+    lastUpdated: new Date()
+  }
+
+  listsStore.addList(newList)
         console.log('Successfully created list locally:', payload.name)
         
         // Show success message for local creation

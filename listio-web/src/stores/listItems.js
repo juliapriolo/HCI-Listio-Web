@@ -70,7 +70,8 @@ export const useListItemsStore = defineStore('listItems', {
       this.startListening()
 
       // begin processing outbox in background (non-blocking)
-      this._startOutboxProcessor()
+      // Commented out to prevent constant API calls
+      // this._startOutboxProcessor()
     },
 
     save() {
@@ -84,7 +85,8 @@ export const useListItemsStore = defineStore('listItems', {
       const newItem = { id: Date.now(), ...item }
       this.items.unshift(newItem)
       this.save()
-      if (remote && this.listId) this._enqueueOutbox({ op: 'create', listId: this.listId, payload: newItem })
+      // Commented out to prevent constant API calls
+      // if (remote && this.listId) this._enqueueOutbox({ op: 'create', listId: this.listId, payload: newItem })
       return newItem
     },
 
@@ -93,7 +95,8 @@ export const useListItemsStore = defineStore('listItems', {
       if (idx > -1) {
         this.items[idx] = { ...this.items[idx], ...patch }
         this.save()
-        if (remote && this.listId) this._enqueueOutbox({ op: 'update', listId: this.listId, itemId: id, payload: patch })
+        // Commented out to prevent constant API calls
+        // if (remote && this.listId) this._enqueueOutbox({ op: 'update', listId: this.listId, itemId: id, payload: patch })
       }
     },
 
@@ -102,7 +105,8 @@ export const useListItemsStore = defineStore('listItems', {
       if (idx > -1) {
         this.items.splice(idx, 1)
         this.save()
-        if (remote && this.listId) this._enqueueOutbox({ op: 'delete', listId: this.listId, itemId: id })
+        // Commented out to prevent constant API calls
+        // if (remote && this.listId) this._enqueueOutbox({ op: 'delete', listId: this.listId, itemId: id })
       }
     },
 
@@ -197,8 +201,9 @@ export const useListItemsStore = defineStore('listItems', {
       dest.save()
 
       // enqueue remote ops: delete on source and create on dest
-      src._enqueueOutbox({ op: 'delete', listId: fromListId, itemId })
-      dest._enqueueOutbox({ op: 'create', listId: toListId, payload: item })
+      // Commented out to prevent constant API calls
+      // src._enqueueOutbox({ op: 'delete', listId: fromListId, itemId })
+      // dest._enqueueOutbox({ op: 'create', listId: toListId, payload: item })
 
       return true
     },

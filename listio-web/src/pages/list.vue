@@ -7,7 +7,7 @@
           {{ currentListName }}
         </h1>
         
-  <div class="header-actions">
+        <div class="header-actions">
           <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
@@ -37,6 +37,19 @@
         </div>
       </div>
 
+      <!-- Back Button -->
+      <div class="mb-4">
+        <v-btn
+          icon="mdi-arrow-left"
+          variant="text"
+          color="grey-darken-3"
+          @click="goBackToLists"
+          class="back-btn"
+        >
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
+      </div>
+
       <!-- Shopping List -->
       <div class="lists-grid mb-8">
         <div class="list">
@@ -49,7 +62,7 @@
 
                 <div>
                   <h3 class="item-descr">{{ item.name }}</h3>
-                  <p class="text-caption text-grey-darken-2">{{ item.category }}</p>
+                  <p class="text-caption text-grey-darken-2">{{ item.quantity || 1 }} {{ item.unit || 'g' }}</p>
                 </div>
 
                 <div class="item-buttons">
@@ -61,14 +74,38 @@
                     base-color="black"
                     hide-details
                   />
-                  <v-btn 
-                    icon 
-                    variant="plain"
-                    style="background-color: transparent;"
-                    @click="openEditDialog(item)"
-                  >
-                    <v-icon color="black">mdi-dots-horizontal</v-icon>
-                  </v-btn>
+                  <div class="item-menu">
+                    <button 
+                      class="menu-button"
+                      @click.stop="toggleItemMenu(item.id, $event)"
+                      @blur="hideItemMenu"
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                        <circle cx="12" cy="12" r="1"/>
+                        <circle cx="12" cy="5" r="1"/>
+                        <circle cx="12" cy="19" r="1"/>
+                      </svg>
+                    </button>
+                    
+                    <div v-if="activeItemMenu === item.id" class="menu-dropdown">
+                      <div class="menu-item" @click="openEditDialog(item)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        <span>Editar</span>
+                      </div>
+                      <div class="menu-item delete-item" @click="deleteItem(item)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
+                          <polyline points="3,6 5,6 21,6"/>
+                          <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                          <line x1="10" y1="11" x2="10" y2="17"/>
+                          <line x1="14" y1="11" x2="14" y2="17"/>
+                        </svg>
+                        <span>Eliminar</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <v-divider thickness="2px"/>
@@ -100,7 +137,7 @@
       icon
       class="new-item-fab"
       elevation="8"
-      @click="openNewItemDialog"
+      @click="openProductSelectionDialog"
     >
       <v-icon size="24">mdi-plus</v-icon>
     </v-btn>
@@ -117,14 +154,64 @@
       @cancel="newItemDialog = false"
     />
 
-    <ItemMenuDialog
-      v-model="itemMenuDialog"
-      :item="selectedItem"
-      :categories="categories"
-      @update="updateItem"
-      @delete="deleteItem"
-      @cancel="itemMenuDialog = false"
-    />
+    <!-- Item Edit Dialog -->
+    <div v-if="itemMenuDialog" class="modal-overlay">
+      <div class="modal item-edit-modal">
+        <h2>Editar Producto</h2>
+        
+        <form @submit.prevent="saveItemEdit">
+          <div class="form-group">
+            <label for="editItemName">Nombre</label>
+            <input
+              id="editItemName"
+              v-model="editItemName"
+              type="text"
+              class="form-input"
+              required
+            />
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="editItemQuantity">Cantidad</label>
+              <input
+                id="editItemQuantity"
+                v-model="editItemQuantity"
+                type="number"
+                min="1"
+                class="form-input"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="editItemUnit">Unidad</label>
+              <select id="editItemUnit" v-model="editItemUnit" class="form-input">
+                <option value="unidad">Unidad</option>
+                <option value="kg">Kilogramo</option>
+                <option value="g">Gramo</option>
+                <option value="l">Litro</option>
+                <option value="ml">Mililitro</option>
+                <option value="paquete">Paquete</option>
+                <option value="caja">Caja</option>
+              </select>
+            </div>
+          </div>
+          
+          
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="itemMenuDialog = false">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+            >
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Share List Dialog -->
     <div v-if="shareListDialog" class="modal-overlay">
@@ -183,6 +270,101 @@
       </div>
     </div>
 
+    <!-- Product Selection Dialog -->
+    <div v-if="productSelectionDialog" class="modal-overlay">
+      <div class="modal product-selection-modal">
+        <h2>Seleccionar Producto</h2>
+        
+        <div v-if="availableProducts.length === 0" class="empty-state">
+          <div class="empty-icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+              <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+            </svg>
+          </div>
+          <p class="empty-text">No hay productos disponibles</p>
+          <p class="empty-subtext">Ve a la sección de productos para agregar algunos</p>
+        </div>
+        
+        <div v-else>
+          <div class="products-grid">
+            <div
+              v-for="product in availableProducts"
+              :key="product.id"
+              class="product-card"
+              :class="{ 'selected': selectedProduct?.id === product.id }"
+              @click="selectProduct(product)"
+            >
+              <div class="product-content">
+                <div class="product-image">
+                  <img 
+                    v-if="product.metadata?.image" 
+                    :src="product.metadata.image" 
+                    :alt="product.name"
+                    class="product-img"
+                  />
+                  <div v-else class="image-placeholder">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21,15 16,10 5,21"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="product-info">
+                  <h4 class="product-name">{{ product.name }}</h4>
+                  <p v-if="product.metadata?.description" class="product-description">
+                    {{ product.metadata.description }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div v-if="selectedProduct" class="product-details">
+            <div class="divider"></div>
+            <h4 class="details-title">Detalles del Producto</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="productQuantity">Cantidad</label>
+                <input
+                  id="productQuantity"
+                  v-model="productQuantity"
+                  type="number"
+                  min="1"
+                  class="form-input"
+                />
+              </div>
+              <div class="form-group">
+                <label for="productUnit">Unidad</label>
+                <select id="productUnit" v-model="productUnit" class="form-input">
+                  <option value="unidad">Unidad</option>
+                  <option value="kg">Kilogramo</option>
+                  <option value="g">Gramo</option>
+                  <option value="l">Litro</option>
+                  <option value="ml">Mililitro</option>
+                  <option value="paquete">Paquete</option>
+                  <option value="caja">Caja</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions">
+          <button type="button" class="btn btn--cancel" @click="productSelectionDialog = false">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn--primary"
+            :disabled="!selectedProduct"
+            @click="addSelectedProductToList"
+          >
+            Agregar a Lista
+          </button>
+        </div>
+      </div>
+    </div>
 
     <FilterList
       v-model="filterDialog"
@@ -194,24 +376,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useLanguage } from '@/composables/useLanguage'
 import { useRoute } from 'vue-router'
 import { useListItemsStore } from '@/stores/listItems'
 import { useListsStore } from '@/stores/lists'
+import { useProductStore } from '@/stores/products'
 import listsApi from '@/api/lists'
 import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
-import ItemMenuDialog from '@/components/ItemMenuDialog.vue'
 
 const { t } = useLanguage()
 // Use listItems store for per-list persistence
 const route = useRoute()
 const listItemsStore = useListItemsStore()
 const listsStore = useListsStore()
+const productStore = useProductStore()
 
 const items = computed(() => listItemsStore.items)
+const availableProducts = computed(() => {
+  return productStore.products || []
+})
 
 // Load the items for the requested list id (query param `id`). If no id
 // present, keep items empty.
@@ -242,6 +428,16 @@ const itemMenuDialog = ref(false)
 const selectedItem = ref(null)
 const shareListDialog = ref(false)
 const filterDialog = ref(false)
+const productSelectionDialog = ref(false)
+const selectedProduct = ref(null)
+const productQuantity = ref(1)
+const productUnit = ref('g')
+const activeItemMenu = ref(null)
+
+// Item edit modal state
+const editItemName = ref('')
+const editItemQuantity = ref(1)
+const editItemUnit = ref('g')
 
 // Share modal state
 const shareEmail = ref('')
@@ -306,6 +502,9 @@ const openNewItemDialog = () => {
 
 const openEditDialog = (item) => {
   selectedItem.value = { ...item }
+  editItemName.value = item.name || ''
+  editItemQuantity.value = item.quantity || 1
+  editItemUnit.value = item.unit || 'g'
   itemMenuDialog.value = true
 }
 
@@ -325,10 +524,26 @@ const addItem = (formData) => {
   if (!formData.name) return
   listItemsStore.addItem({
     name: formData.name,
-    category: t('common.noCategory'),
+    category: formData.category || t('common.noCategory'),
+    quantity: formData.quantity || 1,
+    unit: formData.unit || 'g',
     checked: false
   })
   newItemDialog.value = false
+}
+
+const saveItemEdit = () => {
+  if (!selectedItem.value) return
+  
+  const updatedItem = {
+    ...selectedItem.value,
+    name: editItemName.value,
+    quantity: parseInt(editItemQuantity.value),
+    unit: editItemUnit.value
+  }
+  
+  listItemsStore.updateItem(selectedItem.value.id, updatedItem)
+  itemMenuDialog.value = false
 }
 
 const updateItem = (updated) => {
@@ -405,6 +620,71 @@ async function revokeUser(user) {
 
 function clearShareEmailErrors() {
   if (shareEmailServerError.value) shareEmailServerError.value = ''
+}
+
+// Product selection functions
+const openProductSelectionDialog = () => {
+  productSelectionDialog.value = true
+  selectedProduct.value = null
+  productQuantity.value = 1
+  productUnit.value = 'g'
+}
+
+const selectProduct = (product) => {
+  selectedProduct.value = product
+}
+
+const addSelectedProductToList = async () => {
+  if (!selectedProduct.value) return
+  
+  const itemData = {
+    name: selectedProduct.value.name,
+    description: selectedProduct.value.metadata?.description || '',
+    category: selectedProduct.value.metadata?.category || 'General',
+    quantity: parseInt(productQuantity.value),
+    unit: productUnit.value,
+    checked: false
+  }
+  
+  try {
+    await addItem(itemData)
+    productSelectionDialog.value = false
+    selectedProduct.value = null
+    productQuantity.value = 1
+    productUnit.value = 'g'
+  } catch (error) {
+    console.error('Error adding product to list:', error)
+  }
+}
+
+// Item menu functions
+const toggleItemMenu = (itemId, event) => {
+  if (activeItemMenu.value === itemId) {
+    activeItemMenu.value = null
+  } else {
+    activeItemMenu.value = itemId
+    // Calculate position for fixed dropdown
+    nextTick(() => {
+      const button = event.target.closest('.menu-button')
+      const dropdown = document.querySelector('.menu-dropdown')
+      if (button && dropdown) {
+        const rect = button.getBoundingClientRect()
+        dropdown.style.top = `${rect.bottom + 8}px`
+        dropdown.style.right = `${window.innerWidth - rect.right + 8}px`
+      }
+    })
+  }
+}
+
+const hideItemMenu = () => {
+  setTimeout(() => {
+    activeItemMenu.value = null
+  }, 150)
+}
+
+const goBackToLists = () => {
+  // Navigate back to the lists page
+  window.history.back()
 }
 
 
@@ -599,4 +879,323 @@ const toggleChecked = (item) => {
 .user-name { font-weight: 600; color: #333; }
 .user-email { color: #555; }
 .revoke-btn { flex: 0 0 auto; padding: 6px 12px; }
+
+/* Product Selection Dialog Styles */
+.product-selection-modal {
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.empty-subtext {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.product-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.product-card:hover {
+  border-color: #1976d2;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.15);
+}
+
+.product-card.selected {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.product-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.product-image {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.product-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+}
+
+.product-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.product-description {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+.product-details {
+  margin-top: 20px;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e0e0e0;
+  margin: 20px 0;
+}
+
+.details-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #424242;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
+}
+
+.form-input select {
+  background-color: white;
+  cursor: pointer;
+}
+
+/* Item menu styles */
+.item-menu {
+  position: relative;
+  z-index: 1000;
+}
+
+.menu-button {
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 10;
+}
+
+.menu-button:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.menu-button:active {
+  background: rgba(0, 0, 0, 0.15);
+  transform: scale(0.95);
+}
+
+.menu-dropdown {
+  position: fixed;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #424242;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.menu-item:hover {
+  background-color: #f5f5f5;
+}
+
+.menu-item.delete-item {
+  color: #f44336;
+}
+
+.menu-item.delete-item:hover {
+  background-color: #ffebee;
+}
+
+.menu-item span {
+  flex: 1;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal h2 {
+  margin: 0 0 24px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn--cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.btn--cancel:hover {
+  background: #e0e0e0;
+}
+
+.btn--primary {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn--primary:hover {
+  background: #45a049;
+}
+
+/* Back button styles */
+.back-btn {
+  margin-bottom: 16px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .products-grid {
+    grid-template-columns: 1fr;
+    max-height: 250px;
+  }
+}
 </style>

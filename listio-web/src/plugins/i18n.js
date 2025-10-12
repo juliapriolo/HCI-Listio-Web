@@ -171,7 +171,7 @@ const messages = {
 				share: { title: 'Compartir lista', submit: 'Compartir', recipient: 'Destinatario' }
 			},
 			lists: {
-				title: 'Mis listas',
+				title: 'Listas',
 				searchPlaceholder: 'Buscar productos...',
 				loadingLists: 'Cargando listas...',
 				noListsTitle: 'No tienes listas aún',
@@ -247,7 +247,7 @@ const messages = {
 				}
 			},
 			pantry: {
-				title: 'Mi despensa',
+				title: 'Despensas',
 				searchCategories: 'Buscar categorías...',
 				searchProducts: 'Buscar productos...',
 				addCategoryTitle: 'Agregar categoría',

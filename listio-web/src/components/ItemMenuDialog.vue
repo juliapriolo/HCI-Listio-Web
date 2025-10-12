@@ -24,6 +24,25 @@
           :items="categories"
           required
         />
+
+        <div class="d-flex gap-3">
+          <v-text-field
+            label="Cantidad"
+            variant="outlined"
+            v-model.number="localData.quantity"
+            type="number"
+            min="1"
+            class="flex-grow-1"
+          />
+
+          <v-select
+            label="Unidad"
+            variant="outlined"
+            v-model="localData.unit"
+            :items="unitOptions"
+            class="flex-grow-1"
+          />
+        </div>
       </v-card-text>
       
       <v-card-actions>
@@ -68,20 +87,48 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update', 'delete', 'cancel'])
 
+// Opciones de unidad
+const unitOptions = [
+  { title: 'Unidad', value: 'unidad' },
+  { title: 'Kilogramo', value: 'kg' },
+  { title: 'Gramo', value: 'g' },
+  { title: 'Litro', value: 'l' },
+  { title: 'Mililitro', value: 'ml' },
+  { title: 'Paquete', value: 'paquete' },
+  { title: 'Caja', value: 'caja' }
+]
+
 // Copia local del item para no modificarlo directamente
-const localData = ref({ ...props.item })
+const localData = ref({ 
+  quantity: 1,
+  unit: 'g',
+  ...props.item 
+})
 
 // Cuando cambie el item o se abra el modal, actualizamos la copia
 watch(() => props.item, (newItem) => {
-  localData.value = { ...newItem }
+  localData.value = { 
+    quantity: 1,
+    unit: 'g',
+    ...newItem 
+  }
 })
 
 watch(() => props.modelValue, (open) => {
-  if (!open) localData.value = { ...props.item }
+  if (!open) {
+    localData.value = { 
+      quantity: 1,
+      unit: 'g',
+      ...props.item 
+    }
+  }
 })
 
 const isFormValid = computed(() => {
-  return localData.value.name?.trim() && localData.value.category?.trim()
+  return localData.value.name?.trim() && 
+         localData.value.category?.trim() && 
+         localData.value.quantity > 0 &&
+         localData.value.unit?.trim()
 })
 
 // Guardar cambios

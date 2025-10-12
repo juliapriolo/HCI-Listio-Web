@@ -180,31 +180,39 @@ const formatDate = (date) => {
 
 /* Custom menu styles for lists */
 .menu-button {
-  background: none;
+  background: white;
   border: none;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  z-index: 10;
 }
 
 .menu-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background: #f5f5f5;
+  transform: scale(1.05);
+}
+
+.menu-button:active {
+  background: #e0e0e0;
+  transform: scale(0.95);
 }
 
 .menu-dropdown {
   position: absolute;
-  top: 100%;
-  right: 0;
+  top: calc(100% + 8px);
+  right: -8px;
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10001;
-  min-width: 120px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  min-width: 140px;
   overflow: hidden;
 }
 
