@@ -22,7 +22,12 @@
                 :key="item.name"
               >
                 <div class="list-row">
-                  <img src="/icons8-apple-64.png" alt="Manzana" class="category-logo" />
+                  <!-- Dynamic category icon -->
+                  <v-avatar size="40" :color="getCategoryColor(item.categoryId)" class="mr-3">
+                    <v-icon :color="isDarkColor(getCategoryColor(item.categoryId)) ? 'white' : 'black'">
+                      {{ getCategoryIcon(item.categoryId) }}
+                    </v-icon>
+                  </v-avatar>
                   <div>
                     <h3 class="item-descr">{{ item.name }}</h3>
                     <!-- <h3 class="item-descr">{{ item.category }}</h3> -->
@@ -77,18 +82,42 @@
 </template>
 
 <script setup>
+import { useCategoryStore } from '@/stores/category'
+
+const categoryStore = useCategoryStore()
 
 const items = [
-  { name: "Manzanas", category: "Frutas", checked: true },
-  { name: "Pan", category: "Despensa", checked: true },
-  { name: "Leche", category: "Lácteos", checked: true },
-  { name: "Banana", category: "Frutas", checked: true },
-  { name: "Aceite", category: "Despensa", checked: !true },
-  { name: "Yogur", category: "Lácteos", checked: !true },
-  { name: "Melon", category: "Frutas", checked: false },
-  { name: "Dulce de leche", category: "Despensa", checked: false },
-  { name: "Manteca", category: "Lácteos", checked: false },
+  { name: "Manzanas", category: "Frutas", categoryId: "cat-fruits", checked: true },
+  { name: "Pan", category: "Despensa", categoryId: "cat-bakery", checked: true },
+  { name: "Leche", category: "Lácteos", categoryId: "cat-dairy", checked: true },
+  { name: "Banana", category: "Frutas", categoryId: "cat-fruits", checked: true },
+  { name: "Aceite", category: "Despensa", categoryId: "cat-canned", checked: !true },
+  { name: "Yogur", category: "Lácteos", categoryId: "cat-dairy", checked: !true },
+  { name: "Melon", category: "Frutas", categoryId: "cat-fruits", checked: false },
+  { name: "Dulce de leche", category: "Despensa", categoryId: "cat-snacks", checked: false },
+  { name: "Manteca", category: "Lácteos", categoryId: "cat-dairy", checked: false },
 ];
+
+// Helper functions for category icons
+const getCategoryIcon = (categoryId) => {
+  if (!categoryId) return 'mdi-package-variant'
+  return categoryStore.getIconById(categoryId)
+}
+
+const getCategoryColor = (categoryId) => {
+  if (!categoryId) return '#9E9E9E'
+  return categoryStore.getColorById(categoryId)
+}
+
+const isDarkColor = (hexColor) => {
+  // Convert hex to RGB and calculate luminance
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance < 0.5
+}
 
 function handleFiltrar (){
   console.log("Filtrar");

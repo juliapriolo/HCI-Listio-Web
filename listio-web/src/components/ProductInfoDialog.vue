@@ -102,16 +102,26 @@ const localData = ref({
 })
 
 watch(() => props.item, (newItem) => {
+  // When item changes, ensure category is set correctly
+  const categoryId = newItem.category?.id || newItem.category
+  const categoryObj = props.categories.find(c => c.id === categoryId)
+  
   localData.value = { 
-    ...newItem, 
+    ...newItem,
+    category: categoryObj || newItem.category,
     newCategoryName: "" 
   }
 })
 
 watch(() => props.modelValue, (open) => {
-  if (!open) {
+  if (open) {
+    // When dialog opens, ensure category is set correctly
+    const categoryId = props.item.category?.id || props.item.category
+    const categoryObj = props.categories.find(c => c.id === categoryId)
+    
     localData.value = { 
-      ...props.item, 
+      ...props.item,
+      category: categoryObj || props.item.category,
       newCategoryName: "" 
     }
   }

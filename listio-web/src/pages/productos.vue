@@ -460,6 +460,7 @@ const addProduct = async (formData) => {
         snackbarText.value = "Debe especificar un nombre para la nueva categoría";
         snackbarColor.value = "error";
         snackbar.value = true;
+        isCreating.value = false;
         return;
       }
 
@@ -473,6 +474,16 @@ const addProduct = async (formData) => {
       
       // Refrescar las categorías para que aparezcan en futuros formularios
       await categoryStore.fetchRemote();
+    }
+
+    // Ensure categoryToUse is an object with id property
+    if (typeof categoryToUse === 'string') {
+      // If it's a string (categoryId), find the category object
+      const categoryObj = categoryStore.categories.find(c => c.id === categoryToUse);
+      if (!categoryObj) {
+        throw new Error('Categoría no encontrada');
+      }
+      categoryToUse = categoryObj;
     }
 
     // Convertir imagen a base64 si existe
@@ -532,6 +543,16 @@ const updateProduct = async (updatedData) => {
       
       // Refrescar las categorías para que aparezcan en futuros formularios
       await categoryStore.fetchRemote();
+    }
+
+    // Ensure categoryToUse is an object with id property
+    if (typeof categoryToUse === 'string') {
+      // If it's a string (categoryId), find the category object
+      const categoryObj = categoryStore.categories.find(c => c.id === categoryToUse);
+      if (!categoryObj) {
+        throw new Error('Categoría no encontrada');
+      }
+      categoryToUse = categoryObj;
     }
 
     // Convertir imagen a base64 si existe

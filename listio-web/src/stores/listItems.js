@@ -7,11 +7,13 @@ const STORAGE_PREFIX = 'listio:list-items:' // key will be STORAGE_PREFIX + list
 function mapListItem(data) {
   if (!data) return null
   
-  // Si el servidor devuelve el producto anidado, extraer el nombre
+  // Si el servidor devuelve el producto anidado, extraer el nombre y categoría
   if (data.product && data.product.name) {
     return {
       id: data.id,
       name: data.product.name,
+      categoryId: data.product.category?.id || null,
+      categoryName: data.product.category?.name || null,
       quantity: data.quantity || 1,
       unit: data.unit || 'unidad',
       purchased: data.purchased || false,
@@ -26,6 +28,8 @@ function mapListItem(data) {
   return {
     id: data.id,
     name: data.name || 'Item sin nombre',
+    categoryId: data.categoryId || data.product?.category?.id || null,
+    categoryName: data.categoryName || data.product?.category?.name || null,
     quantity: data.quantity || 1,
     unit: data.unit || 'unidad',
     purchased: data.purchased || false,

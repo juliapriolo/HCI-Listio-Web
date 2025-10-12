@@ -114,7 +114,12 @@
               <div 
                 class="list-row" 
                 >
-                <img src="/icons8-apple-64.png" alt="Manzana" class="category-logo" />
+                <!-- Dynamic category icon -->
+                <v-avatar size="40" :color="getCategoryColor(item.categoryId)" class="mr-3">
+                  <v-icon :color="isDarkColor(getCategoryColor(item.categoryId)) ? 'white' : 'black'">
+                    {{ getCategoryIcon(item.categoryId) }}
+                  </v-icon>
+                </v-avatar>
 
                 <div>
                   <h3 class="item-descr">{{ item.name }}</h3>
@@ -693,6 +698,27 @@ const filteredItems = computed(() => {
   console.log('ITEEEEEEEMSS', list)
   return list
 })
+
+// Helper functions for category icons
+const getCategoryIcon = (categoryId) => {
+  if (!categoryId) return 'mdi-package-variant'
+  return categoryStore.getIconById(categoryId)
+}
+
+const getCategoryColor = (categoryId) => {
+  if (!categoryId) return '#9E9E9E'
+  return categoryStore.getColorById(categoryId)
+}
+
+const isDarkColor = (hexColor) => {
+  // Convert hex to RGB and calculate luminance
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  return luminance < 0.5
+}
 
 // Métodos
 const openNewItemDialog = () => {
