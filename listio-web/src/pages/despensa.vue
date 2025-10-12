@@ -244,22 +244,40 @@
     <!-- Product Selection Dialog -->
     <div v-if="productSelectionDialog" class="modal-overlay">
       <div class="modal product-selection-modal">
-  <h2>{{ t('pages.pantry.productSelection.title') }}</h2>
+        <h2>{{ t('pages.pantry.productSelection.title') }}</h2>
         
-        <div v-if="availableProducts.length === 0" class="empty-state">
+        <!-- Search field -->
+        <div class="search-section">
+          <div class="form-group">
+            <label for="productSearch">Buscar producto</label>
+            <input
+              id="productSearch"
+              v-model="productSearchQuery"
+              type="text"
+              class="form-input"
+              placeholder="Escribe el nombre del producto..."
+            />
+          </div>
+        </div>
+        
+        <div v-if="filteredAvailableProducts.length === 0" class="empty-state">
           <div class="empty-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
               <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
             </svg>
           </div>
-          <p class="empty-text">{{ t('pages.pantry.productSelection.noneAvailable') }}</p>
-          <p class="empty-subtext">{{ t('pages.pantry.productSelection.goToProducts') }}</p>
+          <p class="empty-text">
+            {{ productSearchQuery ? 'No se encontraron productos' : t('pages.pantry.productSelection.noneAvailable') }}
+          </p>
+          <p class="empty-subtext">
+            {{ productSearchQuery ? 'Intenta con otro término de búsqueda' : t('pages.pantry.productSelection.goToProducts') }}
+          </p>
         </div>
         
         <div v-else>
           <div class="products-grid">
             <div
-              v-for="product in availableProducts"
+              v-for="product in filteredAvailableProducts"
               :key="product.id"
               class="product-card"
               :class="{ 'selected': selectedProduct?.id === product.id }"
@@ -565,6 +583,7 @@ const productSelectionDialog = ref(false)
 const selectedProduct = ref(null)
 const productQuantity = ref(1)
 const productUnit = ref('unidad')
+const productSearchQuery = ref('')
 const filterDialog = ref(false)
 const shareDialog = ref(false)
 const currentView = ref('categories') // 'categories' or 'products'
@@ -655,6 +674,17 @@ const availableProducts = computed(() => {
   return productStore.products || []
 })
 
+const filteredAvailableProducts = computed(() => {
+  if (!productSearchQuery.value) {
+    return availableProducts.value
+  }
+  
+  const query = productSearchQuery.value.toLowerCase().trim()
+  return availableProducts.value.filter(product => 
+    product.name.toLowerCase().includes(query)
+  )
+})
+
 // Use stores
 const pantryStore = usePantryStore()
 const productStore = useProductStore()
@@ -710,6 +740,7 @@ const openAddProductDialog = () => {
   selectedProduct.value = null
   productQuantity.value = 1
   productUnit.value = 'unidad'
+  productSearchQuery.value = ''
 }
 
 const editCategory = (category) => {
@@ -1750,6 +1781,37 @@ onMounted(() => {
 .product-selection-modal {
   max-width: 800px;
   width: 90vw;
+}
+
+.search-section {
+  margin-bottom: 20px;
+}
+
+.search-section .form-group {
+  margin-bottom: 0;
+}
+
+.search-section label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.search-section .form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+.search-section .form-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
 }
 
 .empty-state {
