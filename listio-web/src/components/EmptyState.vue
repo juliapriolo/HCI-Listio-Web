@@ -75,7 +75,7 @@ defineEmits(['action'])
   align-items: center;
   justify-content: center;
   text-align: center;
-  min-height: 400px;
+  min-height: 300px;
   padding: 2rem;
 }
 </style>

@@ -45,12 +45,13 @@
       <!-- Lists Tab -->
       <div v-if="activeTab === 'lists'">
         <!-- Empty State -->
-        <EmptyState
-          v-if="listEvents.length === 0"
-          icon="mdi-format-list-bulleted"
-          title="No hay listas en el historial"
-          description="Las listas eliminadas aparecerán aquí"
-        />
+        <div v-if="listEvents.length === 0" class="empty-state-container">
+          <EmptyState
+            icon="mdi-format-list-bulleted"
+            title="No hay listas en el historial"
+            description="Las listas eliminadas aparecerán aquí"
+          />
+        </div>
 
         <!-- Lists Grid -->
         <div v-else class="history-grid mb-8">
@@ -104,7 +105,7 @@
       </div>
 
       <!-- Clear History Action -->
-      <div v-if="allEvents.length > 0" class="text-center mt-6">
+      <div v-if="listEvents.length > 0" class="text-center mt-6">
         <v-btn
           color="#f44336"
           variant="elevated"
@@ -328,6 +329,14 @@ function confirmClearHistory() {
   padding-bottom: 6rem;
   min-height: calc(100vh - 80px);
   background-color: #fafafa;
+}
+
+.empty-state-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 300px);
+  margin-top: -100px;
 }
 
 .lists-grid {
