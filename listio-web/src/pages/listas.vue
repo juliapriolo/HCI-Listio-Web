@@ -16,7 +16,7 @@
 
         <!-- History page button -->
         <v-btn
-          color="primary"
+          color="success"
           variant="tonal"
           size="small"
           class="ml-4"
