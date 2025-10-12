@@ -116,7 +116,7 @@
           </div>
 
           <div class="form-group">
-            <label for="productCategory">Categoría *</label>
+            <label for="productCategory">{{t('common.category')}} *</label>
             <div class="category-input-group">
               <select
                 id="productCategory"

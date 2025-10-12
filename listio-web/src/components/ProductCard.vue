@@ -36,31 +36,6 @@
         <h4 class="text-h6 mb-0">{{ product.name }}</h4>
         
         <!-- Actions Menu -->
-        <!-- <v-menu>
-          <template v-slot:activator="{ props }">
-            <v-btn
-              icon="mdi-dots-vertical"
-              variant="text"
-              size="small"
-              v-bind="props"
-              @click.stop
-            />
-          </template>
-          <v-list>
-            <v-list-item @click="$emit('edit', product)">
-              <v-list-item-title>{{ t('common.edit') }}</v-list-item-title>
-              <template v-slot:prepend>
-                <v-icon>mdi-pencil</v-icon>
-              </template>
-            </v-list-item>
-            <v-list-item @click="$emit('delete', product)">
-              <v-list-item-title>{{ t('common.delete') }}</v-list-item-title>
-              <template v-slot:prepend>
-                <v-icon color="error">mdi-delete</v-icon>
-              </template>
-            </v-list-item>
-          </v-list>
-        </v-menu> -->
         <div class="actions-menu">
           <button 
             class="menu-button"
@@ -80,7 +55,7 @@
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
-              <span>Editar</span>
+              <span>{{ t('common.edit') }}</span>
             </div>
             <div class="menu-item delete-item" @click.stop="handleMenuAction('delete', product)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
@@ -89,7 +64,7 @@
                 <line x1="10" y1="11" x2="10" y2="17"/>
                 <line x1="14" y1="11" x2="14" y2="17"/>
               </svg>
-              <span>Eliminar</span>
+              <span>{{ t('common.delete') }}</span>
             </div>
           </div>
         </div>

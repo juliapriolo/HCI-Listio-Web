@@ -161,7 +161,7 @@
         
         <form @submit.prevent="saveItemEdit">
           <div class="form-group">
-            <label for="editItemName">Nombre</label>
+            <label for="editItemName">{{t('common.name')}}</label>
             <input
               id="editItemName"
               v-model="editItemName"
