@@ -66,9 +66,33 @@ export const useHistoryStore = defineStore('history', {
     },
 
     recordEvent(type, resource, resourceId = null, data = null, opts = {}) {
+      // Deduplication: Check if a similar event was recorded recently (within last 5 seconds)
+      const now = Date.now()
+      const recentDuplicateThreshold = 5000 // 5 seconds
+      
+      const isDuplicate = this.events.some(ev => {
+        // Check if event is recent
+        if (now - ev.ts > recentDuplicateThreshold) return false
+        
+        // Check if it's the same type and resource
+        if (ev.type !== String(type)) return false
+        if (ev.resource !== resource) return false
+        if (String(ev.resourceId) !== String(resourceId)) return false
+        
+        // For list deletes, also check the name to be extra sure
+        if (type === 'list.delete' && ev.data?.name !== data?.name) return false
+        
+        return true
+      })
+      
+      if (isDuplicate) {
+        console.warn('⚠️ Evento duplicado detectado y bloqueado:', { type, resource, resourceId, data })
+        return null
+      }
+      
       const ev = {
         id: makeId(),
-        ts: Date.now(),
+        ts: now,
         type: String(type),
         resource: resource || null,
         resourceId: resourceId !== undefined ? resourceId : null,
@@ -78,6 +102,8 @@ export const useHistoryStore = defineStore('history', {
         meta: opts.meta || {},
         synced: !!opts.synced
       }
+      
+      console.log('✅ Registrando evento en historial:', { type, resource, resourceId, name: data?.name })
       this.events.unshift(ev)
       this.prune()
       this._schedulePersist()

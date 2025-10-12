@@ -469,13 +469,13 @@ const confirmDeleteList = async () => {
         console.warn('API delete failed, falling back to local:', apiError)
         isApiAvailable.value = false
         
-        // Fallback to local delete
-        listsStore.deleteList(listToDelete.value.id)
+        // Fallback to local delete (don't skip history since API failed)
+        listsStore.deleteList(listToDelete.value.id, false)
         console.log('Deleted list locally:', listToDelete.value.name)
       }
     } else {
-      // API unavailable, delete locally
-      listsStore.deleteList(listToDelete.value.id)
+      // API unavailable, delete locally (don't skip history)
+      listsStore.deleteList(listToDelete.value.id, false)
       console.log('Deleted list locally (API unavailable):', listToDelete.value.name)
     }
     
@@ -647,62 +647,28 @@ const createNewList = async (formData) => {
 
     console.log('Attempting to create list with payload:', payload)
     
-    // Always try API first if we haven't confirmed it's unavailable
-    if (isApiAvailable.value !== false) {
-      try {
-        const createdList = await listsStore.createRemote(payload)
-        console.log('Successfully created list via API:', createdList)
-        isApiAvailable.value = true // Mark API as available for future calls
-        
-        // Show success message
-        snackbarText.value = `Lista "${payload.name}" creada exitosamente`
-        snackbarColor.value = 'success'
-        snackbar.value = true
-        
-      } catch (apiError) {
-        console.warn('API creation failed, falling back to local storage:', apiError)
-        isApiAvailable.value = false // Mark API as unavailable
-        
-        // Fallback to local creation
-  const newList = {
-    id: Date.now(),
-          name: payload.name,
-          description: payload.description,
-          recurring: payload.recurring,
-          image: payload.metadata.image,
-    itemCount: 0,
-    completedItems: 0,
-    lastUpdated: new Date()
-  }
-
-  listsStore.addList(newList)
-        console.log('Successfully created list locally:', payload.name)
-        
-        // Show success message for local creation
-        snackbarText.value = `Lista "${payload.name}" creada localmente`
-        snackbarColor.value = 'warning'
-        snackbar.value = true
-      }
-    } else {
-      // API is known to be unavailable, create locally
-      const newList = {
-        id: Date.now(),
-        name: payload.name,
-        description: payload.description,
-        recurring: payload.recurring,
-        image: payload.metadata.image,
-        itemCount: 0,
-        completedItems: 0,
-        lastUpdated: new Date()
-      }
-
-  listsStore.addList(newList)
-      console.log('Created list locally (API unavailable):', payload.name)
+    // Always use API
+    try {
+      const createdList = await listsStore.createRemote(payload)
+      console.log('Successfully created list via API:', createdList)
       
-      // Show success message for local creation
-      snackbarText.value = `Lista "${payload.name}" creada localmente`
-      snackbarColor.value = 'warning'
+      // Show success message
+      snackbarText.value = `Lista "${payload.name}" creada exitosamente`
+      snackbarColor.value = 'success'
       snackbar.value = true
+      
+    } catch (apiError) {
+      console.error('API creation failed:', apiError)
+      
+      // Show error message with details
+      const errorMsg = apiError.data?.message || apiError.message || 'Error desconocido'
+      snackbarText.value = `Error al crear la lista: ${errorMsg}`
+      snackbarColor.value = 'error'
+      snackbar.value = true
+      
+      // Don't close dialog so user can retry
+      isCreating.value = false
+      return
     }
     
     closeNewListDialog()

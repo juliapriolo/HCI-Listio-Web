@@ -152,49 +152,71 @@ export const useListItemsStore = defineStore('listItems', {
         // Capture item data before deletion
         const deletedItem = this.items[idx]
         
-        // Get list name
-        let listName = ''
+        // Get list name synchronously
+        let listName = 'Lista desconocida'
         try {
-          import('@/stores/lists').then(mod => {
-            const listsStore = mod.useListsStore()
+          // Dynamic import is async, but we can access the store if it's already loaded
+          const listsModule = require('@/stores/lists')
+          if (listsModule && listsModule.useListsStore) {
+            const listsStore = listsModule.useListsStore()
             const list = listsStore.getById(this.listId)
-            listName = list?.name || `List ${this.listId}`
-          }).catch(() => {})
-        } catch (e) { /* ignore */ }
+            if (list) {
+              listName = list.name
+            }
+          }
+        } catch (e) { 
+          // Fallback to async if sync fails
+          console.warn('Could not get list name synchronously')
+        }
         
         this.items.splice(idx, 1)
         this.save()
         
-        // Record history event with item details
+        // Record history event with complete item details
         import('@/stores/history').then(mod => {
           try {
             const history = mod.useHistoryStore()
-            // Get list name synchronously from lists store
-            import('@/stores/lists').then(listsModule => {
-              const listsStore = listsModule.useListsStore()
-              const list = listsStore.getById(this.listId)
-              const listName = list?.name || `List ${this.listId}`
-              
+            
+            // If we didn't get the list name yet, try again
+            if (listName === 'Lista desconocida') {
+              import('@/stores/lists').then(listsModule => {
+                const listsStore = listsModule.useListsStore()
+                const list = listsStore.getById(this.listId)
+                listName = list?.name || `Lista #${this.listId}`
+                
+                history.recordEvent('listItem.delete', 'listItem', id, {
+                  name: deletedItem.name || 'Producto sin nombre',
+                  quantity: deletedItem.quantity,
+                  unit: deletedItem.unit,
+                  checked: deletedItem.checked,
+                  listName: listName,
+                  listId: this.listId
+                }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
+              }).catch(() => {
+                // Last fallback
+                history.recordEvent('listItem.delete', 'listItem', id, {
+                  name: deletedItem.name || 'Producto sin nombre',
+                  quantity: deletedItem.quantity,
+                  unit: deletedItem.unit,
+                  checked: deletedItem.checked,
+                  listName: `Lista #${this.listId}`,
+                  listId: this.listId
+                }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
+              })
+            } else {
+              // We have the list name, record immediately
               history.recordEvent('listItem.delete', 'listItem', id, {
-                name: deletedItem.name,
+                name: deletedItem.name || 'Producto sin nombre',
                 quantity: deletedItem.quantity,
                 unit: deletedItem.unit,
                 checked: deletedItem.checked,
                 listName: listName,
                 listId: this.listId
               }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
-            }).catch(() => {
-              // Fallback if lists store fails
-              history.recordEvent('listItem.delete', 'listItem', id, {
-                name: deletedItem.name,
-                quantity: deletedItem.quantity,
-                unit: deletedItem.unit,
-                checked: deletedItem.checked,
-                listName: `List ${this.listId}`,
-                listId: this.listId
-              }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
-            })
-          } catch (e) { /* ignore */ }
+            }
+          } catch (e) { 
+            console.warn('Error al registrar eliminación de item en historial:', e)
+          }
         }).catch(() => {})
         // Commented out to prevent constant API calls
         // if (remote && this.listId) this._enqueueOutbox({ op: 'delete', listId: this.listId, itemId: id })

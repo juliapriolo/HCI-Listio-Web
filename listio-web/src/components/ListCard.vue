@@ -31,7 +31,7 @@
     </div>
     
     <!-- Menu Button -->
-    <div class="list-menu">
+    <div v-if="!hideActions" class="list-menu">
       <button 
         class="menu-button"
         @click.stop="toggleMenu"
@@ -87,6 +87,10 @@ const props = defineProps({
       // Require a name and id; image is optional
       return !!(list && list.name && (list.id !== undefined && list.id !== null))
     }
+  },
+  hideActions: {
+    type: Boolean,
+    default: false
   }
 })
 

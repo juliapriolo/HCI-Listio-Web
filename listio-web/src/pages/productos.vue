@@ -284,13 +284,29 @@
         
         <div class="confirmation-content">
           <p class="confirmation-text">
-            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>? 
-            Esta acción no se puede deshacer.
+            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>?
+          </p>
+          
+          <!-- Mostrar referencias si existen -->
+          <div v-if="productReferences.length > 0" class="references-warning">
+            <p class="warning-title">⚠️ Este producto está en las siguientes listas:</p>
+            <ul class="references-list">
+              <li v-for="ref in productReferences" :key="ref.listId">
+                <strong>{{ ref.listName }}</strong> ({{ ref.items.length }} {{ ref.items.length === 1 ? 'ítem' : 'ítems' }})
+              </li>
+            </ul>
+            <p class="warning-text">
+              Al eliminar el producto, también se eliminarán estos ítems de las listas.
+            </p>
+          </div>
+          
+          <p v-if="productReferences.length === 0" class="info-text">
+            Este producto no está en ninguna lista y se eliminará permanentemente.
           </p>
         </div>
         
         <div class="modal-actions">
-          <button type="button" class="btn btn--cancel" @click="deleteConfirmDialog = false">
+          <button type="button" class="btn btn--cancel" @click="cancelDelete">
             Cancelar
           </button>
           <button
@@ -298,7 +314,7 @@
             class="btn btn--danger"
             @click="executeDelete"
           >
-            Eliminar
+            Eliminar {{ productReferences.length > 0 ? 'de todos modos' : '' }}
           </button>
         </div>
       </div>
@@ -330,6 +346,7 @@ const newProductDialog = ref(false);
 const deleteConfirmDialog = ref(false);
 const selectedProduct = ref(null);
 const productToDelete = ref(null);
+const productReferences = ref([]);
 const isCreating = ref(false);
 const productImageFile = ref(null);
 const productImagePreview = ref("");
@@ -547,14 +564,26 @@ const updateProduct = async (updatedData) => {
   }
 };
 
-const deleteProduct = async (product) => {
+const deleteProduct = async (product, forceDelete = false) => {
   try {
-  await productStore.deleteRemote(product.id)
-  
-  // Refrescar la lista de productos para mostrar los cambios inmediatamente
-  await productStore.fetchRemote()
-  
-  snackbarText.value = t('pages.products.messages.deleted')
+    // Primero verificar referencias
+    const result = await productStore.deleteRemote(product.id)
+    
+    if (result.needsConfirmation && !forceDelete) {
+      // Hay referencias, mostrar dialog con información
+      productToDelete.value = result.product
+      productReferences.value = result.references
+      deleteConfirmDialog.value = true
+      return
+    }
+    
+    // No hay referencias, eliminar directamente
+    await productStore.forceDeleteRemote(product.id, false)
+    
+    // Refrescar la lista de productos
+    await productStore.fetchRemote()
+    
+    snackbarText.value = t('pages.products.messages.deleted')
     snackbarColor.value = 'success'
     snackbar.value = true
   } catch (error) {
@@ -567,7 +596,41 @@ const deleteProduct = async (product) => {
   }
 }
 
-// --- Add to List Functions ---
+const confirmDeleteProduct = async (product) => {
+  await deleteProduct(product, false);
+};
+
+const executeDelete = async () => {
+  if (productToDelete.value) {
+    try {
+      // Eliminar forzadamente, incluyendo referencias
+      await productStore.forceDeleteRemote(productToDelete.value.id, true)
+      
+      // Refrescar la lista
+      await productStore.fetchRemote()
+      
+      snackbarText.value = 'Producto eliminado correctamente'
+      snackbarColor.value = 'success'
+      snackbar.value = true
+    } catch (error) {
+      console.error('Error al eliminar producto:', error)
+      snackbarText.value = `Error al eliminar: ${error.message}`
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    } finally {
+      deleteConfirmDialog.value = false
+      productToDelete.value = null
+      productReferences.value = []
+    }
+  }
+};
+
+const cancelDelete = () => {
+  deleteConfirmDialog.value = false
+  productToDelete.value = null
+  productReferences.value = []
+};
+
 const addToList = async (product) => {
   try {
     // Cargar listas disponibles
@@ -648,19 +711,6 @@ const editProduct = async (product) => {
     console.warn('No se pudieron refrescar las categorías:', error);
   }
   productInfoDialog.value = true;
-};
-
-const confirmDeleteProduct = (product) => {
-  productToDelete.value = product;
-  deleteConfirmDialog.value = true;
-};
-
-const executeDelete = () => {
-  if (productToDelete.value) {
-    deleteProduct(productToDelete.value);
-    deleteConfirmDialog.value = false;
-    productToDelete.value = null;
-  }
 };
 
 onMounted(async () => {
@@ -1009,5 +1059,63 @@ select.form-input:focus {
     flex-direction: column;
     gap: 0;
   }
+}
+
+/* Delete confirmation modal styles */
+.delete-confirmation-modal {
+  max-width: 550px;
+}
+
+.confirmation-content {
+  margin: 20px 0;
+}
+
+.confirmation-text {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.references-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.warning-title {
+  font-weight: 600;
+  color: #856404;
+  margin: 0 0 12px 0;
+  font-size: 0.95rem;
+}
+
+.references-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+}
+
+.references-list li {
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.warning-text {
+  font-size: 0.9rem;
+  color: #856404;
+  margin: 0;
+  font-weight: 500;
+}
+
+.info-text {
+  font-size: 0.95rem;
+  color: #666;
+  font-style: italic;
 }
 </style>

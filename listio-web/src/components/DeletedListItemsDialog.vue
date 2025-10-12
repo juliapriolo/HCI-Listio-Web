@@ -4,9 +4,9 @@
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="600"
   >
-    <v-card theme="light">
-      <v-card-title class="d-flex align-center justify-space-between py-4">
-        <span class="text-h6 font-weight-bold">{{ listName }}</span>
+    <v-card>
+      <v-card-title class="text-h6 d-flex align-center justify-space-between">
+        <span>{{ listName }}</span>
         <v-btn
           icon
           variant="text"

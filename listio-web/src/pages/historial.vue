@@ -49,11 +49,12 @@
         />
 
         <!-- Lists Grid -->
-        <div v-else class="lists-grid mb-8">
+        <div v-else class="history-grid mb-8">
           <ListCard
             v-for="ev in listEvents"
             :key="ev.id"
             :list="mapEventToList(ev)"
+            :hide-actions="true"
             @click="openListHistory(ev)"
           />
         </div>
@@ -117,6 +118,38 @@
       :items="selectedListItems"
     />
 
+    <!-- Confirm Clear History Dialog -->
+    <v-dialog
+      v-model="showClearConfirm"
+      max-width="450"
+    >
+      <v-card>
+        <v-card-title class="text-h6">
+          Confirmar acción
+        </v-card-title>
+
+        <v-card-text>
+          ¿Está seguro que desea borrar todo el historial? Esta acción no se puede deshacer.
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            @click="showClearConfirm = false"
+          >
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="elevated"
+            @click="confirmClearHistory"
+          >
+            Borrar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar for notifications -->
     <v-snackbar
       v-model="snackbar"
@@ -157,6 +190,7 @@ const selectedListItems = ref([])
 const selectedListName = ref('')
 const snackbar = ref(false)
 const snackbarText = ref('')
+const showClearConfirm = ref(false)
 
 // Initialize history store only once
 let initialized = false
@@ -172,6 +206,8 @@ const allEvents = computed(() => history.events || [])
 // Filter events by resource type
 const listEvents = computed(() => {
   let events = allEvents.value.filter(e => e.resource === 'list' || e.type.includes('list'))
+  
+  // Apply text filter if present
   if (filterText.value) {
     const q = filterText.value.toLowerCase()
     events = events.filter(e => 
@@ -179,11 +215,24 @@ const listEvents = computed(() => {
       (e.data && JSON.stringify(e.data).toLowerCase().includes(q))
     )
   }
-  return events
+  
+  // Deduplicate: Keep only the most recent event for each unique resourceId
+  const uniqueListsMap = new Map()
+  for (const event of events) {
+    const key = event.resourceId || event.id
+    if (!uniqueListsMap.has(key) || uniqueListsMap.get(key).ts < event.ts) {
+      uniqueListsMap.set(key, event)
+    }
+  }
+  
+  // Convert back to array and sort by timestamp (most recent first)
+  return Array.from(uniqueListsMap.values()).sort((a, b) => b.ts - a.ts)
 })
 
 const itemEvents = computed(() => {
   let events = allEvents.value.filter(e => e.resource === 'listItem' || e.type.includes('item'))
+  
+  // Apply text filter if present
   if (filterText.value) {
     const q = filterText.value.toLowerCase()
     events = events.filter(e => 
@@ -191,7 +240,18 @@ const itemEvents = computed(() => {
       (e.data && JSON.stringify(e.data).toLowerCase().includes(q))
     )
   }
-  return events
+  
+  // Deduplicate: Keep only the most recent event for each unique resourceId
+  const uniqueItemsMap = new Map()
+  for (const event of events) {
+    const key = event.resourceId || event.id
+    if (!uniqueItemsMap.has(key) || uniqueItemsMap.get(key).ts < event.ts) {
+      uniqueItemsMap.set(key, event)
+    }
+  }
+  
+  // Convert back to array and sort by timestamp (most recent first)
+  return Array.from(uniqueItemsMap.values()).sort((a, b) => b.ts - a.ts)
 })
 
 function formatDate(ts) { 
@@ -247,10 +307,16 @@ function openListHistory(ev) {
 }
 
 function clearHistory() {
-  if (confirm('¿Borrar todo el historial?')) {
-    history.clear()
-  }
+  showClearConfirm.value = true
 }
+
+function confirmClearHistory() {
+  history.clear()
+  showClearConfirm.value = false
+  snackbarText.value = 'Historial borrado exitosamente'
+  snackbar.value = true
+}
+
 </script>
 
 <style scoped>
