@@ -322,25 +322,6 @@
                   <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label for="productExpiryDate">{{ t('pages.pantry.productSelection.expiryLabel') }}</label>
-                <input
-                  id="productExpiryDate"
-                  v-model="productExpiryDate"
-                  type="date"
-                  class="form-input"
-                />
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="productCategory">{{ t('pages.pantry.productSelection.categoryOptional') }}</label>
-              <input
-                id="productCategory"
-                v-model="productCategory"
-                type="text"
-                class="form-input"
-                :placeholder="t('pages.pantry.productSelection.enterCategory')"
-              />
             </div>
           </div>
         </div>
@@ -439,16 +420,6 @@
                 <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
               </select>
             </div>
-          </div>
-          
-          <div class="form-group">
-            <label for="editExpiryDate">{{ t('pages.pantry.editProduct.expiryLabel') }}</label>
-            <input
-              id="editExpiryDate"
-              v-model="editExpiryDate"
-              type="date"
-              class="form-input"
-            />
           </div>
           
           <div class="form-group">
@@ -588,14 +559,11 @@ const productEditDialog = ref(false)
 const productToEdit = ref(null)
 const editQuantity = ref(1)
 const editUnit = ref('unidad')
-const editExpiryDate = ref('')
 const editImageFile = ref(null)
 const editImagePreview = ref('')
 const productSelectionDialog = ref(false)
 const selectedProduct = ref(null)
 const productQuantity = ref(1)
-const productExpiryDate = ref('')
-const productCategory = ref('')
 const productUnit = ref('unidad')
 const filterDialog = ref(false)
 const shareDialog = ref(false)
@@ -741,8 +709,6 @@ const openAddProductDialog = () => {
   productSelectionDialog.value = true
   selectedProduct.value = null
   productQuantity.value = 1
-  productExpiryDate.value = ''
-  productCategory.value = ''
   productUnit.value = 'unidad'
 }
 
@@ -917,8 +883,7 @@ const addSelectedProductToPantry = async () => {
       name: newProduct.product?.name || selectedProduct.value.name,
       quantity: newProduct.quantity,
       unit: newProduct.unit,
-      category: newProduct.product?.category?.name || productCategory.value,
-      expiryDate: newProduct.metadata?.expiryDate || productExpiryDate.value,
+      category: newProduct.product?.category?.name || 'Sin categoría',
       image: newProduct.product?.metadata?.image || selectedProduct.value.metadata?.image || '',
       description: newProduct.product?.metadata?.description || selectedProduct.value.metadata?.description || '',
       stock: newProduct.quantity, // Use quantity as stock for display
@@ -959,8 +924,7 @@ const addSelectedProductToPantry = async () => {
       name: selectedProduct.value.name,
       quantity: parseInt(productQuantity.value), // Convert to number
       unit: productUnit.value,
-      category: productCategory.value,
-      expiryDate: productExpiryDate.value,
+      category: 'Sin categoría',
       image: selectedProduct.value.metadata?.image || '',
       createdAt: new Date().toISOString()
     }
@@ -1110,7 +1074,6 @@ const editItem = (itemId) => {
     productToEdit.value = item
     editQuantity.value = item.quantity || 1
     editUnit.value = item.unit || 'unidad'
-    editExpiryDate.value = item.expiryDate || ''
     editImageFile.value = null
     editImagePreview.value = item.image || item.metadata?.image || ''
     productEditDialog.value = true
@@ -1138,8 +1101,7 @@ const saveProductEdit = async () => {
       quantity: parseInt(editQuantity.value),
       unit: editUnit.value,
       metadata: {
-        ...productToEdit.value.metadata,
-        expiryDate: editExpiryDate.value
+        ...productToEdit.value.metadata
       }
     }
     
@@ -1159,7 +1121,6 @@ const saveProductEdit = async () => {
         ...pantryItems.value[itemIndex],
         quantity: updateData.quantity,
         unit: updateData.unit,
-        expiryDate: updateData.metadata.expiryDate,
         image: updateData.metadata.image || pantryItems.value[itemIndex].image,
         metadata: updateData.metadata
       }
