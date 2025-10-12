@@ -177,6 +177,78 @@
       @cancel="productInfoDialog = false"
     />
 
+    <!-- Add to List Dialog -->
+    <div v-if="addToListDialog" class="modal-overlay">
+      <div class="modal add-to-list-modal">
+        <h2>Agregar a Lista de Compras</h2>
+        
+        <div v-if="selectedProductForList" class="product-info">
+          <h3>{{ selectedProductForList.name }}</h3>
+          <p v-if="selectedProductForList.metadata?.description">{{ selectedProductForList.metadata.description }}</p>
+        </div>
+        
+        <form @submit.prevent="confirmAddToList">
+          <div class="form-group">
+            <label for="listSelection">Seleccionar Lista</label>
+            <select
+              id="listSelection"
+              v-model="selectedListId"
+              class="form-input"
+              required
+            >
+              <option value="">Seleccione una lista</option>
+              <option
+                v-for="list in listsStore.lists"
+                :key="list.id"
+                :value="list.id"
+              >
+                {{ list.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="quantity">Cantidad</label>
+              <input
+                id="quantity"
+                v-model="productQuantity"
+                type="number"
+                min="1"
+                class="form-input"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="unit">Unidad</label>
+              <select id="unit" v-model="productUnit" class="form-input" required>
+                <option value="unidad">Unidad</option>
+                <option value="kg">Kilogramo</option>
+                <option value="g">Gramo</option>
+                <option value="l">Litro</option>
+                <option value="ml">Mililitro</option>
+                <option value="paquete">Paquete</option>
+                <option value="caja">Caja</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="closeAddToListDialog">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn--primary"
+              :disabled="!selectedListId || !productQuantity"
+            >
+              Agregar a Lista
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Delete confirmation dialog -->
     <!-- <v-dialog v-model="deleteConfirmDialog" max-width="400">
       <v-card>
@@ -238,6 +310,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useProductStore } from '@/stores/products'
 import { useCategoryStore } from "@/stores/category";
+import { useListsStore } from '@/stores/lists'
+import { useListItemsStore } from '@/stores/listItems'
 import { useLanguage } from '@/composables/useLanguage'
 import SearchBar from '@/components/SearchBar.vue'
 import ProductCard from '@/components/ProductCard.vue'
@@ -260,6 +334,13 @@ const isCreating = ref(false);
 const productImageFile = ref(null);
 const productImagePreview = ref("");
 
+// Variables para diálogos de agregar a lista
+const addToListDialog = ref(false);
+const selectedProductForList = ref(null);
+const selectedListId = ref(null);
+const productQuantity = ref(1);
+const productUnit = ref('unidad');
+
 const newProductForm = ref({
   name: "",
   description: "",
@@ -270,6 +351,8 @@ const newProductForm = ref({
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const listsStore = useListsStore();
+const listItemsStore = useListItemsStore();
 
 const filteredProducts = computed(() => {
   const list = productStore.products;
@@ -484,11 +567,75 @@ const deleteProduct = async (product) => {
   }
 }
 
-// -------------------- TODO !!!!!!!!!!!!!! --------------------------
-const addToList = (product) => {
-  snackbarText.value = t('pages.products.messages.addedToList', { name: product.name })
-  snackbarColor.value = 'success'
-  snackbar.value = true
+// --- Add to List Functions ---
+const addToList = async (product) => {
+  try {
+    // Cargar listas disponibles
+    await listsStore.load()
+    
+    if (listsStore.lists.length === 0) {
+      snackbarText.value = 'No hay listas disponibles. Crea una lista primero.'
+      snackbarColor.value = 'warning'
+      snackbar.value = true
+      return
+    }
+    
+    // Configurar el producto seleccionado y abrir diálogo
+    selectedProductForList.value = product
+    selectedListId.value = null
+    productQuantity.value = 1
+    productUnit.value = 'unidad'
+    addToListDialog.value = true
+    
+  } catch (error) {
+    console.error('Error loading lists:', error)
+    snackbarText.value = 'Error al cargar las listas'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+  }
+}
+
+const closeAddToListDialog = () => {
+  addToListDialog.value = false
+  selectedProductForList.value = null
+  selectedListId.value = null
+  productQuantity.value = 1
+  productUnit.value = 'unidad'
+}
+
+const confirmAddToList = async () => {
+  if (!selectedProductForList.value || !selectedListId.value) return
+  
+  try {
+    // Crear payload según el formato requerido
+    const payload = {
+      product: {
+        id: selectedProductForList.value.id
+      },
+      quantity: parseInt(productQuantity.value),
+      unit: productUnit.value,
+      metadata: {}
+    }
+    
+    // Cargar la lista específica y agregar el producto
+    listItemsStore.load(selectedListId.value)
+    await listItemsStore.createRemote(payload)
+    
+    // Refrescar la lista para mostrar el nuevo producto inmediatamente
+    await listItemsStore.fetchRemote()
+    
+    snackbarText.value = t('pages.products.messages.addedToList', { name: selectedProductForList.value.name })
+    snackbarColor.value = 'success'
+    snackbar.value = true
+    
+    closeAddToListDialog()
+    
+  } catch (error) {
+    console.error('Error adding product to list:', error)
+    snackbarText.value = 'Error al agregar producto a la lista'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+  }
 }
 
 // --- Menu Actions ---
@@ -813,6 +960,42 @@ select.form-input:focus {
   cursor: not-allowed;
 }
 
+/* Add to list modal specific styles */
+.add-to-list-modal {
+  max-width: 500px;
+  width: 90vw;
+}
+
+.product-info {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #4caf50;
+}
+
+.product-info h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.product-info p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .modal {
@@ -820,6 +1003,11 @@ select.form-input:focus {
     padding: 24px 16px;
     min-width: auto;
     width: calc(100vw - 40px);
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
   }
 }
 </style>

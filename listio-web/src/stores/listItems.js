@@ -4,6 +4,38 @@ import listItemsApi from '@/api/listItems'
 
 const STORAGE_PREFIX = 'listio:list-items:' // key will be STORAGE_PREFIX + listId
 
+function mapListItem(data) {
+  if (!data) return null
+  
+  // Si el servidor devuelve el producto anidado, extraer el nombre
+  if (data.product && data.product.name) {
+    return {
+      id: data.id,
+      name: data.product.name,
+      quantity: data.quantity || 1,
+      unit: data.unit || 'unidad',
+      purchased: data.purchased || false,
+      metadata: data.metadata || {},
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      product: data.product // Mantener referencia al producto completo
+    }
+  }
+  
+  // Si ya tiene el nombre directamente, devolverlo tal como está
+  return {
+    id: data.id,
+    name: data.name || 'Item sin nombre',
+    quantity: data.quantity || 1,
+    unit: data.unit || 'unidad',
+    purchased: data.purchased || false,
+    metadata: data.metadata || {},
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    product: data.product
+  }
+}
+
 export const useListItemsStore = defineStore('listItems', {
   state: () => ({ listId: null, items: [], _listening: false, _boundStorageHandler: null, _outboxInterval: null }),
   actions: {
@@ -215,7 +247,8 @@ export const useListItemsStore = defineStore('listItems', {
       // expect array or envelope
       const items = Array.isArray(data) ? data : data?.data || data?.items || []
       if (Array.isArray(items)) {
-        this.setItems(items)
+        const mappedItems = items.map(mapListItem).filter(Boolean)
+        this.setItems(mappedItems)
       }
       return items
     },
@@ -223,14 +256,31 @@ export const useListItemsStore = defineStore('listItems', {
     async createRemote(payload) {
       if (!this.listId) throw new Error('listId required')
       const created = await listItemsApi.create(this.listId, payload)
-      if (created && created.id) this.addItem(created)
+      if (created && created.id) {
+        const mappedItem = mapListItem(created)
+        if (mappedItem) this.addItem(mappedItem)
+      }
       return created
     },
 
     async updateRemote(itemId, patch) {
       if (!this.listId) throw new Error('listId required')
       const updated = await listItemsApi.update(this.listId, itemId, patch)
-      if (updated && updated.id) this.updateItem(updated.id, updated)
+      if (updated && updated.id) {
+        const mappedItem = mapListItem(updated)
+        if (mappedItem) this.updateItem(updated.id, mappedItem)
+      }
+      return updated
+    },
+
+    async markAsPurchasedRemote(itemId, purchased) {
+      if (!this.listId) throw new Error('listId required')
+      const payload = { purchased }
+      const updated = await listItemsApi.markAsPurchased(this.listId, itemId, payload)
+      if (updated && updated.id) {
+        const mappedItem = mapListItem(updated)
+        if (mappedItem) this.updateItem(updated.id, mappedItem)
+      }
       return updated
     },
 
