@@ -17,9 +17,9 @@
         <!-- History page button -->
         <v-btn
           color="success"
-          variant="tonal"
-          size="small"
-          class="ml-4"
+          variant="elevated"
+          class="text-none ml-4"
+          min-width="100"
           @click="() => router.push({ path: '/historial' })"
           title="Historial"
         >

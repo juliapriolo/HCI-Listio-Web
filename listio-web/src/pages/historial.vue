@@ -106,8 +106,10 @@
       <!-- Clear History Action -->
       <div v-if="allEvents.length > 0" class="text-center mt-6">
         <v-btn
-          variant="text"
-          color="error"
+          color="#f44336"
+          variant="elevated"
+          class="text-none"
+          min-width="100"
           @click="clearHistory"
         >
           Limpiar historial
