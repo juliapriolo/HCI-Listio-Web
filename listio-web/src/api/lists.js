@@ -39,5 +39,22 @@ export default {
   // DELETE /api/shopping-lists/{id}
   delete(id) {
     return api.delete(`/api/shopping-lists/${id}`)
+
+  },
+
+  // POST /api/shopping-lists/{id}/share - Share shopping list with a user by email
+  share(id, payload) {
+    // Assumes payload = { email: string }
+    return api.post(`/api/shopping-lists/${id}/share`, payload)
+  },
+
+  // GET /api/shopping-lists/{id}/shared-users - Get users with whom the list is shared
+  getSharedUsers(id) {
+    return api.get(`/api/shopping-lists/${id}/shared-users`)
+  },
+
+  // DELETE /api/shopping-lists/{id}/share/{user_id} - Revoke a user's access
+  revokeShare(id, userId) {
+    return api.delete(`/api/shopping-lists/${id}/share/${userId}`)
   }
 }

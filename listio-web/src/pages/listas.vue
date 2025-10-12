@@ -34,6 +34,7 @@
           @click="openList(list)"
           @edit="editList"
           @delete="deleteList"
+          @share="openShareDialog(list)"
         />
       </div>
 
@@ -142,6 +143,63 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Share List Dialog -->
+    <div v-if="shareListDialog" class="modal-overlay">
+      <div class="modal list-modal">
+        <h2>{{ t('pages.lists.share.title') || 'Compartir lista' }}</h2>
+        <form @submit.prevent="shareListWithEmail">
+          <div class="form-group">
+            <label for="shareEmail">{{ t('pages.lists.share.emailLabel') || 'Correo electrónico' }}</label>
+            <input
+              id="shareEmail"
+              v-model="shareEmail"
+              type="email"
+              class="form-input"
+              :placeholder="t('pages.lists.share.emailPlaceholder') || 'usuario@ejemplo.com'"
+              @input="clearShareEmailErrors"
+              @blur="shareEmailTouched = true"
+              required
+            />
+            <small v-if="shareEmailTouched && !isShareEmailValid" class="error-text">
+              {{ t('pages.lists.share.invalidEmail') || 'Ingresa un correo válido' }}
+            </small>
+            <small v-if="shareEmailServerError" class="error-text">
+              {{ shareEmailServerError }}
+            </small>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn--cancel" @click="closeShareDialog">{{ t('common.cancel') }}</button>
+            <button type="submit" class="btn btn--primary" :disabled="!isShareEmailValid || isSharing">
+              {{ isSharing ? (t('pages.lists.share.inviting') || 'Compartiendo...') : (t('pages.lists.share.invite') || 'Compartir') }}
+            </button>
+          </div>
+        </form>
+
+        <!-- Current shared users -->
+        <div class="shared-users-section">
+          <h3 class="section-title">{{ t('pages.lists.share.currentAccess') || 'Acceso actual' }}</h3>
+          <div v-if="isLoadingSharedUsers" class="text-center py-4">
+            <v-progress-circular indeterminate color="success" size="28" />
+          </div>
+          <div v-else>
+            <p v-if="!sharedUsers.length" class="muted">{{ t('pages.lists.share.noSharedUsers') || 'Nadie más tiene acceso a esta lista.' }}</p>
+            <ul v-else class="shared-users-list">
+              <li v-for="user in sharedUsers" :key="user.id" class="shared-user-row">
+                <div class="user-info">
+                  <span class="user-name" v-if="user.name">{{ user.name }}</span>
+                  <span class="user-email">{{ user.email || user.username }}</span>
+                </div>
+                <button class="btn btn--danger revoke-btn" :disabled="isRevokingMap[user.id]" @click="revokeUser(user)">
+                  {{ isRevokingMap[user.id] ? (t('pages.lists.share.revoking') || 'Revocando...') : (t('pages.lists.share.revoke') || 'Revocar') }}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -281,6 +339,21 @@ const isCreating = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+const shareListDialog = ref(false)
+const shareEmail = ref('')
+const listIdToShare = ref(null)
+const isSharing = ref(false)
+const sharedUsers = ref([])
+const isLoadingSharedUsers = ref(false)
+const isRevokingMap = ref({})
+const shareEmailTouched = ref(false)
+const shareEmailServerError = ref('')
+const isShareEmailValid = computed(() => {
+  if (!shareEmail.value) return false
+  // Simple RFC5322-ish email validation
+  const emailRegex = /^(?:[a-zA-Z0-9_'^&\-\+])+(?:\.(?:[a-zA-Z0-9_'^&\-\+])+)*@(?:(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})$/
+  return emailRegex.test(shareEmail.value.trim())
+})
 
 
 const newListForm = ref({
@@ -406,6 +479,100 @@ const confirmDeleteList = async () => {
     snackbarText.value = 'Error al eliminar la lista. Por favor, intenta de nuevo.'
     snackbarColor.value = 'error'
     snackbar.value = true
+  }
+}
+
+const openShareDialog = (list) => {
+  listIdToShare.value = list?.id || null
+  shareEmail.value = ''
+  shareListDialog.value = true
+  shareEmailTouched.value = false
+  shareEmailServerError.value = ''
+  loadSharedUsers()
+}
+
+const closeShareDialog = () => {
+  shareListDialog.value = false
+  listIdToShare.value = null
+  shareEmail.value = ''
+  sharedUsers.value = []
+  isLoadingSharedUsers.value = false
+  isRevokingMap.value = {}
+  shareEmailServerError.value = ''
+}
+
+const shareListWithEmail = async () => {
+  shareEmailTouched.value = true
+  if (!listIdToShare.value || !isShareEmailValid) return
+  isSharing.value = true
+  try {
+    // Assumption: API expects { email }
+    await listsApi.share(listIdToShare.value, { email: shareEmail.value.trim() })
+    snackbarText.value = t('pages.lists.share.success') || 'Lista compartida correctamente'
+    snackbarColor.value = 'success'
+    snackbar.value = true
+    // Refresh shared users after invite
+    await loadSharedUsers()
+    shareEmail.value = ''
+    shareEmailTouched.value = false
+    shareEmailServerError.value = ''
+  } catch (error) {
+    console.error('Error sharing list:', error)
+    // Map server 'user not found' errors to inline message
+    const code = error?.data?.code || error?.code || ''
+    const message = (typeof error?.data === 'object' && error?.data?.message) ? error.data.message : (error?.message || '')
+    if (error?.status === 404 || code === 'user_not_found' || /user.*not.*found|usuario.*no.*existe/i.test(message)) {
+      shareEmailServerError.value = t('pages.lists.share.userNotFound') || 'Ese email no pertenece a un usuario registrado'
+    } else {
+      snackbarText.value = t('pages.lists.share.error') || 'No se pudo compartir la lista'
+      snackbarColor.value = 'error'
+      snackbar.value = true
+    }
+  } finally {
+    isSharing.value = false
+  }
+}
+
+async function loadSharedUsers() {
+  if (!listIdToShare.value) return
+  isLoadingSharedUsers.value = true
+  try {
+    const data = await listsApi.getSharedUsers(listIdToShare.value)
+    // Accept either array or envelope
+    const users = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.users) ? data.users : []))
+    sharedUsers.value = users
+  } catch (e) {
+    console.warn('Failed to load shared users:', e)
+    sharedUsers.value = []
+  } finally {
+    isLoadingSharedUsers.value = false
+  }
+}
+
+async function revokeUser(user) {
+  if (!listIdToShare.value || !user?.id) return
+  isRevokingMap.value = { ...isRevokingMap.value, [user.id]: true }
+  try {
+    await listsApi.revokeShare(listIdToShare.value, user.id)
+    snackbarText.value = t('pages.lists.share.revoked') || 'Acceso revocado'
+    snackbarColor.value = 'success'
+    snackbar.value = true
+    sharedUsers.value = sharedUsers.value.filter(u => u.id !== user.id)
+    // Clear any previous server error when state changes
+    shareEmailServerError.value = ''
+  } catch (e) {
+    console.error('Failed to revoke access:', e)
+    snackbarText.value = t('pages.lists.share.revokeError') || 'No se pudo revocar el acceso'
+    snackbarColor.value = 'error'
+    snackbar.value = true
+  } finally {
+    isRevokingMap.value = { ...isRevokingMap.value, [user.id]: false }
+  }
+}
+
+function clearShareEmailErrors() {
+  if (shareEmailServerError.value) {
+    shareEmailServerError.value = ''
   }
 }
 
@@ -994,6 +1161,63 @@ function onListItemsStorage(e) {
 .form-input::placeholder {
   color: #9e9e9e;
   opacity: 1;
+}
+
+.error-text {
+  color: #d32f2f;
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.shared-users-section {
+  margin-top: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.shared-users-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shared-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.user-info {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.user-email {
+  color: #555;
+}
+
+.revoke-btn {
+  flex: 0 0 auto;
+  padding: 6px 12px;
 }
 
 .checkbox-label {

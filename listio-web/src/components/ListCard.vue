@@ -44,6 +44,15 @@
       </button>
       
       <div v-if="showMenu" class="menu-dropdown">
+        <div class="menu-item" @click="handleMenuAction('share', list.id)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <path d="M8.59 13.51l6.83 3.98M15.41 6.51L8.59 10.49"/>
+          </svg>
+          <span>{{ t('common.share') }}</span>
+        </div>
         <div class="menu-item" @click="handleMenuAction('edit', list.id)">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -67,18 +76,22 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useLanguage } from '@/composables/useLanguage'
 
 const props = defineProps({
   list: {
     type: Object,
     required: true,
     validator: (list) => {
-      return list.name && list.image
+      // Require a name and id; image is optional
+      return !!(list && list.name && (list.id !== undefined && list.id !== null))
     }
   }
 })
 
-const emit = defineEmits(['click', 'edit', 'delete'])
+const emit = defineEmits(['click', 'edit', 'delete', 'share'])
+
+const { t } = useLanguage()
 
 const showMenu = ref(false)
 
@@ -99,6 +112,8 @@ const handleMenuAction = (action, listId) => {
     emit('edit', listId)
   } else if (action === 'delete') {
     emit('delete', listId)
+  } else if (action === 'share') {
+    emit('share', listId)
   }
 }
 
@@ -129,6 +144,7 @@ const formatDate = (date) => {
   background-color: white;
   border: 0.5px solid #9e9e9e;
   box-shadow: none;
+  overflow: visible; /* ensure dropdown menu is not clipped by card */
 }
 
 .list-card:hover {

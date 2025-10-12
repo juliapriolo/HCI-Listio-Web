@@ -195,7 +195,24 @@ const messages = {
 					edit: { title: 'Editar lista' }
 				},
 				filters: { title: 'Filtrar listas', name: 'Nombre', category: 'Categoría', clear: 'Limpiar', apply: 'Aplicar' },
-				deleteConfirm: { title: 'Confirmar eliminación', message: '¿Estás seguro de que quieres eliminar la lista <strong>"{name}"</strong>? Esta acción no se puede deshacer.' }
+				deleteConfirm: { title: 'Confirmar eliminación', message: '¿Estás seguro de que quieres eliminar la lista <strong>"{name}"</strong>? Esta acción no se puede deshacer.' },
+				share: {
+					title: 'Compartir lista',
+					emailLabel: 'Correo electrónico',
+					emailPlaceholder: 'usuario@ejemplo.com',
+					invalidEmail: 'Ingresa un correo válido',
+					userNotFound: 'Ese email no pertenece a un usuario',
+					invite: 'Invitar',
+					inviting: 'Invitando...',
+					success: 'Lista compartida correctamente',
+					error: 'No se pudo compartir la lista',
+					currentAccess: 'Acceso actual',
+					noSharedUsers: 'Nadie más tiene acceso a esta lista.',
+					revoke: 'Revocar',
+					revoking: 'Revocando...',
+					revoked: 'Acceso revocado',
+					revokeError: 'No se pudo revocar el acceso'
+				}
 			},
 			products: {
 				title: 'Productos',
@@ -456,7 +473,24 @@ const messages = {
 					edit: { title: 'Edit list' }
 				},
 				filters: { title: 'Filter lists', name: 'Name', category: 'Category', clear: 'Clear', apply: 'Apply' },
-				deleteConfirm: { title: 'Confirm deletion', message: 'Are you sure you want to delete the list <strong>"{name}"</strong>? This action cannot be undone.' }
+				deleteConfirm: { title: 'Confirm deletion', message: 'Are you sure you want to delete the list <strong>"{name}"</strong>? This action cannot be undone.' },
+				share: {
+					title: 'Share list',
+					emailLabel: 'Email',
+					emailPlaceholder: 'user@example.com',
+					invalidEmail: 'Enter a valid email',
+					userNotFound: 'That email does not belong to a user',
+					invite: 'Invite',
+					inviting: 'Inviting...',
+					success: 'List shared successfully',
+					error: 'Could not share the list',
+					currentAccess: 'Current access',
+					noSharedUsers: 'No one else has access to this list.',
+					revoke: 'Revoke',
+					revoking: 'Revoking...',
+					revoked: 'Access revoked',
+					revokeError: 'Could not revoke access'
+				}
 			},
 			products: {
 				title: 'Products',
