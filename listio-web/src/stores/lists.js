@@ -69,7 +69,7 @@ export const useListsStore = defineStore('lists', {
         this.save()
       }
     },
-    deleteList(id, skipHistory = false) {
+    async deleteList(id, skipHistory = false) {
       const idx = this.lists.findIndex(l => l.id === id)
       if (idx > -1) {
         const deletedList = this.lists[idx]
@@ -79,18 +79,55 @@ export const useListsStore = defineStore('lists', {
         // Record in history only if not skipped (to avoid duplicates)
         if (!skipHistory) {
           try {
-            import('@/stores/history').then(({ useHistoryStore }) => {
-              const history = useHistoryStore()
-              history.recordEvent('list.delete', 'list', id, {
-                name: deletedList.name,
-                description: deletedList.description,
-                image: deletedList.image,
-                itemCount: deletedList.itemCount,
-                recurring: deletedList.recurring,
-                metadata: deletedList.metadata
-              }, { meta: { source: 'local' } })
+            // Get all items from this list before deleting
+            let listItems = []
+            try {
+              const { useListItemsStore } = await import('@/stores/listItems')
+              const listItemsStore = useListItemsStore()
+              await listItemsStore.load(id)
+              listItems = [...listItemsStore.items] // Create a copy
+              console.log(`📦 Lista "${deletedList.name}" tiene ${listItems.length} productos`)
+            } catch (e) {
+              console.warn('No se pudieron cargar los productos de la lista:', e)
+            }
+            
+            const { useHistoryStore } = await import('@/stores/history')
+            const history = useHistoryStore()
+            
+            // Register the list deletion
+            history.recordEvent('list.delete', 'list', id, {
+              name: deletedList.name,
+              description: deletedList.description,
+              image: deletedList.image,
+              itemCount: listItems.length, // Use actual items count
+              recurring: deletedList.recurring,
+              metadata: deletedList.metadata
+            }, { 
+              listId: id,
+              meta: { source: 'local' } 
             })
-          } catch (e) { /* ignore */ }
+            
+            // Register each item deletion individually
+            for (const item of listItems) {
+              try {
+                history.recordEvent('listItem.delete', 'listItem', item.id, {
+                  name: item.name || 'Producto sin nombre',
+                  quantity: item.quantity,
+                  unit: item.unit,
+                  product: item.product,
+                  metadata: item.metadata
+                }, { 
+                  listId: id,
+                  meta: { source: 'local' } 
+                })
+                console.log(`  ✓ Producto "${item.name}" registrado en historial local`)
+              } catch (itemError) {
+                console.warn(`Error al registrar producto "${item.name}" en historial:`, itemError)
+              }
+            }
+          } catch (e) { 
+            console.warn('Error al registrar en historial:', e)
+          }
         }
       }
     },
@@ -149,11 +186,7 @@ export const useListsStore = defineStore('lists', {
         // created might be the created resource; ensure it exists locally
         if (created && created.id) {
           this.addList(created)
-          try {
-            const { useHistoryStore } = await import('@/stores/history')
-            const history = useHistoryStore()
-            history.recordEvent('list.create', 'list', created.id, { name: created.name }, { meta: { source: 'remote' } })
-          } catch (e) { /* ignore */ }
+          // Note: No need to record list creation in history - history is only for deleted lists
         }
         return created
       } catch (e) {
@@ -191,11 +224,7 @@ export const useListsStore = defineStore('lists', {
               // Add to local store
               if (updated && updated.id) {
                 this.addList(updated)
-                try {
-                  const { useHistoryStore } = await import('@/stores/history')
-                  const history = useHistoryStore()
-                  history.recordEvent('list.restore', 'list', updated.id, { name: updated.name }, { meta: { source: 'remote' } })
-                } catch (e) { /* ignore */ }
+                // Note: No need to record list restoration in history - history is only for deleted lists
               }
               
               return updated
@@ -263,13 +292,14 @@ export const useListsStore = defineStore('lists', {
         this.deleteList(id, true)
         console.log('✅ Eliminado localmente')
         
-        // Register ONCE in history with complete information including items
-        console.log('📝 Registrando en historial...')
+        // Register list deletion and all its items in history
+        console.log('📝 Registrando lista y productos en historial...')
         try {
           const { useHistoryStore } = await import('@/stores/history')
           const history = useHistoryStore()
           
-          const result = history.recordEvent('list.delete', 'list', id, {
+          // Register the list deletion
+          const listResult = history.recordEvent('list.delete', 'list', id, {
             name: listToDelete.name || 'Lista sin nombre',
             description: listToDelete.description,
             image: listToDelete.image,
@@ -281,11 +311,37 @@ export const useListsStore = defineStore('lists', {
             meta: { source: 'remote' } 
           })
           
-          if (result) {
-            console.log(`✅ Lista "${listToDelete.name}" eliminada y registrada en historial con ID:`, result.id)
+          if (listResult) {
+            console.log(`✅ Lista "${listToDelete.name}" eliminada y registrada en historial con ID:`, listResult.id)
           } else {
             console.log(`⚠️ Evento duplicado bloqueado para lista "${listToDelete.name}"`)
           }
+          
+          // Register each item deletion individually
+          console.log(`📦 Registrando ${listItems.length} productos en historial...`)
+          for (const item of listItems) {
+            try {
+              const itemResult = history.recordEvent('listItem.delete', 'listItem', item.id, {
+                name: item.name || 'Producto sin nombre',
+                quantity: item.quantity,
+                unit: item.unit,
+                product: item.product,
+                metadata: item.metadata
+              }, { 
+                listId: id,
+                meta: { source: 'remote' } 
+              })
+              
+              if (itemResult) {
+                console.log(`  ✓ Producto "${item.name}" registrado en historial`)
+              } else {
+                console.log(`  ⚠️ Evento duplicado bloqueado para producto "${item.name}"`)
+              }
+            } catch (itemError) {
+              console.warn(`Error al registrar producto "${item.name}" en historial:`, itemError)
+            }
+          }
+          
         } catch (e) { 
           console.warn('Error al registrar en historial:', e)
         }

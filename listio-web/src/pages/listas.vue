@@ -470,12 +470,12 @@ const confirmDeleteList = async () => {
         isApiAvailable.value = false
         
         // Fallback to local delete (don't skip history since API failed)
-        listsStore.deleteList(listToDelete.value.id, false)
+        await listsStore.deleteList(listToDelete.value.id, false)
         console.log('Deleted list locally:', listToDelete.value.name)
       }
     } else {
       // API unavailable, delete locally (don't skip history)
-      listsStore.deleteList(listToDelete.value.id, false)
+      await listsStore.deleteList(listToDelete.value.id, false)
       console.log('Deleted list locally (API unavailable):', listToDelete.value.name)
     }
     
