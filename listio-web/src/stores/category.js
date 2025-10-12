@@ -97,7 +97,18 @@ export const useCategoryStore = defineStore('category', {
         const raw = localStorage.getItem(STORAGE_KEY)
         const storedCategories = raw ? JSON.parse(raw) : []
         
-        // Merge default categories with stored ones
+        // Priority 1: If we have stored categories from server (numeric IDs), use them
+        // This ensures we don't overwrite server categories with local defaults
+        if (storedCategories.length > 0) {
+          const hasServerCategories = storedCategories.some(c => typeof c.id === 'number')
+          if (hasServerCategories) {
+            console.log('📦 Usando categorías del servidor desde localStorage:', storedCategories.length)
+            this.categories = storedCategories
+            return
+          }
+        }
+        
+        // Priority 2: Merge default categories with stored ones
         // Keep user-created categories and ensure defaults are present
         const mergedCategories = [...DEFAULT_CATEGORIES]
         
@@ -109,7 +120,7 @@ export const useCategoryStore = defineStore('category', {
         })
         
         this.categories = mergedCategories
-        console.log('Categorías cargadas (incluyendo defaults):', this.categories.length)
+        console.log('📦 Usando categorías default locales:', this.categories.length)
       } catch (e) {
         console.error('Error cargando categorías de localStorage:', e)
         this.categories = [...DEFAULT_CATEGORIES]
@@ -214,76 +225,93 @@ export const useCategoryStore = defineStore('category', {
       try {
         // 1️⃣ Cargar defaults + localStorage
         this.load()
+        console.log('📊 Categorías después de load():', this.categories.length, 'IDs:', this.categories.map(c => c.id))
 
         // 2️⃣ Intentar obtener datos actualizados de la API
         try {
           const remoteData = await this.fetchRemote()
-          console.log('Categorías obtenidas del servidor:', remoteData.items.length)
+          console.log('📥 Categorías obtenidas del servidor:', remoteData.items.length)
           
-          // 3️⃣ Check if default categories exist on server, create or update them
-          for (const defaultCat of DEFAULT_CATEGORIES) {
-            const existsOnServer = remoteData.items.find(remote => 
-              remote.name?.toLowerCase() === defaultCat.name?.toLowerCase()
-            )
+          // 3️⃣ Check migration flag - only create defaults once per user account
+          const DEFAULTS_CREATED_KEY = 'listio:defaults-created:v1'
+          const defaultsAlreadyCreated = localStorage.getItem(DEFAULTS_CREATED_KEY)
+          
+          if (!defaultsAlreadyCreated) {
+            console.log('🔧 Primera inicialización de categorías para esta cuenta')
             
-            if (!existsOnServer) {
-              // Create new category
-              console.log(`📝 Creando categoría default en servidor: ${defaultCat.name}`)
-              try {
-                const newCategoryPayload = {
-                  name: defaultCat.name,
-                  metadata: {
-                    icon: defaultCat.icon,
-                    color: defaultCat.color,
-                    isDefault: true
-                  }
-                }
-                
-                const createdCategory = await this.createRemote(newCategoryPayload)
-                console.log(`✅ Categoría creada: ${createdCategory.name} (ID: ${createdCategory.id})`)
-              } catch (createError) {
-                console.error(`❌ Error creando categoría ${defaultCat.name}:`, createError)
-              }
-            } else {
-              // Category exists, check if icon/color needs update
-              const currentIcon = existsOnServer.icon || existsOnServer.metadata?.icon
-              const currentColor = existsOnServer.color || existsOnServer.metadata?.color
+            // Create or update default categories
+            for (const defaultCat of DEFAULT_CATEGORIES) {
+              const existsOnServer = remoteData.items.find(remote => 
+                remote.name?.toLowerCase() === defaultCat.name?.toLowerCase()
+              )
               
-              if (currentIcon !== defaultCat.icon || currentColor !== defaultCat.color) {
-                console.log(`🔄 Actualizando iconos de categoría: ${defaultCat.name}`)
-                console.log(`   Icono: ${currentIcon} → ${defaultCat.icon}`)
-                console.log(`   Color: ${currentColor} → ${defaultCat.color}`)
-                
+              if (!existsOnServer) {
+                // Create new category
+                console.log(`📝 Creando categoría default en servidor: ${defaultCat.name}`)
                 try {
-                  const updatePayload = {
-                    name: existsOnServer.name,
+                  const newCategoryPayload = {
+                    name: defaultCat.name,
                     metadata: {
-                      ...(existsOnServer.metadata || {}),
                       icon: defaultCat.icon,
                       color: defaultCat.color,
                       isDefault: true
                     }
                   }
                   
-                  await this.updateRemote(existsOnServer.id, updatePayload)
-                  console.log(`✅ Categoría actualizada: ${defaultCat.name}`)
-                } catch (updateError) {
-                  console.error(`❌ Error actualizando categoría ${defaultCat.name}:`, updateError)
+                  const createdCategory = await this.createRemote(newCategoryPayload)
+                  console.log(`✅ Categoría creada: ${createdCategory.name} (ID: ${createdCategory.id})`)
+                } catch (createError) {
+                  console.error(`❌ Error creando categoría ${defaultCat.name}:`, createError)
                 }
               } else {
-                console.log(`✓ Categoría OK: ${defaultCat.name} (ID: ${existsOnServer.id})`)
+                // Category exists, check if icon/color needs update
+                const currentIcon = existsOnServer.icon || existsOnServer.metadata?.icon
+                const currentColor = existsOnServer.color || existsOnServer.metadata?.color
+                
+                if (currentIcon !== defaultCat.icon || currentColor !== defaultCat.color) {
+                  console.log(`🔄 Actualizando iconos de categoría: ${defaultCat.name}`)
+                  console.log(`   Icono: ${currentIcon} → ${defaultCat.icon}`)
+                  console.log(`   Color: ${currentColor} → ${defaultCat.color}`)
+                  
+                  try {
+                    const updatePayload = {
+                      name: existsOnServer.name,
+                      metadata: {
+                        ...(existsOnServer.metadata || {}),
+                        icon: defaultCat.icon,
+                        color: defaultCat.color,
+                        isDefault: true
+                      }
+                    }
+                    
+                    await this.updateRemote(existsOnServer.id, updatePayload)
+                    console.log(`✅ Categoría actualizada: ${defaultCat.name}`)
+                  } catch (updateError) {
+                    console.error(`❌ Error actualizando categoría ${defaultCat.name}:`, updateError)
+                  }
+                } else {
+                  console.log(`✓ Categoría OK: ${defaultCat.name} (ID: ${existsOnServer.id})`)
+                }
               }
             }
+            
+            // Mark defaults as created
+            localStorage.setItem(DEFAULTS_CREATED_KEY, '1')
+            console.log('✅ Categorías default inicializadas y marcadas como creadas')
+          } else {
+            console.log('✓ Categorías default ya fueron creadas previamente')
           }
           
           // 4️⃣ Fetch again to get all categories with updated data
           const updatedData = await this.fetchRemote()
+          console.log('📥 Re-fetch de categorías:', updatedData.items.length)
           
           // 5️⃣ Use server categories (they now include all defaults with updated icons)
           this.categories = updatedData.items
           this.save()
           
           console.log('✅ Categorías sincronizadas con API:', this.categories.length)
+          console.log('📊 IDs finales:', this.categories.map(c => `${c.name}:${c.id}`).join(', '))
         } catch (apiError) {
           console.warn('⚠️ No se pudo conectar con la API, usando categorías locales:', apiError)
           // Categories are already loaded from load() which includes defaults

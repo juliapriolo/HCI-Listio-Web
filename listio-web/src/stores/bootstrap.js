@@ -3,15 +3,23 @@
 
 
 export async function bootstrapStores(pinia) {
+  console.log('🚀 Iniciando bootstrap de stores...')
+  
   // Import stores lazily to avoid circular imports during module initialization
   const { useUserStore } = await import('./user')
   const { useListsStore } = await import('./lists')
   const { useProductStore } = await import('./products')
   const { usePantryStore } = await import('./pantry')
+  const { useCategoryStore } = await import('./category')
 
   const userStore = useUserStore(pinia)
   userStore.load()
+  
+  console.log('👤 Usuario cargado:', userStore.token ? 'Con token' : 'Sin token')
 
+  // Initialize category store early (needed for icons in lists and products)
+  const categoryStore = useCategoryStore(pinia)
+  
   // Load lists store
   const listsStore = useListsStore(pinia)
 
@@ -19,15 +27,44 @@ export async function bootstrapStores(pinia) {
   if (userStore.token) {
     try {
       await userStore.fetchProfile()
-      // After user profile is loaded, reload lists for current user
-      listsStore.reload()
+      console.log('✅ Perfil de usuario cargado')
     } catch (err) {
-      console.error('Failed to refresh user profile', err)
-      // Load lists anyway even if profile refresh failed
+      console.error('❌ Error al cargar perfil:', err)
+      // If 401/403, token is invalid - clear it
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        console.warn('⚠️ Token inválido, limpiando sesión')
+        userStore.clearProfile()
+      }
+    }
+    
+    // CRITICAL: Initialize categories FIRST (before lists)
+    // This ensures category icons are loaded before list items are displayed
+    try {
+      console.log('🏷️ Inicializando categorías...')
+      await categoryStore.init()
+      console.log('✅ Categorías inicializadas:', categoryStore.categories.length)
+      console.log('📊 IDs de categorías:', categoryStore.categories.slice(0, 3).map(c => `${c.name}:${c.id}`))
+    } catch (err) {
+      console.error('❌ Error al inicializar categorías:', err)
+      // Fallback to localStorage
+      categoryStore.load()
+      console.log('📦 Usando categorías de localStorage:', categoryStore.categories.length)
+    }
+    
+    // THEN reload lists (after categories are ready)
+    try {
+      console.log('📋 Recargando listas...')
+      listsStore.reload()
+      console.log('✅ Listas recargadas')
+    } catch (err) {
+      console.error('❌ Error al recargar listas:', err)
       listsStore.load()
     }
   } else {
-    // No user logged in, load lists normally (will use generic key)
+    // No user logged in, load categories from localStorage
+    console.log('📦 Sin sesión, cargando categorías de localStorage...')
+    categoryStore.load()
+    // Load lists normally (will use generic key)
     listsStore.load()
   }
 

@@ -833,19 +833,10 @@ onMounted(async () => {
   console.log('localStorage data for key:', localStorage.getItem(currentStorageKey))
   console.log('Current lists in store before load:', listsStore.lists)
   
-   // Clear localStorage to remove any existing sample data
-   try {
-     localStorage.removeItem('listio:lists')
-     localStorage.removeItem(currentStorageKey)
-     console.log('Cleared localStorage for lists')
-   } catch (e) {
-     console.warn('Could not clear localStorage:', e)
-   }
-   
-   // Load from localStorage first as immediate fallback
+  // Load from localStorage first as immediate fallback
   listsStore.load()
    
-   console.log('Current lists in store after load:', listsStore.lists)
+  console.log('Current lists in store after load:', listsStore.lists)
   
   try {
     // Try to fetch from API to check availability and get latest data

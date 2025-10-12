@@ -908,17 +908,30 @@ const openProductSelectionDialog = async () => {
     try {
       const promises = []
       if (needsProducts) promises.push(productStore.fetchRemote())
-      if (needsCategories) promises.push(categoryStore.fetchRemote())
-      await Promise.all(promises)
-      console.log('Datos cargados desde el servidor.')
+      
+      // Only fetch categories if needed, don't call init() to avoid re-creating defaults
+      if (needsCategories) {
+        // First try to load from localStorage
+        categoryStore.load()
+        // If still empty or only has local defaults, fetch from server
+        if (!categoryStore.categories?.length || 
+            categoryStore.categories.every(c => typeof c.id === 'string')) {
+          promises.push(categoryStore.fetchRemote())
+        }
+      }
+      
+      if (promises.length > 0) {
+        await Promise.all(promises)
+        console.log('Datos cargados desde el servidor.')
+      }
     } catch (error) {
       console.error('Error al cargar productos o categorías:', error)
     }
   } else {
-    // 🔹 Refresca sin bloquear el diálogo
+    // 🔹 Refresca productos sin bloquear el diálogo
+    // Don't refresh categories here to avoid unnecessary API calls
     Promise.allSettled([
       productStore.fetchRemote(),
-      categoryStore.fetchRemote(),
     ])
   }
 }
@@ -1032,9 +1045,14 @@ const createAndAddNewProduct = async () => {
     // Close dialog right away for perceived performance
     productSelectionDialog.value = false
 
-    // Ensure categories are available
+    // Ensure categories are available - load from localStorage or server
     if (!categoryStore.categories || categoryStore.categories.length === 0) {
-      try { await categoryStore.fetchRemote() } catch (e) { /* ignore */ }
+      categoryStore.load()
+      // If still empty or only local defaults, fetch from server
+      if (!categoryStore.categories?.length || 
+          categoryStore.categories.every(c => typeof c.id === 'string')) {
+        try { await categoryStore.fetchRemote() } catch (e) { /* ignore */ }
+      }
     }
 
     // Create category if needed
@@ -1044,6 +1062,7 @@ const createAndAddNewProduct = async () => {
       if (!name) { creatingNewProductLoading.value = false; return }
       const createdCat = await categoryStore.createRemote({ name, metadata: {} })
       categoryToUse = createdCat
+      // Refresh categories after creating new one
       try { await categoryStore.fetchRemote() } catch (e) { /* ignore */ }
     }
 

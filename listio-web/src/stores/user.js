@@ -233,6 +233,13 @@ export const useUserStore = defineStore('user', {
       } finally {
         this.clearProfile()
         
+        // Clear category defaults flag so they get recreated on next login
+        try {
+          localStorage.removeItem('listio:defaults-created:v1')
+        } catch (e) {
+          console.warn('Failed to clear defaults flag:', e)
+        }
+        
         // Clear lists when logging out
         try {
           const { useListsStore } = await import('./lists')

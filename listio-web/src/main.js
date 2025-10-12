@@ -28,8 +28,15 @@ app.use(pinia)
 registerPlugins(app)
 
 // Bootstrap stores (load persisted state, refresh profile if needed)
-bootstrapStores(pinia).catch((err) => {
-  console.error('Failed to bootstrap stores', err)
-})
-
-app.mount('#app')
+// IMPORTANT: Wait for bootstrap to complete before mounting the app
+// This ensures categories and other stores are initialized before routes load
+bootstrapStores(pinia)
+  .then(() => {
+    console.log('✅ Stores bootstrapped successfully')
+    app.mount('#app')
+  })
+  .catch((err) => {
+    console.error('❌ Failed to bootstrap stores', err)
+    // Mount anyway to show error page
+    app.mount('#app')
+  })
