@@ -60,12 +60,16 @@ onMounted(async () => {
 
 <template>
   <main class="profile">
-    <section class="profile__layout">
-      <header class="profile__header">
-        <h1 class="profile__title">{{ t('profile.title') }}</h1>
-      </header>
+    <v-container>
+      <!-- Page Header -->
+      <div class="d-flex align-center justify-space-between mb-6">
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+          {{ t('profile.title') }}
+        </h1>
+      </div>
 
-      <article class="profile__card">
+      <section class="profile__layout">
+        <article class="profile__card">
         <div class="profile__avatar">
           <img
             v-if="profile.avatar"
@@ -82,33 +86,47 @@ onMounted(async () => {
       </article>
 
       <nav class="profile__actions" :aria-label="t('profile.accountActions')">
-        <RouterLink class="profile__action" to="/editar-perfil">
-          <span>{{ t('profile.editProfile') }}</span>
-          <span aria-hidden="true">&rsaquo;</span>
-        </RouterLink>
-        <button class="profile__action" type="button" @click="handleLanguageChange">
-          <span>{{ t('profile.changeLanguage') }} ({{ alternateLanguageLabel }})</span>
-          <span aria-hidden="true">&rsaquo;</span>
-        </button>
-        <button class="profile__action profile__action--warning" type="button" @click="handleLogout">
-          <span>{{ t('profile.logout') }}</span>
-          <span aria-hidden="true">&rsaquo;</span>
-        </button>
+        <v-btn
+          variant="elevated"
+          class="profile__action-btn profile__action-btn--edit"
+          to="/editar-perfil"
+          block
+        >
+          <v-icon left>mdi-account-edit</v-icon>
+          {{ t('profile.editProfile') }}
+        </v-btn>
+        
+        <v-btn
+          variant="elevated"
+          class="profile__action-btn profile__action-btn--language"
+          @click="handleLanguageChange"
+          block
+        >
+          <v-icon left>mdi-translate</v-icon>
+          {{ t('profile.changeLanguage') }} ({{ alternateLanguageLabel }})
+        </v-btn>
+        
+        <v-btn
+          variant="elevated"
+          class="profile__action-btn profile__action-btn--logout"
+          @click="handleLogout"
+          block
+        >
+          <v-icon left>mdi-logout</v-icon>
+          {{ t('profile.logout') }}
+        </v-btn>
       </nav>
-    </section>
+      </section>
+    </v-container>
   </main>
 </template>
 
 <style scoped>
 .profile {
-  height: calc(100vh - 80px);
+  padding-top: 2rem;
+  padding-bottom: 6rem;
   min-height: calc(100vh - 80px);
-  background: #ffff;
-  padding: 24px 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
+  background-color: #fafafa;
 }
 
 .profile__layout {
@@ -117,17 +135,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   gap: 28px;
-}
-
-.profile__header {
-  width: 100%;
-}
-
-.profile__title {
-  margin: 0;
-  font-size: clamp(26px, 4vw, 34px);
-  font-weight: 700;
-  color: #1f2e1f;
+  margin: 0 auto;
 }
 
 .profile__card {
@@ -185,47 +193,55 @@ onMounted(async () => {
   background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 8px 20px rgba(31, 78, 53, 0.08);
-  padding: 8px;
-  display: grid;
-  gap: 6px;
-  width: 100%;
-}
-
-.profile__action {
-  width: 100%;
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 18px;
-  border-radius: 14px;
-  background: transparent;
-  font-size: 15px;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.profile__action-btn {
+  height: 48px;
   font-weight: 500;
-  color: #2f3f30;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-  border: none;
-  text-decoration: none;
+  text-transform: none;
+  border-radius: 12px;
 }
 
-.profile__action:hover {
-  background: rgba(92, 181, 115, 0.12);
-  transform: translateX(3px);
+/* Botones grises por defecto con colores en hover */
+.profile__action-btn--edit {
+  background-color: #f5f5f5 !important;
+  color: #4CAF50 !important;
 }
 
-.profile__action--warning {
-  color: #c53030;
+.profile__action-btn--edit:hover {
+  background-color: #4CAF50 !important;
+  color: #ffffff !important;
 }
 
-.profile__action--warning:hover {
-  background: rgba(197, 48, 48, 0.1);
+.profile__action-btn--language {
+  background-color: #f5f5f5 !important;
+  color: #1976d2 !important;
+}
+
+.profile__action-btn--language:hover {
+  background-color: #1976d2 !important;
+  color: #ffffff !important;
+}
+
+.profile__action-btn--logout {
+  background-color: #f5f5f5 !important;
+  color: #f44336 !important;
+}
+
+.profile__action-btn--logout:hover {
+  background-color: #f44336 !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 720px) {
   .profile {
-    height: calc(100vh - 72px);
-    min-height: calc(100vh - 72px);
-    padding: 24px;
+    padding-top: 1rem;
+    padding-bottom: 4rem;
   }
 
   .profile__card {

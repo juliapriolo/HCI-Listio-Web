@@ -18,6 +18,7 @@ const redirectToLogin = () => {
 
 const form = reactive({
   name: '',
+  surname: '',
   email: '',
   avatar: null,
 })
@@ -32,6 +33,7 @@ watch(
     }
 
     form.name = value.name || ''
+    form.surname = value.surname || ''
     form.email = value.email || ''
     form.avatar = value.avatar || null
   },
@@ -41,6 +43,9 @@ watch(
 const showPasswordModal = ref(false)
 const showAvatarModal = ref(false)
 const passwordForm = reactive({ current: '', new: '' })
+const showPasswordSuccessMessage = ref(false)
+const showPasswordErrorMessage = ref(false)
+const passwordErrorMessage = ref('')
 
 const handleFileUpload = (event) => {
   const [file] = event?.target?.files ?? []
@@ -63,12 +68,8 @@ const submitForm = async () => {
     // Solo enviar los campos que realmente pueden cambiar
     const updateData = {
       name: form.name,
+      surname: form.surname,
       avatar: form.avatar,
-    }
-    
-    // Solo incluir surname si existe en el perfil original
-    if (profile.value?.surname) {
-      updateData.surname = profile.value.surname
     }
     
     await userStore.updateProfile(updateData)
@@ -85,17 +86,56 @@ const submitForm = async () => {
   }
 }
 
+const openPasswordModal = () => {
+  showPasswordModal.value = true
+  showPasswordSuccessMessage.value = false
+  showPasswordErrorMessage.value = false
+  passwordErrorMessage.value = ''
+}
+
+const closePasswordModal = () => {
+  showPasswordModal.value = false
+  showPasswordSuccessMessage.value = false
+  showPasswordErrorMessage.value = false
+  passwordErrorMessage.value = ''
+  passwordForm.current = ''
+  passwordForm.new = ''
+}
+
+const translatePasswordError = (errorMessage) => {
+  // Buscar traducción específica para el mensaje de error
+  const translatedError = t(`profile.passwordErrors.${errorMessage}`)
+  
+  // Si no hay traducción específica, devolver el mensaje original
+  if (translatedError === `profile.passwordErrors.${errorMessage}`) {
+    return errorMessage
+  }
+  
+  return translatedError
+}
+
 const changePassword = async () => {
   try {
     await userStore.changePassword({
       currentPassword: passwordForm.current,
       newPassword: passwordForm.new,
     })
-    showPasswordModal.value = false
-    passwordForm.current = ''
-    passwordForm.new = ''
+    
+    // Mostrar mensaje de éxito
+    showPasswordSuccessMessage.value = true
+    showPasswordErrorMessage.value = false
+    
+    // Cerrar modal y limpiar formulario después de un breve delay
+    setTimeout(() => {
+      closePasswordModal()
+    }, 2000)
+    
   } catch (error) {
-    alert(error?.message || 'Error al cambiar la contrasena')
+    // Mostrar mensaje de error traducido
+    const errorMessage = error?.message || t('profile.passwordErrorDefault')
+    passwordErrorMessage.value = translatePasswordError(errorMessage)
+    showPasswordErrorMessage.value = true
+    showPasswordSuccessMessage.value = false
   }
 }
 
@@ -127,10 +167,15 @@ onMounted(async () => {
   <main class="edit-profile">
     <!-- Header con flecha y título alineados -->
     <div class="page-header">
-      <button @click="router.push('/perfil')" class="back-button">
-        <span class="back-arrow">←</span>
-        <span class="back-text">{{ t('profile.title') }}</span>
-      </button>
+      <v-btn
+        icon="mdi-arrow-left"
+        variant="text"
+        color="grey-darken-3"
+        @click="router.push('/perfil')"
+        class="back-btn"
+      >
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
       <h1 class="edit-profile__title">{{ t('profile.editTitle') }}</h1>
       <div class="spacer"></div>
     </div>
@@ -158,10 +203,7 @@ onMounted(async () => {
               class="avatar-image"
             />
             <div v-else class="avatar-placeholder">
-              <span class="avatar-icon">👤</span>
-            </div>
-            <div class="avatar-overlay">
-              <span class="avatar-edit-icon">📷</span>
+              <v-icon class="avatar-icon" size="48">mdi-account</v-icon>
             </div>
           </div>
           <p class="avatar-hint">{{ t('profile.photoHint') }}</p>
@@ -174,13 +216,18 @@ onMounted(async () => {
           </div>
 
           <div class="form-group">
-            <label for="email">{{ t('profile.email') }}</label>
-            <input v-model="form.email" id="email" type="email" readonly disabled />
+            <label for="surname">{{ t('common.surname') }}</label>
+            <input v-model="form.surname" id="surname" type="text" style="color:black;" />
           </div>
         </div>
 
         <div class="form-group">
-          <button type="button" class="btn btn--secondary" @click="showPasswordModal = true">
+          <label for="email">{{ t('profile.email') }}</label>
+          <input v-model="form.email" id="email" type="email" readonly disabled />
+        </div>
+
+        <div class="form-group">
+          <button type="button" class="btn btn--secondary" @click="openPasswordModal">
             {{ t('profile.changePassword') }}
           </button>
         </div>
@@ -195,19 +242,36 @@ onMounted(async () => {
     <!-- Modal de cambio de contraseña -->
     <div v-if="showPasswordModal" class="modal-overlay">
       <div class="modal">
-  <h2>{{ t('profile.changePassword') }}</h2>
-        <form @submit.prevent="changePassword">
+        <h2>{{ t('profile.changePassword') }}</h2>
+        
+        <!-- Mensaje de éxito -->
+        <div v-if="showPasswordSuccessMessage" class="password-success-message">
+          <div class="success-content">
+            <div class="success-icon">✓</div>
+            <div class="success-text">
+              <h3>{{ t('profile.passwordSuccessTitle') }}</h3>
+              <p>{{ t('profile.passwordSuccessDescription') }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Mensaje de error -->
+        <div v-if="showPasswordErrorMessage" class="password-error-text">
+          {{ passwordErrorMessage }}
+        </div>
+        
+        <form v-if="!showPasswordSuccessMessage" @submit.prevent="changePassword">
           <div class="form-group">
             <label for="currentPassword">{{ t('profile.currentPassword') }}</label>
-            <input v-model="passwordForm.current" id="currentPassword" type="password" required />
+            <input v-model="passwordForm.current" id="currentPassword" type="password" style="color:black;" required />
           </div>
           <div class="form-group">
             <label for="newPassword">{{ t('profile.newPassword') }}</label>
-            <input v-model="passwordForm.new" id="newPassword" type="password" required />
+            <input v-model="passwordForm.new" id="newPassword" type="password" style="color:black;" required />
           </div>
           <div class="edit-profile__actions">
             <button type="submit" class="btn btn--save">{{ t('common.save') }}</button>
-            <button type="button" class="btn btn--cancel" @click="showPasswordModal = false">{{ t('common.cancel') }}</button>
+            <button type="button" class="btn btn--cancel" @click="closePasswordModal">{{ t('common.cancel') }}</button>
           </div>
         </form>
       </div>
@@ -216,7 +280,7 @@ onMounted(async () => {
     <!-- Modal de cambio de avatar -->
     <div v-if="showAvatarModal" class="modal-overlay">
       <div class="modal">
-  <h2>{{ t('profile.changePhoto') }}</h2>
+        <h2>{{ t('profile.changePhoto') }}</h2>
         <div class="avatar-modal-content">
           <div class="current-avatar">
             <img 
@@ -226,24 +290,25 @@ onMounted(async () => {
               class="modal-avatar-preview"
             />
             <div v-else class="modal-avatar-placeholder">
-              <span class="avatar-icon">👤</span>
+              <v-icon class="avatar-icon" size="48">mdi-account</v-icon>
             </div>
           </div>
-          <div class="avatar-upload">
+          <div class="form-group">
+            <label for="avatarFile">Cambiar imagen</label>
             <input 
               type="file" 
               id="avatarFile" 
               @change="handleFileUpload" 
               accept="image/*"
-              style="display: none"
+              class="form-input file-input"
             />
-            <label for="avatarFile" class="upload-button">
-          📁 {{ t('profile.selectNewPhoto') }}
-            </label>
-            <p class="upload-hint">{{ t('profile.uploadHint') }}</p>
+            <div v-if="avatarPreview" class="image-preview">
+              <img :src="avatarPreview" :alt="t('profile.avatarFallback')" class="preview-img" />
+            </div>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn btn--save" @click="showAvatarModal = false">{{ t('common.close') }}</button>
+            <button type="button" class="btn btn--cancel" @click="showAvatarModal = false">{{ t('common.cancel') }}</button>
+            <button type="button" class="btn btn--primary" @click="showAvatarModal = false">{{ t('common.save') }}</button>
           </div>
         </div>
       </div>
@@ -301,35 +366,11 @@ onMounted(async () => {
 }
 
 .spacer {
-  width: 100px; /* Mismo ancho aproximado que el botón de regreso */
+  width: 48px; /* Mismo ancho que el v-btn icon */
 }
 
-.back-button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  color: #4CAF50;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-  min-width: 100px;
-}
-
-.back-button:hover {
-  background-color: #f5f5f5;
-}
-
-.back-arrow {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.back-text {
-  font-weight: 500;
+.back-btn {
+  margin-left: -8px;
 }
 
 .edit-profile__title {
@@ -405,27 +446,7 @@ onMounted(async () => {
 }
 
 .avatar-icon {
-  font-size: 48px;
   color: #999;
-}
-
-.avatar-overlay {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 36px;
-  height: 36px;
-  background: #4CAF50;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid white;
-}
-
-.avatar-edit-icon {
-  font-size: 16px;
-  color: white;
 }
 
 .avatar-hint {
@@ -495,16 +516,24 @@ onMounted(async () => {
 }
 
 .btn--save {
-  background: #06763f;
+  background: #4CAF50;
   color: #fff;
 }
 
+.btn--save:hover {
+  background: #45A049;
+}
+
 .btn--cancel {
-  background: #ccc;
+  background: #f5f5f5;
   color: #333;
   text-decoration: none;
   display: flex;
   align-items: center;
+}
+
+.btn--cancel:hover {
+  background: #e0e0e0;
 }
 
 .btn--secondary {
@@ -613,25 +642,6 @@ onMounted(async () => {
   border: 3px solid #e0e0e0;
 }
 
-.avatar-upload {
-  text-align: center;
-}
-
-.upload-button {
-  display: inline-block;
-  background: #4CAF50;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: background-color 0.3s ease;
-}
-
-.upload-button:hover {
-  background: #45A049;
-}
-
 .upload-hint {
   margin-top: 8px;
   color: #666;
@@ -641,7 +651,120 @@ onMounted(async () => {
 .modal-actions {
   width: 100%;
   display: flex;
+  gap: 12px;
   justify-content: center;
+}
+
+/* File input styles consistent with other sections */
+.file-input {
+  padding: 6px 12px;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.file-input:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.file-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+  background-color: #fff;
+}
+
+.file-input::file-selector-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 12px;
+  transition: background-color 0.2s ease;
+}
+
+.file-input::file-selector-button:hover {
+  background-color: #5a6268;
+}
+
+.btn--primary {
+  background: #4CAF50;
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #45A049;
+}
+
+/* Image preview styles consistent with other sections */
+.image-preview {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.preview-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Mensajes de contraseña */
+.password-success-message {
+  margin-bottom: 20px;
+}
+
+.password-success-message .success-content {
+  background: linear-gradient(135deg, #4CAF50, #45A049);
+  color: white;
+  padding: 20px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.password-success-message .success-icon {
+  background: rgba(255, 255, 255, 0.2);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.password-success-message .success-text h3 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.password-success-message .success-text p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.password-error-text {
+  color: #f44336;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
 }
 
 /* Responsive */

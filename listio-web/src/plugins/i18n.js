@@ -101,7 +101,7 @@ const messages = {
 			pantry: 'Despensas'
 		},
 		profile: {
-			title: 'Mi perfil',
+			title: 'Perfil',
 			editProfile: 'Editar perfil',
 			changeLanguage: 'Cambiar idioma',
 			logout: 'Cerrar sesión',
@@ -121,7 +121,19 @@ const messages = {
 			uploadHint: 'Selecciona una imagen desde tu dispositivo',
 			photoHint: 'Haz clic en tu foto para cambiarla',
 			successTitle: '¡Perfil actualizado!',
-			successDescription: 'Tus cambios se han guardado correctamente'
+			successDescription: 'Tus cambios se han guardado correctamente',
+			passwordSuccessTitle: '¡Contraseña cambiada!',
+			passwordSuccessDescription: 'Tu contraseña se ha actualizado correctamente.',
+			passwordErrorTitle: 'Error al cambiar contraseña',
+			passwordErrorDefault: 'Error al cambiar la contraseña',
+			passwordErrors: {
+				'Invalid password': 'Contraseña inválida',
+				'Current password is incorrect': 'La contraseña actual es incorrecta',
+				'Password too short': 'La contraseña es muy corta',
+				'Password does not meet requirements': 'La contraseña no cumple con los requisitos',
+				'New password must be different': 'La nueva contraseña debe ser diferente',
+				'Password change failed': 'No se pudo cambiar la contraseña'
+			}
 		},
 		common: {
 			cancel: 'Cancelar',
@@ -423,7 +435,7 @@ const messages = {
 		},
 		nav: { lists: 'Lists', products: 'Products', pantry: 'Pantry' },
 		profile: {
-			title: 'My profile',
+			title: 'Profile',
 			editProfile: 'Edit profile',
 			changeLanguage: 'Change language',
 			logout: 'Sign out',
@@ -443,7 +455,19 @@ const messages = {
 			uploadHint: 'Choose an image from your device',
 			photoHint: 'Click your photo to change it',
 			successTitle: 'Profile updated!',
-			successDescription: 'Your changes have been saved successfully'
+			successDescription: 'Your changes have been saved successfully',
+			passwordSuccessTitle: 'Password changed!',
+			passwordSuccessDescription: 'Your password has been updated successfully.',
+			passwordErrorTitle: 'Error changing password',
+			passwordErrorDefault: 'Error changing password',
+			passwordErrors: {
+				'Invalid password': 'Invalid password',
+				'Current password is incorrect': 'Current password is incorrect',
+				'Password too short': 'Password too short',
+				'Password does not meet requirements': 'Password does not meet requirements',
+				'New password must be different': 'New password must be different',
+				'Password change failed': 'Password change failed'
+			}
 		},
 		common: {
 			cancel: 'Cancel',
