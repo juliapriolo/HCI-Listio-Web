@@ -3,21 +3,9 @@
     <v-container>
       <!-- Page Header -->
       <div class="d-flex align-center justify-space-between mb-6">
-        <div class="d-flex align-center" style="margin-left: -12px;">
-          <v-btn
-            icon
-            size="small"
-            variant="text"
-            color="black"
-            @click="router.back()"
-            class="mr-1"
-          >
-            <v-icon>mdi-arrow-left</v-icon>
-          </v-btn>
-          <h1 class="text-h4 font-weight-bold text-grey-darken-3 mb-0">
-            Historial
-          </h1>
-        </div>
+        <h1 class="text-h4 font-weight-bold text-grey-darken-3">
+          Historial
+        </h1>
         
         <div class="search-wrapper">
           <v-text-field
@@ -30,6 +18,22 @@
             hide-details
           />
         </div>
+
+        <!-- Empty space to match the layout of listas.vue -->
+        <div class="ml-4"></div>
+      </div>
+
+      <!-- Back Button -->
+      <div class="mb-4">
+        <v-btn
+          icon="mdi-arrow-left"
+          variant="text"
+          color="grey-darken-3"
+          @click="router.back()"
+          class="back-btn"
+        >
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
       </div>
 
       <!-- Tabs -->
@@ -102,8 +106,10 @@
       <!-- Clear History Action -->
       <div v-if="allEvents.length > 0" class="text-center mt-6">
         <v-btn
-          variant="text"
-          color="error"
+          color="#f44336"
+          variant="elevated"
+          class="text-none"
+          min-width="100"
           @click="clearHistory"
         >
           Limpiar historial

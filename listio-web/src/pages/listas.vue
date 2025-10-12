@@ -16,10 +16,10 @@
 
         <!-- History page button -->
         <v-btn
-          color="primary"
-          variant="tonal"
-          size="small"
-          class="ml-4"
+          color="success"
+          variant="elevated"
+          class="text-none ml-4"
+          min-width="100"
           @click="() => router.push({ path: '/historial' })"
           title="Historial"
         >
@@ -57,8 +57,6 @@
         icon="mdi-format-list-bulleted"
         :title="t('pages.lists.noListsTitle')"
         :description="t('pages.lists.noListsDescription')"
-        :action-text="t('pages.lists.createListAction')"
-        @action="openNewListDialog"
       />
 
       <EmptyState
