@@ -90,7 +90,10 @@ const messages = {
 			groceryBagAlt: 'Bolsa de compras',
 			coloredBagsAlt: 'Bolsas de colores',
 			emailExists: 'Este email ya está registrado.',
-			genericError: 'No se pudo completar el registro.'
+			genericError: 'No se pudo completar el registro.',
+			passwordTooShort: 'La contraseña debe tener al menos 6 caracteres.',
+			missingEmail: 'Ingresa tu dirección de email',
+			invalidEmail: 'El formato del email no es válido'
 		},
 		nav: {
 			lists: 'Listas',
@@ -413,7 +416,10 @@ const messages = {
 			groceryBagAlt: 'Grocery bag',
 			coloredBagsAlt: 'Colored bags',
 			emailExists: 'This email is already registered.',
-			genericError: 'We could not complete the registration.'
+			genericError: 'We could not complete the registration.',
+			passwordTooShort: 'Password must be at least 6 characters long.',
+			missingEmail: 'Please enter your email address',
+			invalidEmail: 'Email format is invalid'
 		},
 		nav: { lists: 'Lists', products: 'Products', pantry: 'Pantry' },
 		profile: {
