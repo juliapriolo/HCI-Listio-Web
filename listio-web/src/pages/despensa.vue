@@ -4,14 +4,14 @@
       <!-- Page Header -->
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          {{ currentView === 'categories' ? t('pages.pantry.title') : selectedCategory?.name || t('pages.products.title') }}
+          {{ currentView === 'categories' ? 'Despensas' : selectedCategory?.name || 'Productos' }}
         </h1>
         
         <div class="header-actions">
           <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
-              :placeholder="currentView === 'categories' ? t('pages.pantry.searchCategories') : t('pages.pantry.searchProducts')"
+              :placeholder="currentView === 'categories' ? 'Buscar despensas...' : 'Buscar productos...'"
         />
       </div>
 
@@ -137,15 +137,15 @@
         <EmptyState
           v-if="filteredCategories.length === 0 && !searchQuery"
           icon="mdi-archive-outline"
-          :title="t('pages.pantry.empty.noCategoriesTitle')"
-          :description="t('pages.pantry.empty.noCategoriesDescription')"
+          :title="'No tienes despensas creadas'"
+          :description="'Crea tu primera despensa para organizar tus productos'"
         />
         
         <EmptyState
           v-else-if="filteredCategories.length === 0 && searchQuery"
           icon="mdi-magnify"
-          :title="t('pages.products.empty.noResultsTitle')"
-          :description="t('pages.products.empty.noResultsDescription')"
+          :title="'No se encontraron despensas'"
+          :description="'Intenta con otro término de búsqueda'"
         />
       </div>
 
@@ -179,15 +179,15 @@
       <EmptyState
           v-else-if="!searchQuery"
           icon="mdi-package-variant"
-          :title="t('pages.pantry.empty.noProductsTitle')"
-          :description="t('pages.pantry.empty.noProductsDescription')"
+          :title="'Esta despensa está vacía'"
+          :description="'Agrega productos para comenzar a organizar tu despensa'"
         />
         
         <EmptyState
           v-else
           icon="mdi-magnify"
-          :title="t('pages.pantry.empty.searchNotFoundTitle')"
-          :description="t('pages.pantry.empty.searchNotFoundDescription')"
+          :title="'No se encontraron productos'"
+          :description="'Intenta con otro término de búsqueda'"
         />
       </div>
     </v-container>
@@ -195,24 +195,24 @@
     <!-- Add/Edit Category Dialog -->
     <div v-if="categoryDialog" class="modal-overlay">
       <div class="modal category-modal">
-  <h2>{{ editingCategory ? t('pages.pantry.editCategoryTitle') : t('pages.pantry.addCategoryTitle') }}</h2>
+        <h2>{{ editingCategory ? 'Editar Despensa' : 'Nueva Despensa' }}</h2>
         
         <form @submit.prevent="saveCategory(categoryForm)">
           <div class="form-group">
-            <label for="categoryName">{{ t('pages.pantry.categoryNameLabel') }}</label>
+            <label for="categoryName">Nombre de la despensa</label>
             <input
               id="categoryName"
               v-model="categoryForm.name"
               type="text"
               class="form-input"
-              :placeholder="t('pages.pantry.categoryNamePlaceholder')"
+              placeholder="Ej: Frutas, Lácteos, Limpieza..."
               required
               autofocus
             />
           </div>
           
           <div class="form-group">
-            <label for="categoryImage">{{ t('pages.pantry.categoryImageLabel') }}</label>
+            <label for="categoryImage">Imagen de la despensa</label>
             <input
               id="categoryImage"
               type="file"
@@ -234,7 +234,7 @@
               class="btn btn--primary"
               :disabled="!categoryForm.name?.trim()"
             >
-              {{ editingCategory ? t('pages.pantry.updateCategoryButton') : t('pages.pantry.addCategoryButton') }}
+              {{ editingCategory ? 'Actualizar Despensa' : 'Crear Despensa' }}
             </button>
           </div>
         </form>
@@ -244,7 +244,7 @@
     <!-- Product Selection Dialog -->
     <div v-if="productSelectionDialog" class="modal-overlay">
       <div class="modal product-selection-modal">
-        <h2>{{ t('pages.pantry.productSelection.title') }}</h2>
+        <h2>Agregar Producto a la Despensa</h2>
         
         <!-- Search field -->
         <div class="search-section">
@@ -316,10 +316,10 @@
           
           <div v-if="selectedProduct" class="product-details">
             <div class="divider"></div>
-            <h4 class="details-title">{{ t('pages.pantry.productSelection.detailsTitle') }}</h4>
+            <h4 class="details-title">Detalles del Producto</h4>
             <div class="form-row">
               <div class="form-group">
-                <label for="productQuantity">{{ t('pages.pantry.productSelection.quantityLabel') }}</label>
+                <label for="productQuantity">Cantidad</label>
                 <input
                   id="productQuantity"
                   v-model="productQuantity"
@@ -329,15 +329,15 @@
                 />
               </div>
               <div class="form-group">
-                <label for="productUnit">{{ t('pages.pantry.productSelection.unitLabel') }}</label>
+                <label for="productUnit">Unidad</label>
                 <select id="productUnit" v-model="productUnit" class="form-input">
-                  <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
-                  <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
-                  <option value="g">{{ t('pages.pantry.units.g') }}</option>
-                  <option value="l">{{ t('pages.pantry.units.l') }}</option>
-                  <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
-                  <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
-                  <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
+                <option value="unidad">Unidad</option>
+                <option value="kg">Kilogramo</option>
+                <option value="g">Gramo</option>
+                <option value="l">Litro</option>
+                <option value="ml">Mililitro</option>
+                <option value="paquete">Paquete</option>
+                <option value="caja">Caja</option>
                 </select>
               </div>
             </div>
@@ -354,7 +354,7 @@
             :disabled="!selectedProduct"
             @click="addSelectedProductToPantry"
           >
-            {{ t('pages.pantry.productSelection.addToPantry') }}
+            Agregar a Despensa
           </button>
         </div>
       </div>
@@ -363,10 +363,13 @@
     <!-- Delete Confirmation Dialog -->
     <div v-if="deleteDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-  <h2>{{ t('pages.pantry.deleteConfirm.categoryTitle') }}</h2>
+        <h2>Eliminar Despensa</h2>
         
         <div class="confirmation-content">
-          <p class="confirmation-text" v-html="t('pages.pantry.deleteConfirm.categoryMessage', { name: categoryToDelete?.name || '' })"></p>
+          <p class="confirmation-text">
+            ¿Estás seguro de que quieres eliminar la despensa <strong>{{ categoryToDelete?.name || '' }}</strong>? 
+            Esta acción no se puede deshacer y se eliminarán todos los productos de esta despensa.
+          </p>
         </div>
         
         <div class="modal-actions">
@@ -411,12 +414,12 @@
     <!-- Product Edit Dialog -->
     <div v-if="productEditDialog" class="modal-overlay">
       <div class="modal product-edit-modal">
-  <h2>{{ t('pages.pantry.editProduct.title') }}</h2>
+        <h2>Editar Producto</h2>
         
         <form @submit.prevent="saveProductEdit">
           <div class="form-row">
             <div class="form-group">
-              <label for="editQuantity">{{ t('pages.pantry.editProduct.quantityLabel') }}</label>
+              <label for="editQuantity">Cantidad</label>
               <input
                 id="editQuantity"
                 v-model="editQuantity"
@@ -427,21 +430,21 @@
               />
             </div>
             <div class="form-group">
-              <label for="editUnit">{{ t('pages.pantry.editProduct.unitLabel') }}</label>
+              <label for="editUnit">Unidad</label>
               <select id="editUnit" v-model="editUnit" class="form-input">
-                <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
-                <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
-                <option value="g">{{ t('pages.pantry.units.g') }}</option>
-                <option value="l">{{ t('pages.pantry.units.l') }}</option>
-                <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
-                <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
-                <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
+                <option value="unidad">Unidad</option>
+                <option value="kg">Kilogramo</option>
+                <option value="g">Gramo</option>
+                <option value="l">Litro</option>
+                <option value="ml">Mililitro</option>
+                <option value="paquete">Paquete</option>
+                <option value="caja">Caja</option>
               </select>
             </div>
           </div>
           
           <div class="form-group">
-            <label for="editImageFile">{{ t('pages.pantry.editProduct.changeImage') }}</label>
+            <label for="editImageFile">Cambiar imagen</label>
             <input
               id="editImageFile"
               type="file"
