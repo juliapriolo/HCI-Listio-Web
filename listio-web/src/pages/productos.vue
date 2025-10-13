@@ -145,31 +145,6 @@
           </div>
 
           <div class="form-group">
-            <label for="productImage">{{ t('pages.products.modals.common.imageLabel') }}</label>
-            <input
-              id="productImage"
-              type="file"
-              accept="image/*"
-              class="form-input file-input"
-              @change="handleProductImageChange"
-            />
-            <div v-if="productImagePreview" class="image-preview">
-              <img :src="productImagePreview" :alt="t('pages.products.modals.common.previewAlt')" class="preview-img" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="productDescription">{{ t('pages.products.modals.common.descriptionLabel') }}</label>
-            <textarea
-              id="productDescription"
-              v-model="newProductForm.description"
-              class="form-input"
-              :placeholder="t('pages.products.modals.common.descriptionPlaceholder')"
-              rows="3"
-            ></textarea>
-          </div>
-
-          <div class="form-group">
             <label for="productCategory">{{t('common.category')}}</label>
             <div class="category-input-group">
               <select
@@ -201,6 +176,32 @@
               </div>
             </div>
           </div>
+          
+          <div class="form-group">
+            <label for="productImage">{{ t('pages.products.modals.common.imageLabel') }}</label>
+            <input
+              id="productImage"
+              type="file"
+              accept="image/*"
+              class="form-input file-input"
+              @change="handleProductImageChange"
+            />
+            <div v-if="productImagePreview" class="image-preview">
+              <img :src="productImagePreview" :alt="t('pages.products.modals.common.previewAlt')" class="preview-img" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="productDescription">{{ t('pages.products.modals.common.descriptionLabel') }}</label>
+            <textarea
+              id="productDescription"
+              v-model="newProductForm.description"
+              class="form-input"
+              :placeholder="t('pages.products.modals.common.descriptionPlaceholder')"
+              rows="3"
+            ></textarea>
+          </div>
+
 
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="closeNewProductDialog">
