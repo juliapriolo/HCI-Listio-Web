@@ -358,7 +358,12 @@ const messages = {
 				deleteConfirm: {
 					title: 'Confirmar eliminación',
 					message: '¿Estás seguro de que quieres eliminar el producto <strong>"{name}"</strong>?',
-					warning: 'Esta acción no se puede deshacer.'
+					warning: 'Esta acción no se puede deshacer.',
+					referencesTitle: '⚠️ Este producto está en las siguientes listas:',
+					singleItem: 'ítem',
+					multipleItems: 'ítems',
+					referencesWarning: 'Al eliminar el producto, también se eliminarán estos ítems de las listas.',
+					deleteAnyway: 'de todos modos'
 				},
 				messages: {
 					added: '{name} agregado correctamente',
@@ -765,7 +770,16 @@ const messages = {
 					new: { title: 'Add Product', creating: 'Adding...', submit: 'Add Product' },
 					edit: { title: 'Edit Product' }
 				},
-				deleteConfirm: { title: 'Confirm deletion', message: 'Are you sure you want to delete the product <strong>"{name}"</strong>?', warning: 'This action cannot be undone.' },
+				deleteConfirm: { 
+					title: 'Confirm deletion', 
+					message: 'Are you sure you want to delete the product <strong>"{name}"</strong>?', 
+					warning: 'This action cannot be undone.',
+					referencesTitle: '⚠️ This product is in the following lists:',
+					singleItem: 'item',
+					multipleItems: 'items',
+					referencesWarning: 'When deleting the product, these items will also be removed from the lists.',
+					deleteAnyway: 'anyway'
+				},
 				messages: { added: '{name} added successfully', addError: 'Error adding {name}: {error}', updated: 'Product updated successfully', updateError: 'Error updating product: {error}', deleted: 'Product deleted successfully', deleteError: 'Error deleting product: {error}', addedToList: '{name} added to the list', loadError: 'Error loading data. Checking connection...' }
 			},
 			pantry: {

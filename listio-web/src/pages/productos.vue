@@ -334,23 +334,21 @@
     <!-- Diálogo de confirmación de eliminación -->
     <div v-if="deleteConfirmDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-        <h2>Confirmar eliminación</h2>
+        <h2>{{ t('pages.products.deleteConfirm.title') }}</h2>
         
         <div class="confirmation-content">
-          <p class="confirmation-text">
-            ¿Estás seguro de que quieres eliminar el producto <strong>"{{ productToDelete?.name }}"</strong>?
-          </p>
+          <p class="confirmation-text" v-html="t('pages.products.deleteConfirm.message', { name: productToDelete?.name || '' })"></p>
           
           <!-- Mostrar referencias si existen -->
           <div v-if="productReferences.length > 0" class="references-warning">
-            <p class="warning-title">⚠️ Este producto está en las siguientes listas:</p>
+            <p class="warning-title">{{ t('pages.products.deleteConfirm.referencesTitle') }}</p>
             <ul class="references-list">
               <li v-for="ref in productReferences" :key="ref.listId">
-                <strong>{{ ref.listName }}</strong> ({{ ref.items.length }} {{ ref.items.length === 1 ? 'ítem' : 'ítems' }})
+                <strong>{{ ref.listName }}</strong> ({{ ref.items.length }} {{ ref.items.length === 1 ? t('pages.products.deleteConfirm.singleItem') : t('pages.products.deleteConfirm.multipleItems') }})
               </li>
             </ul>
             <p class="warning-text">
-              Al eliminar el producto, también se eliminarán estos ítems de las listas.
+              {{ t('pages.products.deleteConfirm.referencesWarning') }}
             </p>
           </div>
           
@@ -358,14 +356,14 @@
         
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="cancelDelete">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             class="btn btn--danger"
             @click="executeDelete"
           >
-            Eliminar {{ productReferences.length > 0 ? 'de todos modos' : '' }}
+            {{ t('common.delete') }}{{ productReferences.length > 0 ? ' ' + t('pages.products.deleteConfirm.deleteAnyway') : '' }}
           </button>
         </div>
       </div>
@@ -712,12 +710,12 @@ const executeDelete = async () => {
       // Refrescar la lista
       await productStore.fetchRemote()
       
-      snackbarText.value = 'Producto eliminado correctamente'
+      snackbarText.value = t('pages.products.messages.deleted')
       snackbarColor.value = 'success'
       snackbar.value = true
     } catch (error) {
       console.error('Error al eliminar producto:', error)
-      snackbarText.value = `Error al eliminar: ${error.message}`
+      snackbarText.value = t('pages.products.messages.deleteError', { error: error.message || 'Error desconocido' })
       snackbarColor.value = 'error'
       snackbar.value = true
     } finally {
