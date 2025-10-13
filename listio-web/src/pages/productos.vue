@@ -170,7 +170,7 @@
           </div>
 
           <div class="form-group">
-            <label for="productCategory">{{t('common.category')}} *</label>
+            <label for="productCategory">{{t('common.category')}}</label>
             <div class="category-input-group">
               <select
                 id="productCategory"
