@@ -37,8 +37,6 @@
             <ul class="list-items">
               <li v-for="item in items" :key="item.id">
                 <div class="list-row">
-                  <img src="/icons8-apple-64.png" alt="Producto" class="category-logo" />
-                  
                   <div>
                     <h3 class="item-descr">{{ item.data?.name || 'Producto sin nombre' }}</h3>
                     <p class="text-caption text-grey-darken-2">
@@ -62,8 +60,9 @@
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn
-          color="error"
+          color="#f44336"
           variant="elevated"
+          class="text-none"
           @click="$emit('update:modelValue', false)"
         >
           Cerrar
