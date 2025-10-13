@@ -195,11 +195,11 @@
     <!-- Add/Edit Category Dialog -->
     <div v-if="categoryDialog" class="modal-overlay">
       <div class="modal category-modal">
-  <h2>{{ editingCategory ? t('pages.pantry.editCategoryTitle') : t('pages.pantry.addCategoryTitle') }}</h2>
+  <h2>{{ editingCategory ? t('pages.pantry.editCategoryTitle').replace('categoría', 'despensa') : t('pages.pantry.addCategoryTitle').replace('categoría', 'despensa') }}</h2>
         
         <form @submit.prevent="saveCategory(categoryForm)">
           <div class="form-group">
-            <label for="categoryName">{{ t('pages.pantry.categoryNameLabel') }}</label>
+            <label for="categoryName">{{ t('pages.pantry.categoryNameLabel').replace('categoría', 'despensa') }}</label>
             <input
               id="categoryName"
               v-model="categoryForm.name"
@@ -212,7 +212,7 @@
           </div>
           
           <div class="form-group">
-            <label for="categoryImage">{{ t('pages.pantry.categoryImageLabel') }}</label>
+            <label for="categoryImage">{{ t('pages.pantry.categoryImageLabel').replace('categoría', 'despensa') }}</label>
             <input
               id="categoryImage"
               type="file"
@@ -234,7 +234,7 @@
               class="btn btn--primary"
               :disabled="!categoryForm.name?.trim()"
             >
-              {{ editingCategory ? t('pages.pantry.updateCategoryButton') : t('pages.pantry.addCategoryButton') }}
+              {{ editingCategory ? t('pages.pantry.updateCategoryButton').replace('categoría', 'despensa') : t('pages.pantry.addCategoryButton').replace('categoría', 'despensa') }}
             </button>
           </div>
         </form>
