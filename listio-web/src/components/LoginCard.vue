@@ -3,7 +3,7 @@
     <h2 class="login-title">{{ t('login.title') }}</h2>
     
     <form @submit.prevent="handleLogin" class="login-form">
-      <!-- Campo Email -->
+      
       <div class="form-group">
         <label for="email" class="form-label">{{ t('login.email') }}</label>
         <input
@@ -15,7 +15,7 @@
         />
       </div>
       
-      <!-- Campo Contraseña -->
+      
       <div class="form-group">
         <label for="password" class="form-label">{{ t('login.password') }}</label>
         <input
@@ -27,7 +27,7 @@
         />
       </div>
       
-      <!-- Botón de Login -->
+      
       <button type="submit" class="login-button" :disabled="loading">
         {{ loading ? t('login.loginButtonLoading') : t('login.loginButton') }}
       </button>
@@ -60,14 +60,14 @@
         </div>
       </div>
       
-      <!-- Enlace de recuperación de contraseña -->
+      
       <div class="forgot-password">
         <a href="#" @click.prevent="$emit('forgot-password')" class="forgot-link">
           {{ t('login.forgotPassword') }}
         </a>
       </div>
       
-      <!-- Link to register (internationalized) -->
+      
       <p class="redirect-text">
         {{ t('login.noAccount') }} <RouterLink to="/registro" class="redirect-link">{{ t('login.signUpLink') }}</RouterLink>
       </p>
@@ -84,7 +84,7 @@ import { useLanguage } from '@/composables/useLanguage'
 
 const { t } = useLanguage()
 
-// Props
+
 const props = defineProps({
   loading: {
     type: Boolean,
@@ -103,7 +103,7 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['login', 'send-verification', 'open-verification', 'forgot-password'])
 
-// Form data
+
 const form = ref({
   email: '',
   password: ''
@@ -114,7 +114,7 @@ const handleLogin = () => {
   emit('login', form.value)
 }
 
-// Expose form for parent component
+
 defineExpose({
   form
 })
@@ -313,7 +313,7 @@ defineExpose({
   text-decoration: underline;
 }
 
-/* Responsive styles for the card */
+
 @media (max-width: 1024px) {
   .login-card {
     padding: 35px 50px 50px 50px;

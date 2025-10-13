@@ -1,10 +1,10 @@
-// Script de diagnóstico para verificar categorías en el servidor
-// Ejecutar en la consola del navegador después de hacer login
+
+
 
 export async function debugCategories() {
   console.log('🔍 === DIAGNÓSTICO DE CATEGORÍAS ===')
   
-  // 1. Ver categorías en localStorage
+  
   const localCategories = localStorage.getItem('listio:categories')
   console.log('\n📦 LocalStorage (listio:categories):')
   if (localCategories) {
@@ -19,7 +19,7 @@ export async function debugCategories() {
     console.log('   ❌ No hay categorías en localStorage')
   }
   
-  // 2. Ver categorías en el store de Pinia
+  
   const categoryStore = window.__PINIA_STORES__?.get('category')
   if (categoryStore) {
     console.log('\n🏪 Pinia Store (state.categories):')
@@ -31,7 +31,7 @@ export async function debugCategories() {
     })))
   }
   
-  // 3. Hacer fetch directo al servidor
+  
   const token = localStorage.getItem('listio:token')
   if (token) {
     console.log('\n🌐 Servidor (API):')
@@ -58,7 +58,7 @@ export async function debugCategories() {
     console.log('   ⚠️ No hay token, no se puede consultar API')
   }
   
-  // 4. Ver categorías default del código
+  
   console.log('\n📋 DEFAULT_CATEGORIES (código fuente):')
   const defaults = [
     { id: 'cat-fruits', name: 'Frutas y Verduras', icon: 'mdi-carrot', color: '#4CAF50' },
@@ -80,6 +80,6 @@ export async function debugCategories() {
   console.log('\n✅ Diagnóstico completado')
 }
 
-// Para uso manual en consola del navegador:
-// import { debugCategories } from '@/utils/debug-categories.js'
-// debugCategories()
+
+
+

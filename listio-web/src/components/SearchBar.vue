@@ -1,6 +1,6 @@
 <template>
   <div class="search-container">
-    <!-- Campo de búsqueda -->
+    
     <v-expand-transition>
       <v-text-field
         v-show="showSearch"
@@ -18,7 +18,7 @@
       />
     </v-expand-transition>
 
-    <!-- Botón -->
+    
     <v-btn
       :icon="showSearch ? 'mdi-close' : 'mdi-magnify'"
       variant="text"

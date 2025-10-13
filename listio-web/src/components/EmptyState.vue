@@ -20,7 +20,7 @@
       {{ description }}
     </p>
 
-    <!-- Optional Action Button -->
+    
     <v-btn
       v-if="actionText"
       :color="actionColor"

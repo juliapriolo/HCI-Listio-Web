@@ -24,7 +24,7 @@ export const useLanguage = () => {
     setLanguage(newLang)
   }
 
-  // Initialize locale from stored language
+  
   if (locale.value !== currentLanguage.value) {
     locale.value = currentLanguage.value
   }

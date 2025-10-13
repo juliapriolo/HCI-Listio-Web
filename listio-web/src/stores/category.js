@@ -3,7 +3,7 @@ import { categoriesApi } from '@/api/category'
 
 const STORAGE_KEY = 'listio:categories'
 
-// Categorías por defecto con iconos de Material Design
+
 const DEFAULT_CATEGORIES = [
   { id: 'cat-fruits', name: 'Frutas y Verduras', icon: 'mdi-carrot', color: '#4CAF50' },
   { id: 'cat-dairy', name: 'Lácteos', icon: 'mdi-cheese', color: '#FFC107' },
@@ -28,21 +28,21 @@ export const useCategoryStore = defineStore('category', {
   getters: {
     getById: (state) => (id) => state.categories.find(c => c.id === id),
     
-    // Getter para obtener el icono de una categoría
+    
     getIconById: (state) => (id) => {
       if (!id) return 'mdi-package-variant'
       
-      // 1. Try to find by exact ID match in loaded categories (from server)
+      
       const category = state.categories.find(c => c.id === id)
       if (category) {
         return category.icon || category.metadata?.icon || 'mdi-package-variant'
       }
       
-      // 2. If ID looks like old default ID (cat-*), try to map by name
+      
       if (typeof id === 'string' && id.startsWith('cat-')) {
         const defaultCat = DEFAULT_CATEGORIES.find(def => def.id === id)
         if (defaultCat) {
-          // Find in server categories by name
+          
           const serverCat = state.categories.find(c => 
             c.name?.toLowerCase() === defaultCat.name?.toLowerCase()
           )
@@ -52,25 +52,25 @@ export const useCategoryStore = defineStore('category', {
         }
       }
       
-      // 3. Last fallback
+      
       return 'mdi-package-variant'
     },
     
-    // Getter para obtener el color de una categoría
+    
     getColorById: (state) => (id) => {
       if (!id) return '#9E9E9E'
       
-      // 1. Try to find by exact ID match in loaded categories (from server)
+      
       const category = state.categories.find(c => c.id === id)
       if (category) {
         return category.color || category.metadata?.color || '#9E9E9E'
       }
       
-      // 2. If ID looks like old default ID (cat-*), try to map by name
+      
       if (typeof id === 'string' && id.startsWith('cat-')) {
         const defaultCat = DEFAULT_CATEGORIES.find(def => def.id === id)
         if (defaultCat) {
-          // Find in server categories by name
+          
           const serverCat = state.categories.find(c => 
             c.name?.toLowerCase() === defaultCat.name?.toLowerCase()
           )
@@ -80,25 +80,25 @@ export const useCategoryStore = defineStore('category', {
         }
       }
       
-      // 3. Last fallback
+      
       return '#9E9E9E'
     },
     
-    // Helper to get category by name (useful for mapping server categories)
+    
     getByName: (state) => (name) => state.categories.find(c => 
       c.name?.toLowerCase() === name?.toLowerCase()
     )
   },
 
   actions: {
-    // --- LOCAL ---
+    
     load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY)
         const storedCategories = raw ? JSON.parse(raw) : []
         
-        // Priority 1: If we have stored categories from server (numeric IDs), use them
-        // This ensures we don't overwrite server categories with local defaults
+        
+        
         if (storedCategories.length > 0) {
           const hasServerCategories = storedCategories.some(c => typeof c.id === 'number')
           if (hasServerCategories) {
@@ -108,11 +108,11 @@ export const useCategoryStore = defineStore('category', {
           }
         }
         
-        // Priority 2: Merge default categories with stored ones
-        // Keep user-created categories and ensure defaults are present
+        
+        
         const mergedCategories = [...DEFAULT_CATEGORIES]
         
-        // Add stored categories that are not in defaults
+        
         storedCategories.forEach(stored => {
           if (!DEFAULT_CATEGORIES.find(def => def.id === stored.id)) {
             mergedCategories.push(stored)
@@ -156,7 +156,7 @@ export const useCategoryStore = defineStore('category', {
       }
     },
 
-    // --- REMOTO ---
+    
     async fetchRemote(params) {
       try {
         const data = await categoriesApi.getAll(params)
@@ -219,34 +219,34 @@ export const useCategoryStore = defineStore('category', {
       }
     },
 
-    // --- INIT ---
-    // --- INIT sincrónico con API ---
+    
+    
     async init() {
       try {
-        // 1️⃣ Cargar defaults + localStorage
+        
         this.load()
         console.log('📊 Categorías después de load():', this.categories.length, 'IDs:', this.categories.map(c => c.id))
 
-        // 2️⃣ Intentar obtener datos actualizados de la API
+        
         try {
           const remoteData = await this.fetchRemote()
           console.log('📥 Categorías obtenidas del servidor:', remoteData.items.length)
           
-          // 3️⃣ Check migration flag - only create defaults once per user account
+          
           const DEFAULTS_CREATED_KEY = 'listio:defaults-created:v1'
           const defaultsAlreadyCreated = localStorage.getItem(DEFAULTS_CREATED_KEY)
           
           if (!defaultsAlreadyCreated) {
             console.log('🔧 Primera inicialización de categorías para esta cuenta')
             
-            // Create or update default categories
+            
             for (const defaultCat of DEFAULT_CATEGORIES) {
               const existsOnServer = remoteData.items.find(remote => 
                 remote.name?.toLowerCase() === defaultCat.name?.toLowerCase()
               )
               
               if (!existsOnServer) {
-                // Create new category
+                
                 console.log(`📝 Creando categoría default en servidor: ${defaultCat.name}`)
                 try {
                   const newCategoryPayload = {
@@ -264,7 +264,7 @@ export const useCategoryStore = defineStore('category', {
                   console.error(`❌ Error creando categoría ${defaultCat.name}:`, createError)
                 }
               } else {
-                // Category exists, check if icon/color needs update
+                
                 const currentIcon = existsOnServer.icon || existsOnServer.metadata?.icon
                 const currentColor = existsOnServer.color || existsOnServer.metadata?.color
                 
@@ -295,18 +295,18 @@ export const useCategoryStore = defineStore('category', {
               }
             }
             
-            // Mark defaults as created
+            
             localStorage.setItem(DEFAULTS_CREATED_KEY, '1')
             console.log('✅ Categorías default inicializadas y marcadas como creadas')
           } else {
             console.log('✓ Categorías default ya fueron creadas previamente')
           }
           
-          // 4️⃣ Fetch again to get all categories with updated data
+          
           const updatedData = await this.fetchRemote()
           console.log('📥 Re-fetch de categorías:', updatedData.items.length)
           
-          // 5️⃣ Use server categories (they now include all defaults with updated icons)
+          
           this.categories = updatedData.items
           this.save()
           
@@ -314,12 +314,12 @@ export const useCategoryStore = defineStore('category', {
           console.log('📊 IDs finales:', this.categories.map(c => `${c.name}:${c.id}`).join(', '))
         } catch (apiError) {
           console.warn('⚠️ No se pudo conectar con la API, usando categorías locales:', apiError)
-          // Categories are already loaded from load() which includes defaults
+          
         }
 
       } catch (e) {
         console.error('❌ Error inicializando categorías:', e)
-        // Ensure we at least have default categories
+        
         this.categories = [...DEFAULT_CATEGORIES]
       }
     }

@@ -1,6 +1,6 @@
 <template>
   <div class="lists-page">
-    <!-- Page Header -->
+    
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
@@ -14,21 +14,21 @@
             />
           </div>
 
-        <!-- History page button -->
+        
         <v-btn
           color="success"
           variant="elevated"
           class="text-none ml-4"
           min-width="100"
           @click="() => router.push({ path: '/historial' })"
-          title="Historial"
+          :title="t('pages.history.title')"
         >
           <v-icon left>mdi-clock</v-icon>
-          Historial
+          {{ t('pages.history.title') }}
         </v-btn>
       </div>
 
-      <!-- Loading State -->
+      
       <div v-if="isLoading" class="text-center py-8">
         <v-progress-circular 
           indeterminate 
@@ -38,7 +38,7 @@
         <p class="text-body-1 text-grey-darken-1 mt-4">{{ t('pages.lists.loadingLists') }}</p>
       </div>
 
-      <!-- Shopping Lists Grid -->
+      
       <div v-else-if="filteredLists.length > 0" class="lists-grid mb-8">
         <ListCard
           v-for="list in filteredLists"
@@ -51,7 +51,7 @@
         />
       </div>
 
-      <!-- Empty States -->
+      
       <EmptyState
         v-else-if="filteredLists.length === 0 && !searchQuery"
         icon="mdi-format-list-bulleted"
@@ -66,7 +66,7 @@
         :description="t('pages.lists.noSearchDescription')"
       />
 
-      <!-- Pagination -->
+      
       <div class="text-center mt-6" v-if="totalPages > 1">
         <span class="text-body-2 text-grey-darken-1">
           {{ t('pages.lists.paginationLabel', { page: currentPage }) }}
@@ -74,7 +74,7 @@
       </div>
     </v-container>
 
-    <!-- Floating Action Button -->
+    
     <v-btn
       color="success"
       size="large"
@@ -86,7 +86,7 @@
       <v-icon size="24">mdi-plus</v-icon>
     </v-btn>
 
-    <!-- New List Dialog -->
+    
     <div v-if="newListDialog" class="modal-overlay">
       <div class="modal list-modal">
         <h2>{{ t('pages.lists.modals.new.title') }}</h2>
@@ -157,7 +157,7 @@
       </div>
     </div>
 
-    <!-- Share List Dialog -->
+    
     <div v-if="shareListDialog" class="modal-overlay">
       <div class="modal list-modal">
         <h2>{{ t('pages.lists.share.title') || 'Compartir lista' }}</h2>
@@ -190,7 +190,7 @@
           </div>
         </form>
 
-        <!-- Current shared users -->
+        
         <div class="shared-users-section">
           <h3 class="section-title">{{ t('pages.lists.share.currentAccess') || 'Acceso actual' }}</h3>
           <div v-if="isLoadingSharedUsers" class="text-center py-4">
@@ -214,7 +214,7 @@
       </div>
     </div>
 
-    <!-- Edit List Dialog -->
+    
     <div v-if="editListDialog" class="modal-overlay">
       <div class="modal list-edit-modal">
         <h2>{{ t('pages.lists.modals.edit.title') }}</h2>
@@ -285,7 +285,7 @@
       </div>
     </div>
 
-    <!-- Delete Confirmation Dialog -->
+    
     <div v-if="deleteDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
   <h2>{{ t('pages.lists.deleteConfirm.title') }}</h2>
@@ -309,7 +309,7 @@
       </div>
     </div>
 
-    <!-- Snackbar for notifications -->
+    
     <v-snackbar v-model="snackbar" :timeout="4000" :color="snackbarColor">
       {{ snackbarText }}
       <template v-slot:actions>
@@ -335,7 +335,7 @@ const router = useRouter()
 const { t } = useLanguage()
 const userStore = useUserStore()
 
-// Reactive data
+
 const searchQuery = ref('')
 const newListDialog = ref(false)
 const editListDialog = ref(false)
@@ -411,24 +411,24 @@ const checkApiAvailability = async () => {
 }
 
 
-// Computed properties
+
 const filteredLists = computed(() => {
   let lists = listsStore.lists
   
-  // Apply search filter if present
+  
   if (searchQuery.value) {
     lists = lists.filter(list =>
       list.name.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
   
-  // Sort lists: recurrent lists first, then by name
+  
   return lists.sort((a, b) => {
-    // First, sort by recurring status (recurring lists first)
+    
     if (a.recurring && !b.recurring) return -1
     if (!a.recurring && b.recurring) return 1
     
-    // If both have same recurring status, sort by name
+    
     return a.name.localeCompare(b.name)
   })
 })
@@ -437,9 +437,9 @@ const totalPages = computed(() => {
   return Math.ceil(filteredLists.value.length / 10)
 })
 
-// Methods
+
 const openList = (list) => {
-  // Navigate to list detail and pass the list id as a query parameter
+  
   router.push({ path: '/list', query: { id: String(list.id) } })
 }
 
@@ -447,7 +447,7 @@ const editList = (listId) => {
   const list = listsStore.lists.find(l => l.id === listId)
   if (list) {
     listToEdit.value = list
-    // Get image from metadata.image or fallback to list.image
+    
     const currentImage = list.metadata?.image || list.image || ''
     editListForm.value = {
       name: list.name,
@@ -501,7 +501,7 @@ const confirmDeleteList = async () => {
         console.log('Deleted list locally:', listToDelete.value.name)
       }
     } else {
-      // API unavailable, delete locally (don't skip history)
+      
       await listsStore.deleteList(listToDelete.value.id, false)
       console.log('Deleted list locally (API unavailable):', listToDelete.value.name)
     }
@@ -509,7 +509,7 @@ const confirmDeleteList = async () => {
   deleteDialog.value = false
   listToDelete.value = null
     
-  // Show success message
+  
   snackbarText.value = `Lista "${deletedName}" eliminada exitosamente`
     snackbarColor.value = 'success'
     snackbar.value = true
@@ -551,7 +551,7 @@ const shareListWithEmail = async () => {
     snackbarText.value = t('pages.lists.share.success') || 'Lista compartida correctamente'
     snackbarColor.value = 'success'
     snackbar.value = true
-    // Refresh shared users after invite
+    
     await loadSharedUsers()
     shareEmail.value = ''
     shareEmailTouched.value = false
@@ -578,7 +578,7 @@ async function loadSharedUsers() {
   isLoadingSharedUsers.value = true
   try {
     const data = await listsApi.getSharedUsers(listIdToShare.value)
-    // Accept either array or envelope
+    
     const users = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.users) ? data.users : []))
     sharedUsers.value = users
   } catch (e) {
@@ -598,7 +598,7 @@ async function revokeUser(user) {
     snackbarColor.value = 'success'
     snackbar.value = true
     sharedUsers.value = sharedUsers.value.filter(u => u.id !== user.id)
-    // Clear any previous server error when state changes
+    
     shareEmailServerError.value = ''
   } catch (e) {
     console.error('Failed to revoke access:', e)
@@ -674,7 +674,7 @@ const createNewList = async (formData) => {
   try {
     let imageData = 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop'
     
-    // Handle image file if provided
+    
     if (newImageFile.value) {
       imageData = await convertFileToBase64(newImageFile.value)
     }
@@ -703,13 +703,13 @@ const createNewList = async (formData) => {
     } catch (apiError) {
       console.error('API creation failed:', apiError)
       
-      // Show error message with details
+      
       const errorMsg = apiError.data?.message || apiError.message || 'Error desconocido'
       snackbarText.value = `Error al crear la lista: ${errorMsg}`
       snackbarColor.value = 'error'
       snackbar.value = true
       
-      // Don't close dialog so user can retry
+      
       isCreating.value = false
       return
     }
@@ -726,7 +726,7 @@ const createNewList = async (formData) => {
   }
 }
 
-// Helper function to convert file to base64
+
 const convertFileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -736,7 +736,7 @@ const convertFileToBase64 = (file) => {
   })
 }
 
-// Handle image file selection for editing
+
 const handleEditImageChange = (event) => {
   const file = event.target.files[0]
   if (file) {
@@ -755,12 +755,12 @@ const saveListEdit = async () => {
   try {
     let imageData = editListForm.value.image
     
-    // Handle image file if provided
+    
     if (editImageFile.value) {
       imageData = await convertFileToBase64(editImageFile.value)
     }
     
-    // Update the list via API
+    
     const updateData = {
       name: editListForm.value.name.trim(),
       description: editListForm.value.description?.trim() || '',
@@ -810,12 +810,12 @@ const saveListEdit = async () => {
 onMounted(async () => {
   isLoading.value = true
   
-  // Debug: Check what's in localStorage
+  
   console.log('=== DEBUGGING LOCALSTORAGE ===')
   console.log('localStorage listio:user:', localStorage.getItem('listio:user'))
   
-  // Get the current storage key that will be used
-  let currentStorageKey = 'listio:lists' // default
+  
+  let currentStorageKey = 'listio:lists' 
   try {
     const userRaw = localStorage.getItem('listio:user')
     if (userRaw) {
@@ -833,13 +833,13 @@ onMounted(async () => {
   console.log('localStorage data for key:', localStorage.getItem(currentStorageKey))
   console.log('Current lists in store before load:', listsStore.lists)
   
-  // Load from localStorage first as immediate fallback
+  
   listsStore.load()
    
   console.log('Current lists in store after load:', listsStore.lists)
   
   try {
-    // Try to fetch from API to check availability and get latest data
+    
     console.log('Checking API availability and fetching latest data...')
     await checkApiAvailability()
   } catch (error) {
@@ -847,21 +847,21 @@ onMounted(async () => {
     isApiAvailable.value = false
   }
   
-   // No longer seeding with sample data - start with empty lists
+   
   
   console.log('Final lists in store:', listsStore.lists)
   console.log('=== END DEBUGGING ===')
   
   isLoading.value = false
 
-  // After lists are loaded, compute item counts
+  
   try {
     await updateAllListItemCounts()
   } catch (e) {
     console.warn('Failed to update item counts on mount:', e)
   }
 
-  // Listen to localStorage changes for list items to keep counts in sync
+  
   window.addEventListener('storage', onListItemsStorage)
 })
 
@@ -869,17 +869,17 @@ onUnmounted(() => {
   window.removeEventListener('storage', onListItemsStorage)
 })
 
-// Watcher para detectar cambios en las listas y actualizar conteos
+
 watch(() => listsStore.lists, (newLists) => {
   if (newLists && newLists.length > 0) {
-    // Actualizar conteos para todas las listas cuando cambian
+    
     newLists.forEach(list => {
       updateListItemCount(list.id)
     })
   }
 }, { deep: true })
 
-// --- Item count helpers ---
+
 const LIST_ITEMS_STORAGE_PREFIX = 'listio:list-items:'
 
 function getLocalListItemCount(listId) {
@@ -895,17 +895,17 @@ function getLocalListItemCount(listId) {
 
 async function getRemoteListItemCount(listId) {
   try {
-    // Primero intentar obtener solo la metadata para el conteo total
+    
     const data = await listItemsApi.getAll(listId, { limit: 0, page: 1 })
     
-    // Intentar obtener el total de la metadata
+    
     const meta = data?.meta || data?.data?.meta || null
     if (meta && typeof meta.total === 'number') {
       console.log(`Lista ${listId} tiene ${meta.total} productos (desde metadata)`)
       return meta.total
     }
     
-    // Si no hay metadata, obtener todos los items para contar
+    
     const allData = await listItemsApi.getAll(listId)
     let count = 0
     
@@ -920,7 +920,7 @@ async function getRemoteListItemCount(listId) {
     console.log(`Lista ${listId} tiene ${count} productos (contados manualmente)`)
     return count
   } catch (e) {
-    // Silently handle 404 errors for lists that don't exist on the server
+    
     if (e?.status === 404) {
       console.log(`Lista ${listId} no encontrada en el servidor, usando conteo local`)
       return null
@@ -935,11 +935,11 @@ async function updateAllListItemCounts() {
   if (!lists.length) return
   const useRemote = isApiAvailable.value !== false
 
-  // Only try remote count for lists that likely exist on the server
-  // Skip lists with very high IDs (likely local-only) or non-numeric IDs
+  
+  
   const listsToCheck = lists.filter(list => {
     const id = Number(list.id)
-    return !isNaN(id) && id < 1000 // Assume server IDs are reasonable
+    return !isNaN(id) && id < 1000 
   })
 
   await Promise.all(
@@ -957,7 +957,7 @@ async function updateAllListItemCounts() {
     })
   )
 
-  // For lists that we skipped (likely local-only), just use local count
+  
   const skippedLists = lists.filter(list => {
     const id = Number(list.id)
     return isNaN(id) || id >= 1000
@@ -985,7 +985,7 @@ function onListItemsStorage(e) {
   }
 }
 
-// Función para actualizar el conteo de una lista específica
+
 function updateListItemCount(listId) {
   const count = getLocalListItemCount(listId)
   const idNum = isNaN(Number(listId)) ? listId : Number(listId)
@@ -1035,7 +1035,7 @@ function updateListItemCount(listId) {
   align-items: center;
 }
 
-/* Modal styles */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1119,7 +1119,7 @@ function updateListItemCount(listId) {
   cursor: not-allowed;
 }
 
-/* List modals specific styles */
+
 .list-modal,
 .list-edit-modal {
   max-width: 500px;
@@ -1177,7 +1177,7 @@ function updateListItemCount(listId) {
   object-fit: cover;
 }
 
-/* Delete confirmation modal specific styles */
+
 .delete-confirmation-modal {
   max-width: 450px;
   width: 90vw;
@@ -1315,7 +1315,7 @@ function updateListItemCount(listId) {
   user-select: none;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .modal {
     margin: 20px;

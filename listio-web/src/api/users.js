@@ -27,7 +27,7 @@ export const usersApi = {
     return api.post(`${USERS_BASE}/send-verification?${search.toString()}`)
   },
   
-  // Forgot password (el backend espera el email por query string)
+  
   forgotPassword(data) {
     const email = typeof data === 'string' ? data : data?.email
     if (!email || !`${email}`.trim()) {
@@ -37,7 +37,7 @@ export const usersApi = {
     return api.post(`${USERS_BASE}/forgot-password?${search.toString()}`)
   },
 
-  // Reset password (verificá que coincida con tu backend)
+  
   resetPassword(data) {
     return api.post(`${USERS_BASE}/reset-password`, data)
   },

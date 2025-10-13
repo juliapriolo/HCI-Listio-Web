@@ -1,7 +1,7 @@
 <template>
   <div class="products-page">
     <v-container>
-      <!-- Page Header with Search -->
+      
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
           {{ t('pages.products.title') }}
@@ -27,7 +27,7 @@
           
           <div v-if="filterDialog" class="modal-overlay">
             <div class="modal">
-              <h2>Filtrar Items</h2>
+              <h2>{{ t('pages.products.filters.title') }}</h2>
 
               <form @submit.prevent="applyFilters">
                 <div class="form-row">
@@ -38,13 +38,13 @@
                       v-model="filterCategoryDialog"
                       class="form-input"
                     >
-                      <option value="">Seleccione una categoría</option>
+                      <option value="">{{ t('common.selectCategory') }}</option>
                       <option
                         v-for="category in categoryStore.categories"
                         :key="category.id"
                         :value="category.id"
                       >
-                        {{ category.name }}
+                        {{ getCategoryDisplayName(category) }}
                       </option>
                     </select>
                   </div>
@@ -52,16 +52,16 @@
 
                 <div class="modal-actions">
                   <button type="button" class="btn btn--cancel" @click="filterDialog = false">
-                    Cancelar
+                    {{ t('common.cancel') }}
                   </button>
                   <button type="button" class="btn btn--cancel" @click="resetFilters">
-                    Limpiar
+                    {{ t('pages.products.filters.clear') }}
                   </button>
                   <button
                     type="submit"
                     class="btn btn--primary"
                   >
-                    Guardar
+                    {{ t('pages.products.filters.apply') }}
                   </button>
                 </div>
               </form>
@@ -71,7 +71,7 @@
         </div>
       </div>
 
-      <!-- Products Grid -->
+      
       <v-row>
         <v-col
           v-for="product in filteredProducts"
@@ -91,7 +91,7 @@
         </v-col>
       </v-row>
 
-      <!-- Empty State -->
+      
       <EmptyState
         v-if="!loading && filteredProducts.length === 0"
         icon="mdi-package-variant"
@@ -99,13 +99,13 @@
         :description="t('pages.products.empty.noResultsDescription')"
       />
 
-      <!-- Loading Spinner -->
+      
       <div v-if="loading" class="text-center py-12">
         <v-progress-circular indeterminate color="primary" size="48" />
       </div>
     </v-container>
 
-    <!-- Floating Action Button -->
+    
     <v-btn
       color="success"
       size="large"
@@ -117,7 +117,7 @@
       <v-icon size="24">mdi-plus</v-icon>
     </v-btn>
 
-    <!-- Snackbar -->
+    
     <v-snackbar v-model="snackbar" :timeout="4000" :color="snackbarColor">
       {{ snackbarText }}
       <template v-slot:actions>
@@ -178,13 +178,13 @@
                 class="form-input"
                 required
               >
-                <option value="">Seleccione una categoría</option>
+                <option value="">{{ t('common.selectCategory') }}</option>
                 <option
                   v-for="category in categoryStore.categories"
                   :key="category.id"
                   :value="category"
                 >
-                  {{ category.name }}
+                  {{ getCategoryDisplayName(category) }}
                 </option>
                 <option value="__new__">+ Crear nueva categoría</option>
               </select>
@@ -388,6 +388,8 @@ import ProductCard from '@/components/ProductCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ProductInfoDialog from '@/components/ProductInfoDialog.vue'
 const { t } = useLanguage()
+import { useCategoryI18n } from '@/composables/useCategoryI18n'
+const { getCategoryDisplayName } = useCategoryI18n()
 
 const searchQuery = ref("");
 const snackbar = ref(false);
@@ -540,13 +542,13 @@ const addProduct = async (formData) => {
       const createdCategory = await categoryStore.createRemote(newCategoryPayload);
       categoryToUse = createdCategory;
       
-      // Refrescar las categorías para que aparezcan en futuros formularios
+      
       await categoryStore.fetchRemote();
     }
     
-    // Ensure categoryToUse is an object with id property
+    
     if (typeof categoryToUse === 'string') {
-      // If it's a string (categoryId), find the category object
+      
       const categoryObj = categoryStore.categories.find(c => c.id === categoryToUse);
       if (!categoryObj) {
         throw new Error('Categoría no encontrada');
@@ -554,7 +556,7 @@ const addProduct = async (formData) => {
       categoryToUse = categoryObj;
     }
     
-    // Convertir imagen a base64 si existe
+    
     let imageBase64 = null;
     if (productImageFile.value) {
       imageBase64 = await convertImageToBase64(productImageFile.value);
@@ -609,13 +611,13 @@ const updateProduct = async (updatedData) => {
       const createdCategory = await categoryStore.createRemote(newCategoryPayload);
       categoryToUse = createdCategory;
       
-      // Refrescar las categorías para que aparezcan en futuros formularios
+      
       await categoryStore.fetchRemote();
     }
     
-    // Ensure categoryToUse is an object with id property
+    
     if (typeof categoryToUse === 'string') {
-      // If it's a string (categoryId), find the category object
+      
       const categoryObj = categoryStore.categories.find(c => c.id === categoryToUse);
       if (!categoryObj) {
         throw new Error('Categoría no encontrada');
@@ -623,7 +625,7 @@ const updateProduct = async (updatedData) => {
       categoryToUse = categoryObj;
     }
     
-    // Convertir imagen a base64 si existe
+    
     const imageBase64 = await convertImageToBase64(updatedData.image);
     
     const payload = {
@@ -886,7 +888,7 @@ onMounted(async () => {
   z-index: 1000;
 }
 
-/* Modal styles */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -956,7 +958,7 @@ onMounted(async () => {
   background: #e0e0e0;
 }
 
-/* Product modal specific styles */
+
 .product-modal {
   max-width: 500px;
   width: 90vw;
@@ -1052,7 +1054,7 @@ onMounted(async () => {
   opacity: 1;
 }
 
-/* Select styling */
+
 select.form-input {
   cursor: pointer;
   background-color: #fff;
@@ -1064,7 +1066,7 @@ select.form-input:focus {
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
-/* Category input group styles */
+
 .category-input-group {
   display: flex;
   flex-direction: column;
@@ -1087,7 +1089,7 @@ select.form-input:focus {
   }
 }
 
-/* Delete confirmation modal specific styles */
+
 .delete-confirmation-modal {
   max-width: 450px;
   width: 90vw;
@@ -1124,7 +1126,7 @@ select.form-input:focus {
   cursor: not-allowed;
 }
 
-/* Add to list modal specific styles */
+
 .add-to-list-modal {
   max-width: 500px;
   width: 90vw;
@@ -1160,7 +1162,7 @@ select.form-input:focus {
   flex: 1;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .modal {
     margin: 20px;
@@ -1175,7 +1177,7 @@ select.form-input:focus {
   }
 }
 
-/* Delete confirmation modal styles */
+
 .delete-confirmation-modal {
   max-width: 550px;
 }

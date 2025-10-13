@@ -6,7 +6,7 @@
   >
     <v-img
       :src="imageSrc"
-      :alt="item.name || 'Producto'"
+      :alt="item.name || t('pages.pantry.fallbacks.unnamedProduct')"
       height="150"
       cover
     >
@@ -26,7 +26,7 @@
         size="small"
         variant="elevated"
       >
-        {{ item.quantity }} {{ item.unit }}
+        {{ item.quantity }} {{ unitLabel }}
       </v-chip>
 
       <!-- Expiry Date Chip -->
@@ -131,7 +131,6 @@ const handleMenuAction = (action, itemId) => {
   }
 }
 
-const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='%23eeeeee' width='100%' height='100%'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-family='Arial, Helvetica, sans-serif' font-size='24'>Sin imagen</text></svg>"
 
 const imageSrc = computed(() => {
   const item = props.item || {}
@@ -140,6 +139,15 @@ const imageSrc = computed(() => {
   const byCategory = getDefaultCategoryImageForItem(item)
   if (byCategory) return byCategory
   return defaultImage
+})
+
+const unitLabel = computed(() => {
+  const raw = (props.item?.unit || '').toString().toLowerCase()
+  const known = ['unidad', 'kg', 'g', 'l', 'ml', 'paquete', 'caja']
+  if (known.includes(raw)) {
+    return t(`pages.pantry.units.${raw}`)
+  }
+  return props.item?.unit || ''
 })
 
 const getStatusColor = (status) => {
@@ -162,7 +170,12 @@ const getStatusText = (status) => {
 
 const formatDate = (dateString) => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('es-ES')
+  
+  try {
+    return date.toLocaleDateString()
+  } catch (e) {
+    return date.toISOString().slice(0, 10)
+  }
 }
 </script>
 
@@ -206,7 +219,7 @@ const formatDate = (dateString) => {
   right: 8px;
 }
 
-/* Custom menu styles */
+
 .actions-menu {
   position: relative;
   z-index: 100;

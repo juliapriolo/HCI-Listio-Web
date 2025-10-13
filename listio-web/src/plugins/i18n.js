@@ -160,7 +160,9 @@ const messages = {
 			confirm: 'Confirmar',
 			back: 'Atrás',
 			englishShort: 'EN',
-			spanishShort: 'ES'
+			spanishShort: 'ES',
+			selectCategory: 'Seleccione una categoría',
+			selectCategoryPlaceholder: 'Seleccionar categoría...'
 		},
 		languageSwitcher: {
 			switchToEnglish: 'Cambiar a inglés',
@@ -170,6 +172,48 @@ const messages = {
 			generic: 'Algo salió mal. Intenta nuevamente.'
 		},
 		pages: {
+			history: {
+				title: 'Historial',
+				searchPlaceholder: 'Buscar eventos...',
+				tabs: { lists: 'Listas', items: 'Productos' },
+				lists: {
+					empty: {
+						title: 'No hay listas en el historial',
+						description: 'Las listas eliminadas aparecerán aquí'
+					}
+				},
+				items: {
+					empty: {
+						title: 'No hay productos en el historial',
+						description: 'Los productos de listas eliminadas aparecerán aquí'
+					}
+				},
+				listLabel: 'Lista: {name}',
+				clear: 'Limpiar historial',
+				confirm: {
+					title: 'Confirmar acción',
+					message: '¿Está seguro que desea borrar todo el historial? Esta acción no se puede deshacer.'
+				},
+				cleared: 'Historial borrado exitosamente',
+				unnamedList: 'Lista sin nombre',
+				unknownList: 'Lista desconocida',
+				listNumber: 'Lista #{num}'
+			},
+			categories: {
+				'cat-fruits': 'Frutas y Verduras',
+				'cat-dairy': 'Lácteos',
+				'cat-meat': 'Carnes y Pescados',
+				'cat-bakery': 'Panadería',
+				'cat-beverages': 'Bebidas',
+				'cat-snacks': 'Snacks y Dulces',
+				'cat-canned': 'Enlatados y Conservas',
+				'cat-frozen': 'Congelados',
+				'cat-cleaning': 'Limpieza',
+				'cat-personal': 'Cuidado Personal',
+				'cat-baby': 'Bebé',
+				'cat-pets': 'Mascotas',
+				'cat-other': 'Otros'
+			},
 			list: {
 				searchPlaceholder: 'Buscar ítems...',
 				empty: {
@@ -184,6 +228,24 @@ const messages = {
 				},
 				addItem: { title: 'Agregar ítem', submit: 'Agregar' },
 				share: { title: 'Compartir lista', submit: 'Compartir', recipient: 'Destinatario' },
+				filters: {
+					title: 'Filtrar ítems',
+					purchased: 'Comprados',
+					options: { yes: 'Sí', no: 'No', all: 'Todos' }
+				},
+				pantrySelection: {
+					title: 'Agregar productos a la despensa',
+					description: 'Selecciona los productos que quieres agregar a tu despensa para tener un registro de lo que tienes en casa.',
+					purchasedTitle: 'Productos comprados:',
+					selectCategoryTitle: 'Seleccionar categoría de despensa:',
+					categoryPlaceholder: 'Seleccionar categoría...',
+					addToPantry: 'Agregar a despensa'
+				},
+				allPurchased: {
+					title: '¡Lista completada!',
+					description: 'Todos los productos han sido marcados como comprados.',
+					addToPantry: 'Agregar a despensa'
+				},
 				productSelection: {
 					title: 'Seleccionar Producto',
 					searchLabel: 'Buscar',
@@ -224,6 +286,10 @@ const messages = {
 				noSearchResults: 'No se encontraron listas',
 				noSearchDescription: 'Intenta con otros términos de búsqueda',
 				paginationLabel: 'Página {page}',
+				sharedBy: 'Compartida por {name}',
+				detailTitle: 'Lista: {name}',
+				ownerFallback: 'alguien',
+				theOwner: 'el propietario',
 				fields: { descriptionOptional: 'Descripción (opcional)' },
 				modals: {
 					common: {
@@ -256,11 +322,18 @@ const messages = {
 					revoking: 'Revocando...',
 					revoked: 'Acceso revocado',
 					revokeError: 'No se pudo revocar el acceso'
+				},
+				card: {
+					items: '{count} productos',
+					completed: '{percent}% completado',
+					updated: 'Actualizada {when}',
+					relative: { today: 'hoy', yesterday: 'ayer', daysAgo: 'hace {days} días' }
 				}
 			},
 			products: {
 				title: 'Productos',
 				searchPlaceholder: 'Buscar productos...',
+				filters: { title: 'Filtrar productos', clear: 'Limpiar', apply: 'Aplicar' },
 				empty: { noResultsTitle: 'No se encontraron productos', noResultsDescription: 'Intenta con otros términos de búsqueda' },
 				stock: { none: 'Sin stock', low: 'Poco stock', available: 'Disponible' },
 				modals: {
@@ -270,9 +343,14 @@ const messages = {
 						imageLabel: 'Imagen del producto',
 						previewAlt: 'Vista previa',
 						descriptionLabel: 'Descripción (opcional)',
-						descriptionPlaceholder: 'Ingrese una descripción para el producto'
+						descriptionPlaceholder: 'Ingrese una descripción para el producto',
+						categoryPlaceholder: 'Selecciona una categoría',
+						newCategoryOption: '+ Nueva categoría…',
+						newCategoryNameLabel: 'Nombre de la nueva categoría',
+						newCategoryNamePlaceholder: 'Ej.: Verduras'
 					},
-					new: { title: 'Agregar Producto', creating: 'Agregando...', submit: 'Agregar Producto' }
+					new: { title: 'Agregar Producto', creating: 'Agregando...', submit: 'Agregar Producto' },
+					edit: { title: 'Editar Producto' }
 				},
 				deleteConfirm: {
 					title: 'Confirmar eliminación',
@@ -325,7 +403,7 @@ const messages = {
 					enterCategory: 'Ingrese categoría',
 					addToPantry: 'Agregar a la despensa'
 				},
-				units: { unidad: 'unidad', kg: 'kg', g: 'g', l: 'l', ml: 'ml', paquete: 'paquete', caja: 'caja' },
+				units: { unidad: 'Unidad', kg: 'Kilogramo', g: 'Gramo', l: 'Litro', ml: 'Mililitro', paquete: 'Paquete', caja: 'Caja' },
 				share: { title: 'Compartir despensa', emailLabel: 'Correo electrónico', emailPlaceholder: 'usuario@ejemplo.com' },
 				deleteConfirm: {
 					categoryTitle: 'Confirmar eliminación',
@@ -335,7 +413,14 @@ const messages = {
 				},
 				editProduct: { title: 'Editar producto', quantityLabel: 'Cantidad', unitLabel: 'Unidad', expiryLabel: 'Fecha de vencimiento', changeImage: 'Cambiar imagen' },
 				status: { available: 'Disponible', low: 'Poco stock', expiring: 'Por vencer', expired: 'Vencido', unknown: 'Desconocido' },
-				messages: { invalidQuantityUnit: 'Error: No se pudo agregar el producto. Verifica que la cantidad y unidad sean válidas.' }
+				messages: {
+					invalidQuantityUnit: 'Error: No se pudo agregar el producto. Verifica que la cantidad y unidad sean válidas.',
+					categoryNameRequired: 'El nombre de la categoría es obligatorio',
+					updateError: 'Error al actualizar el producto. Inténtalo de nuevo.'
+				},
+				fallbacks: {
+					unnamedProduct: 'Producto sin nombre'
+				}
 			}
 		}
 	},
@@ -494,17 +579,79 @@ const messages = {
 			confirm: 'Confirm',
 			back: 'Back',
 			englishShort: 'EN',
-			spanishShort: 'ES'
+			spanishShort: 'ES',
+			selectCategory: 'Select a category',
+			selectCategoryPlaceholder: 'Select category...'
 		},
 		languageSwitcher: { switchToEnglish: 'Switch to English', switchToSpanish: 'Switch to Spanish' },
 		errors: { generic: 'Something went wrong. Please try again.' },
 		pages: {
+			history: {
+				title: 'History',
+				searchPlaceholder: 'Search events...',
+				tabs: { lists: 'Lists', items: 'Products' },
+				lists: {
+					empty: {
+						title: 'No lists in history',
+						description: 'Deleted lists will appear here'
+					}
+				},
+				items: {
+					empty: {
+						title: 'No products in history',
+						description: 'Products from deleted lists will appear here'
+					}
+				},
+				listLabel: 'List: {name}',
+				clear: 'Clear history',
+				confirm: {
+					title: 'Confirm action',
+					message: 'Are you sure you want to clear all history? This action cannot be undone.'
+				},
+				cleared: 'History cleared successfully',
+				unnamedList: 'Unnamed list',
+				unknownList: 'Unknown list',
+				listNumber: 'List #{num}'
+			},
+			categories: {
+				'cat-fruits': 'Fruits and Vegetables',
+				'cat-dairy': 'Dairy',
+				'cat-meat': 'Meat and Fish',
+				'cat-bakery': 'Bakery',
+				'cat-beverages': 'Beverages',
+				'cat-snacks': 'Snacks and Sweets',
+				'cat-canned': 'Canned goods',
+				'cat-frozen': 'Frozen',
+				'cat-cleaning': 'Cleaning',
+				'cat-personal': 'Personal Care',
+				'cat-baby': 'Baby',
+				'cat-pets': 'Pets',
+				'cat-other': 'Other'
+			},
 			list: {
 				searchPlaceholder: 'Search items...',
 				empty: { title: 'Your list is empty', description: 'Add your first item to get started', searchTitle: 'No items found', searchDescription: 'Try different search terms' },
 				fields: { product: 'Product', descriptionOptional: 'Description (optional)' },
 				addItem: { title: 'Add item', submit: 'Add' },
 				share: { title: 'Share list', submit: 'Share', recipient: 'Recipient' },
+				filters: {
+					title: 'Filter items',
+					purchased: 'Purchased',
+					options: { yes: 'Yes', no: 'No', all: 'All' }
+				},
+				pantrySelection: {
+					title: 'Add products to pantry',
+					description: 'Select the products you want to add to your pantry to keep track of what you have at home.',
+					purchasedTitle: 'Purchased products:',
+					selectCategoryTitle: 'Select pantry category:',
+					categoryPlaceholder: 'Select category...',
+					addToPantry: 'Add to pantry'
+				},
+				allPurchased: {
+					title: 'List completed!',
+					description: 'All products have been marked as purchased.',
+					addToPantry: 'Add to pantry'
+				},
 				itemMenu: { title: 'Product ' },
 				productSelection: {
 					title: 'Select Product',
@@ -537,7 +684,7 @@ const messages = {
 				}
 			},
 			lists: {
-				title: 'My lists',
+				title: 'Lists',
 				searchPlaceholder: 'Search products...',
 				loadingLists: 'Loading lists...',
 				noListsTitle: 'You do not have any lists yet',
@@ -546,6 +693,10 @@ const messages = {
 				noSearchResults: 'No lists found',
 				noSearchDescription: 'Try different search terms',
 				paginationLabel: 'Page {page}',
+				sharedBy: 'Shared by {name}',
+				detailTitle: 'List: {name}',
+				ownerFallback: 'someone',
+				theOwner: 'the owner',
 				fields: { descriptionOptional: 'Description (optional)' },
 				modals: {
 					common: {
@@ -578,11 +729,18 @@ const messages = {
 					revoking: 'Revoking...',
 					revoked: 'Access revoked',
 					revokeError: 'Could not revoke access'
+				},
+				card: {
+					items: '{count} products',
+					completed: '{percent}% complete',
+					updated: 'Updated {when}',
+					relative: { today: 'today', yesterday: 'yesterday', daysAgo: '{days} days ago' }
 				}
 			},
 			products: {
 				title: 'Products',
 				searchPlaceholder: 'Search products...',
+				filters: { title: 'Filter products', clear: 'Clear', apply: 'Apply' },
 				empty: { noResultsTitle: 'No products found', noResultsDescription: 'Try different search terms' },
 				stock: { none: 'Out of stock', low: 'Low stock', available: 'Available' },
 				modals: {
@@ -592,15 +750,20 @@ const messages = {
 						imageLabel: 'Product image',
 						previewAlt: 'Preview image',
 						descriptionLabel: 'Description (optional)',
-						descriptionPlaceholder: 'Enter a description for the product'
+						descriptionPlaceholder: 'Enter a description for the product',
+						categoryPlaceholder: 'Select a category',
+						newCategoryOption: '+ New category…',
+						newCategoryNameLabel: 'New category name',
+						newCategoryNamePlaceholder: 'e.g., Vegetables'
 					},
-					new: { title: 'Add Product', creating: 'Adding...', submit: 'Add Product' }
+					new: { title: 'Add Product', creating: 'Adding...', submit: 'Add Product' },
+					edit: { title: 'Edit Product' }
 				},
 				deleteConfirm: { title: 'Confirm deletion', message: 'Are you sure you want to delete the product <strong>"{name}"</strong>?', warning: 'This action cannot be undone.' },
 				messages: { added: '{name} added successfully', addError: 'Error adding {name}: {error}', updated: 'Product updated successfully', updateError: 'Error updating product: {error}', deleted: 'Product deleted successfully', deleteError: 'Error deleting product: {error}', addedToList: '{name} added to the list', loadError: 'Error loading data. Checking connection...' }
 			},
 			pantry: {
-				title: 'My pantry',
+				title: 'Pantry',
 				searchCategories: 'Search categories...',
 				searchProducts: 'Search products...',
 				statusLabel: 'Product status',
@@ -616,17 +779,33 @@ const messages = {
 				noCategories: 'There are no categories yet.',
 				empty: { noCategoriesTitle: 'You have no categories yet', noCategoriesDescription: 'Start by adding categories to your pantry', noProductsTitle: 'There are no products in this pantry', noProductsDescription: 'Start by adding products to your pantry', searchNotFoundTitle: 'No products found', searchNotFoundDescription: 'Try different search terms' },
 				productSelection: { title: 'Select Product', noneAvailable: 'No products available', goToProducts: 'Go to the Products section to add products first', detailsTitle: 'Product details', quantityLabel: 'Quantity', unitLabel: 'Unit', expiryLabel: 'Expiration date', categoryOptional: 'Category (optional)', enterCategory: 'Enter category', addToPantry: 'Add to pantry' },
-				units: { unidad: 'unit', kg: 'kg', g: 'g', l: 'l', ml: 'ml', paquete: 'pack', caja: 'box' },
+				units: { unidad: 'Unit', kg: 'Kilogram', g: 'Gram', l: 'Liter', ml: 'Milliliter', paquete: 'Pack', caja: 'Box' },
 				share: { title: 'Share pantry', emailLabel: 'Email', emailPlaceholder: 'user@example.com' },
 				deleteConfirm: { categoryTitle: 'Confirm deletion', categoryMessage: 'Are you sure you want to delete the pantry <strong>"{name}"</strong>?', productTitle: 'Confirm deletion', productMessage: 'Are you sure you want to delete the product <strong>"{name}"</strong>?' },
 				editProduct: { title: 'Edit product', quantityLabel: 'Quantity', unitLabel: 'Unit', expiryLabel: 'Expiration date', changeImage: 'Change image' },
 				status: { available: 'Available', low: 'Low stock', expiring: 'Expiring soon', expired: 'Expired', unknown: 'Unknown' },
-				messages: { invalidQuantityUnit: 'Error: Could not add the product. Please check that quantity and unit are valid.' }
+				messages: {
+					invalidQuantityUnit: 'Error: Could not add the product. Please check that quantity and unit are valid.',
+					categoryNameRequired: 'Category name is required',
+					updateError: 'Error updating the product. Please try again.'
+				},
+				fallbacks: {
+					unnamedProduct: 'Unnamed product'
+				}
 			}
 		}
 	}
 }
 
-const i18n = createI18n({ legacy: false, locale: 'es', fallbackLocale: 'es', messages })
+
+let initialLocale = 'es'
+try {
+	const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('language') : null
+	if (stored === 'en' || stored === 'es') initialLocale = stored
+} catch (e) {
+	
+}
+
+const i18n = createI18n({ legacy: false, locale: initialLocale, fallbackLocale: 'es', messages })
 
 export default i18n

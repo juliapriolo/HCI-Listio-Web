@@ -1,17 +1,14 @@
-/**
- * plugins/index.js
- *
- * Automatically included in `./src/main.js`
- */
 
-// Plugins
+
+
 import vuetify from './vuetify'
 import router from '@/router'
 import { createPinia } from 'pinia'
 import i18n from './i18n'
 
-export function registerPlugins (app) {
-  const pinia = createPinia()
+// Register core plugins. Accept an optional Pinia instance to avoid creating two.
+export function registerPlugins (app, piniaInstance) {
+  const pinia = piniaInstance || createPinia()
 
   app
     .use(vuetify)

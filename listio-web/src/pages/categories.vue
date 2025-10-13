@@ -21,7 +21,7 @@
 
   <p v-if="message" style="margin-top: 15px;">{{ message }}</p>
 
-    <!-- 🔽 Lista de categorías -->
+    
     <div style="margin-top: 30px;">
   <h3>{{ t('pages.pantry.existingCategoriesTitle') }}</h3>
 

@@ -6,10 +6,10 @@
     height="80"
   >
     <v-container class="d-flex align-center">
-      <!-- Logo -->
+      
       <img src="/listio-logo.png" alt="Listio Logo" class="logo-image" @click="router.push('/listas')" />
 
-      <!-- Navigation Buttons -->
+      
       <div class="d-flex gap-2">
         <v-btn
           v-for="item in navigationItems"
@@ -26,7 +26,7 @@
 
       <v-spacer />
 
-      <!-- User Avatar -->
+      
       <v-btn
         icon
         size="large"

@@ -1,21 +1,21 @@
 <template>
   <div class="pantry-page">
     <v-container>
-      <!-- Page Header -->
+      
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          {{ currentView === 'categories' ? 'Despensas' : selectedCategory?.name || 'Productos' }}
+          {{ currentView === 'categories' ? t('pages.pantry.title') : (getCategoryDisplayName(selectedCategory) || t('nav.products')) }}
         </h1>
         
         <div class="header-actions">
           <div class="search-wrapper">
             <SearchBar
               v-model="searchQuery"
-              :placeholder="currentView === 'categories' ? 'Buscar despensas...' : 'Buscar productos...'"
+              :placeholder="currentView === 'categories' ? t('pages.pantry.searchCategories') : t('pages.pantry.searchProducts')"
         />
       </div>
 
-          <!-- Filter and Share buttons (only in products view) -->
+          
           <template v-if="currentView === 'products'">
             <v-btn
               icon
@@ -86,14 +86,14 @@
                 <img 
                   v-if="category.image || getDefaultImageForCategory(category)" 
                   :src="category.image || getDefaultImageForCategory(category)" 
-                  :alt="category.name" 
+                  :alt="getCategoryDisplayName(category)" 
                 />
                 <div v-else class="image-placeholder">
                   <v-icon size="32" color="grey-lighten-1">mdi-image</v-icon>
                 </div>
               </div>
               <div class="category-info">
-                <h3 class="category-title">{{ category.name }}</h3>
+                <h3 class="category-title">{{ getCategoryDisplayName(category) }}</h3>
               </div>
             </div>
             
@@ -137,15 +137,15 @@
         <EmptyState
           v-if="filteredCategories.length === 0 && !searchQuery"
           icon="mdi-archive-outline"
-          :title="'No tienes despensas creadas'"
-          :description="'Crea tu primera despensa para organizar tus productos'"
+          :title="t('pages.pantry.empty.noCategoriesTitle')"
+          :description="t('pages.pantry.empty.noCategoriesDescription')"
         />
         
         <EmptyState
           v-else-if="filteredCategories.length === 0 && searchQuery"
           icon="mdi-magnify"
-          :title="'No se encontraron despensas'"
-          :description="'Intenta con otro término de búsqueda'"
+          :title="t('pages.pantry.empty.searchNotFoundTitle')"
+          :description="t('pages.pantry.empty.searchNotFoundDescription')"
         />
       </div>
 
@@ -179,15 +179,15 @@
       <EmptyState
           v-else-if="!searchQuery"
           icon="mdi-package-variant"
-          :title="'Esta despensa está vacía'"
-          :description="'Agrega productos para comenzar a organizar tu despensa'"
+          :title="t('pages.pantry.empty.noProductsTitle')"
+          :description="t('pages.pantry.empty.noProductsDescription')"
         />
         
         <EmptyState
           v-else
           icon="mdi-magnify"
-          :title="'No se encontraron productos'"
-          :description="'Intenta con otro término de búsqueda'"
+          :title="t('pages.pantry.empty.searchNotFoundTitle')"
+          :description="t('pages.pantry.empty.searchNotFoundDescription')"
         />
       </div>
     </v-container>
@@ -195,24 +195,24 @@
     <!-- Add/Edit Category Dialog -->
     <div v-if="categoryDialog" class="modal-overlay">
       <div class="modal category-modal">
-        <h2>{{ editingCategory ? 'Editar Despensa' : 'Nueva Despensa' }}</h2>
+  <h2>{{ editingCategory ? t('pages.pantry.editCategoryTitle') : t('pages.pantry.addCategoryTitle') }}</h2>
         
         <form @submit.prevent="saveCategory(categoryForm)">
           <div class="form-group">
-            <label for="categoryName">Nombre de la despensa</label>
+            <label for="categoryName">{{ t('pages.pantry.categoryNameLabel') }}</label>
             <input
               id="categoryName"
               v-model="categoryForm.name"
               type="text"
               class="form-input"
-              placeholder="Ej: Frutas, Lácteos, Limpieza..."
+              :placeholder="t('pages.pantry.categoryNamePlaceholder')"
               required
               autofocus
             />
           </div>
           
           <div class="form-group">
-            <label for="categoryImage">Imagen de la despensa</label>
+            <label for="categoryImage">{{ t('pages.pantry.categoryImageLabel') }}</label>
             <input
               id="categoryImage"
               type="file"
@@ -234,7 +234,7 @@
               class="btn btn--primary"
               :disabled="!categoryForm.name?.trim()"
             >
-              {{ editingCategory ? 'Actualizar Despensa' : 'Crear Despensa' }}
+              {{ editingCategory ? t('pages.pantry.updateCategoryButton') : t('pages.pantry.addCategoryButton') }}
             </button>
           </div>
         </form>
@@ -244,18 +244,18 @@
     <!-- Product Selection Dialog -->
     <div v-if="productSelectionDialog" class="modal-overlay">
       <div class="modal product-selection-modal">
-        <h2>Agregar Producto a la Despensa</h2>
+  <h2>{{ t('pages.pantry.productSelection.title') }}</h2>
         
         <!-- Search field -->
         <div class="search-section">
           <div class="form-group">
-            <label for="productSearch">Buscar producto</label>
+            <label for="productSearch">{{ t('common.search') }}</label>
             <input
               id="productSearch"
               v-model="productSearchQuery"
               type="text"
               class="form-input"
-              placeholder="Escribe el nombre del producto..."
+              :placeholder="t('pages.pantry.searchProducts')"
             />
           </div>
         </div>
@@ -267,10 +267,10 @@
             </svg>
           </div>
           <p class="empty-text">
-            {{ productSearchQuery ? 'No se encontraron productos' : t('pages.pantry.productSelection.noneAvailable') }}
+            {{ productSearchQuery ? t('pages.pantry.empty.searchNotFoundTitle') : t('pages.pantry.productSelection.noneAvailable') }}
           </p>
           <p class="empty-subtext">
-            {{ productSearchQuery ? 'Intenta con otro término de búsqueda' : t('pages.pantry.productSelection.goToProducts') }}
+            {{ productSearchQuery ? t('pages.pantry.empty.searchNotFoundDescription') : t('pages.pantry.productSelection.goToProducts') }}
           </p>
         </div>
         
@@ -284,26 +284,8 @@
               @click="selectProduct(product)"
             >
               <div class="product-content">
-                <div class="product-image">
-                  <img 
-                    v-if="product.metadata?.image" 
-                    :src="product.metadata.image" 
-                    :alt="product.name"
-                    class="product-img"
-                  />
-                  <div v-else class="image-placeholder">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21,15 16,10 5,21"/>
-                    </svg>
-                  </div>
-                </div>
                 <div class="product-info">
                   <h4 class="product-name">{{ product.name }}</h4>
-                  <p v-if="product.metadata?.description" class="product-description">
-                    {{ product.metadata.description }}
-                  </p>
                 </div>
                 <div v-if="selectedProduct?.id === product.id" class="selected-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="#4CAF50">
@@ -316,10 +298,10 @@
           
           <div v-if="selectedProduct" class="product-details">
             <div class="divider"></div>
-            <h4 class="details-title">Detalles del Producto</h4>
+            <h4 class="details-title">{{ t('pages.pantry.productSelection.detailsTitle') }}</h4>
             <div class="form-row">
               <div class="form-group">
-                <label for="productQuantity">Cantidad</label>
+                <label for="productQuantity">{{ t('pages.pantry.productSelection.quantityLabel') }}</label>
                 <input
                   id="productQuantity"
                   v-model="productQuantity"
@@ -329,15 +311,15 @@
                 />
               </div>
               <div class="form-group">
-                <label for="productUnit">Unidad</label>
+                <label for="productUnit">{{ t('pages.pantry.productSelection.unitLabel') }}</label>
                 <select id="productUnit" v-model="productUnit" class="form-input">
-                <option value="unidad">Unidad</option>
-                <option value="kg">Kilogramo</option>
-                <option value="g">Gramo</option>
-                <option value="l">Litro</option>
-                <option value="ml">Mililitro</option>
-                <option value="paquete">Paquete</option>
-                <option value="caja">Caja</option>
+                <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
+                <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
+                <option value="g">{{ t('pages.pantry.units.g') }}</option>
+                <option value="l">{{ t('pages.pantry.units.l') }}</option>
+                <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
+                <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
+                <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
                 </select>
               </div>
             </div>
@@ -354,7 +336,7 @@
             :disabled="!selectedProduct"
             @click="addSelectedProductToPantry"
           >
-            Agregar a Despensa
+            {{ t('pages.pantry.productSelection.addToPantry') }}
           </button>
         </div>
       </div>
@@ -363,13 +345,10 @@
     <!-- Delete Confirmation Dialog -->
     <div v-if="deleteDialog" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-        <h2>Eliminar Despensa</h2>
+        <h2>{{ t('pages.pantry.deleteConfirm.categoryTitle') }}</h2>
         
         <div class="confirmation-content">
-          <p class="confirmation-text">
-            ¿Estás seguro de que quieres eliminar la despensa <strong>{{ categoryToDelete?.name || '' }}</strong>? 
-            Esta acción no se puede deshacer y se eliminarán todos los productos de esta despensa.
-          </p>
+          <p class="confirmation-text" v-html="t('pages.pantry.deleteConfirm.categoryMessage', { name: getCategoryDisplayName(categoryToDelete) || '' })"></p>
         </div>
         
         <div class="modal-actions">
@@ -414,12 +393,12 @@
     <!-- Product Edit Dialog -->
     <div v-if="productEditDialog" class="modal-overlay">
       <div class="modal product-edit-modal">
-        <h2>Editar Producto</h2>
+        <h2>{{ t('pages.products.modals.edit.title') }}</h2>
         
         <form @submit.prevent="saveProductEdit">
           <div class="form-row">
             <div class="form-group">
-              <label for="editQuantity">Cantidad</label>
+              <label for="editQuantity">{{ t('pages.pantry.editProduct.quantityLabel') }}</label>
               <input
                 id="editQuantity"
                 v-model="editQuantity"
@@ -430,7 +409,7 @@
               />
             </div>
             <div class="form-group">
-              <label for="editUnit">Unidad</label>
+              <label for="editUnit">{{ t('pages.pantry.editProduct.unitLabel') }}</label>
               <select id="editUnit" v-model="editUnit" class="form-input">
                 <option value="unidad">Unidad</option>
                 <option value="kg">Kilogramo</option>
@@ -444,7 +423,7 @@
           </div>
           
           <div class="form-group">
-            <label for="editImageFile">Cambiar imagen</label>
+            <label for="editImageFile">{{ t('pages.pantry.editProduct.changeImage') }}</label>
             <input
               id="editImageFile"
               type="file"
@@ -475,18 +454,18 @@
     <!-- Filter Dialog -->
     <div v-if="filterDialog" class="modal-overlay">
       <div class="modal">
-        <h2>Filtrar Productos</h2>
+        <h2>{{ t('common.filter') }} {{ t('nav.products') }}</h2>
 
         <form @submit.prevent="applyFilters">
           <div class="form-row">
             <div class="form-group">
-              <label for="filterCategoryDialog">Categoría</label>
+              <label for="filterCategoryDialog">{{ t('common.category') }}</label>
               <select
                 id="filterCategoryDialog"
                 v-model="filterCategory"
                 class="form-input"
               >
-                <option value="">Seleccione una categoría</option>
+                <option value="">{{ t('common.selectCategory') }}</option>
                 <option
                   v-for="category in categoryOptions"
                   :key="category.value"
@@ -500,16 +479,16 @@
 
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="filterDialog = false">
-              Cancelar
+              {{ t('common.cancel') }}
             </button>
             <button type="button" class="btn btn--cancel" @click="clearFilters">
-              Limpiar
+              {{ t('pages.lists.filters.clear') }}
             </button>
             <button
               type="submit"
               class="btn btn--primary"
             >
-              Guardar
+              {{ t('common.save') }}
             </button>
           </div>
         </form>
@@ -568,6 +547,8 @@ import { usePantryStore } from '@/stores/pantry'
 import { useProductStore } from '@/stores/products'
 import { useCategoryStore } from '@/stores/category'
 import { useLanguage } from '@/composables/useLanguage'
+import { useCategoryI18n } from '@/composables/useCategoryI18n'
+const { getCategoryDisplayName } = useCategoryI18n()
 import PantryItemCard from '@/components/PantryItemCard.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import SearchBar from '@/components/SearchBar.vue'
@@ -575,7 +556,7 @@ import { getDefaultCategoryImage } from '@/utils/category-images'
 
 const { t } = useLanguage()
 
-// Reactive data
+
 const categoryDialog = ref(false)
 const editingCategory = ref(null)
 const productDialog = ref(false)
@@ -597,7 +578,7 @@ const productUnit = ref('unidad')
 const productSearchQuery = ref('')
 const filterDialog = ref(false)
 const shareDialog = ref(false)
-const currentView = ref('categories') // 'categories' or 'products'
+const currentView = ref('categories') 
 const selectedCategory = ref(null)
 const pantryItems = ref([])
 const loadingItems = ref(false)
@@ -620,21 +601,9 @@ const productForm = ref({
   category: ''
 })
 
-// Categories data
-const categories = ref([
-  {
-    id: 1,
-    name: 'Limpieza',
-    image: '',
-    itemCount: 5
-  },
-  {
-    id: 2,
-    name: 'Bebidas',
-    image: '',
-    itemCount: 8
-  }
-])
+// Categories data (local fallback only when nothing stored)
+// Start empty so new accounts begin without default categories
+const categories = ref([])
 
 
 // Form configuration for products
@@ -667,9 +636,9 @@ const productFields = [
   }
 ]
 
-// Filter options
+
 const categoryOptions = computed(() => {
-  return categoryStore.categories.map(cat => ({ title: cat.name, value: cat.name }))
+  return categoryStore.categories.map(cat => ({ title: getCategoryDisplayName(cat), value: cat.name }))
 })
 
 const availableProducts = computed(() => {
@@ -687,16 +656,16 @@ const filteredAvailableProducts = computed(() => {
   )
 })
 
-// Use stores
+
 const pantryStore = usePantryStore()
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
 
-// Computed properties for filtering
+
 const filteredCategories = computed(() => {
   if (!searchQuery.value) return categories.value
   return categories.value.filter(category =>
-    category.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+    getCategoryDisplayName(category).toLowerCase().includes((searchQuery.value || '').toLowerCase())
   )
 })
 
@@ -722,10 +691,10 @@ const filteredProducts = computed(() => {
 const processItemsForDisplay = (items) => {
   return items.map(item => ({
     id: item.id,
-    name: item.product?.name || item.metadata?.name || item.name || 'Producto sin nombre',
+    name: item.product?.name || item.metadata?.name || item.name || t('pages.pantry.fallbacks.unnamedProduct'),
     quantity: item.quantity || 0,
     unit: item.unit || 'unidad',
-    category: item.product?.category?.name || item.metadata?.category || item.category || 'Sin categoría',
+    category: item.product?.category?.name || item.metadata?.category || item.category || t('common.noCategory'),
     expiryDate: item.metadata?.expiryDate || item.expiryDate || '',
     image: item.product?.metadata?.image || item.metadata?.image || item.image || '',
     description: item.product?.metadata?.description || item.metadata?.description || '',
@@ -735,7 +704,7 @@ const processItemsForDisplay = (items) => {
   }))
 }
 
-// Methods
+
 const openAddCategoryDialog = () => {
   editingCategory.value = null
   categoryForm.value = {
@@ -791,7 +760,7 @@ const deleteCategory = async () => {
   } catch (error) {
     console.error('Failed to delete category:', error)
     
-    // Fallback: delete locally
+    
     const index = categories.value.findIndex(c => c.id === categoryToDelete.value.id)
     if (index > -1) {
       categories.value.splice(index, 1)
@@ -807,10 +776,10 @@ const deleteCategory = async () => {
 const saveCategory = async (formData) => {
   console.log('saveCategory called with:', formData)
   
-  // Validate required fields
+  
   if (!formData.name || !formData.name.trim()) {
     console.error('Category name is required')
-    alert('El nombre de la categoría es obligatorio')
+    alert(t('pages.pantry.messages.categoryNameRequired'))
     return
   }
   
@@ -835,7 +804,7 @@ const saveCategory = async (formData) => {
       
       await pantryStore.updatePantryRemote(editingCategory.value.id, pantryData)
       
-      // Update local categories
+      
       const index = categories.value.findIndex(c => c.id === editingCategory.value.id)
       if (index > -1) {
         categories.value[index] = {
@@ -848,7 +817,7 @@ const saveCategory = async (formData) => {
     } catch (error) {
       console.error('Failed to update category via API, using local fallback:', error)
       
-      // Fallback: update locally
+      
       const index = categories.value.findIndex(c => c.id === editingCategory.value.id)
       if (index > -1) {
         categories.value[index] = {
@@ -859,7 +828,7 @@ const saveCategory = async (formData) => {
       }
     }
   } else {
-    // Add new category using API endpoint /api/pantries
+    
     try {
       const pantryData = {
         name: formData.name,
@@ -872,12 +841,12 @@ const saveCategory = async (formData) => {
       
       console.log('Creating pantry with data:', pantryData)
       
-      // Try to create pantry via API
+      
       const newPantry = await pantryStore.createPantryRemote(pantryData)
       
       console.log('Pantry created successfully:', newPantry)
       
-      // Add to local categories for display
+      
       const newCategory = {
         id: newPantry.id,
         name: formData.name,
@@ -889,7 +858,7 @@ const saveCategory = async (formData) => {
     } catch (error) {
       console.error('Failed to create pantry via API, using local fallback:', error)
       
-      // Fallback: Add locally
+      
       const newCategory = {
         id: Date.now(),
         name: formData.name,
@@ -900,7 +869,7 @@ const saveCategory = async (formData) => {
     }
   }
   
-  // Save to localStorage
+  
   const categoriesStorageKey = getCategoriesStorageKey()
   localStorage.setItem(categoriesStorageKey, JSON.stringify(categories.value))
   
@@ -914,7 +883,7 @@ const addSelectedProductToPantry = async () => {
     product: {
       id: selectedProduct.value.id
     },
-    quantity: parseInt(productQuantity.value), // Convert to number
+    quantity: parseInt(productQuantity.value), 
     unit: productUnit.value,
     metadata: {}
   }
@@ -926,13 +895,13 @@ const addSelectedProductToPantry = async () => {
   try {
     const newProduct = await pantryStore.createItemRemote(selectedCategory.value.id, productData)
     
-    // Process the API response to ensure it has the correct structure for display
+    
     const processedItem = {
       id: newProduct.id,
       name: newProduct.product?.name || selectedProduct.value.name,
       quantity: newProduct.quantity,
       unit: newProduct.unit,
-      category: newProduct.product?.category?.name || 'Sin categoría',
+  category: newProduct.product?.category?.name || t('common.noCategory'),
       image: newProduct.product?.metadata?.image || selectedProduct.value.metadata?.image || '',
       description: newProduct.product?.metadata?.description || selectedProduct.value.metadata?.description || '',
       stock: newProduct.quantity, // Use quantity as stock for display
@@ -962,18 +931,18 @@ const addSelectedProductToPantry = async () => {
     
     // Check if it's a 400 error (bad request)
     if (error.response && error.response.status === 400) {
-      // Show error message to user
+      
   alert(t('pages.pantry.messages.invalidQuantityUnit'))
       return
     }
     
-    // Fallback: Add locally only for network/server errors
+    
     const newProduct = {
       id: Date.now(),
       name: selectedProduct.value.name,
-      quantity: parseInt(productQuantity.value), // Convert to number
+      quantity: parseInt(productQuantity.value), 
       unit: productUnit.value,
-      category: 'Sin categoría',
+  category: t('common.noCategory'),
       image: selectedProduct.value.metadata?.image || '',
       createdAt: new Date().toISOString()
     }
@@ -982,10 +951,10 @@ const addSelectedProductToPantry = async () => {
     pantryStore.items.unshift(newProduct)
     pantryStore.save()
     
-    // Refresh our local view with processed items
+    
     pantryItems.value = processItemsForDisplay(pantryStore.items)
     
-    // Update category item count
+    
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount += 1
@@ -1001,7 +970,7 @@ const selectProduct = (product) => {
   selectedProduct.value = product
 }
 
-// Helper function to convert file to base64
+
 const convertFileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -1011,7 +980,7 @@ const convertFileToBase64 = (file) => {
   })
 }
 
-// Handle image file selection
+
 const handleImageChange = (event) => {
   const file = event.target.files[0]
   if (file) {
@@ -1024,7 +993,7 @@ const handleImageChange = (event) => {
   }
 }
 
-// Handle category menu
+
 const toggleCategoryMenu = (categoryId) => {
   activeCategoryMenu.value = activeCategoryMenu.value === categoryId ? null : categoryId
 }
@@ -1040,12 +1009,12 @@ const openCategory = async (category) => {
   selectedCategory.value = category
   currentView.value = 'products'
 
-  // Load items for this pantry/category
+  
   loadingItems.value = true
   try {
     await pantryStore.fetchPantryItemsRemote(category.id)
 
-    // Process the items to ensure they have the correct structure for display
+    
     pantryItems.value = processItemsForDisplay(pantryStore.items)
   } catch (error) {
     console.error('Failed to load pantry items:', error)
@@ -1059,7 +1028,7 @@ const goBackToCategories = () => {
   currentView.value = 'categories'
   selectedCategory.value = null
   pantryItems.value = []
-  // Clear filter when exiting pantry
+  
   filterCategory.value = ''
 }
 
@@ -1076,10 +1045,10 @@ const deleteItem = async (itemId) => {
       await pantryStore.deleteItemRemote(selectedCategory.value.id, itemId)
     }
     
-    // Update local items after deletion
+    
     pantryItems.value = pantryItems.value.filter(item => item.id !== itemId)
     
-    // Update category item count
+    
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount = Math.max(0, categories.value[categoryIndex].itemCount - 1)
@@ -1088,10 +1057,10 @@ const deleteItem = async (itemId) => {
     }
   } catch (error) {
     console.error('Failed to delete item:', error)
-    // Fallback: delete locally
+    
     pantryItems.value = pantryItems.value.filter(item => item.id !== itemId)
     
-    // Update category item count
+    
     const categoryIndex = categories.value.findIndex(c => c.id === selectedCategory.value.id)
     if (categoryIndex > -1) {
       categories.value[categoryIndex].itemCount = Math.max(0, categories.value[categoryIndex].itemCount - 1)
@@ -1162,7 +1131,7 @@ const saveProductEdit = async () => {
     console.log('Product updated successfully')
   } catch (error) {
     console.error('Failed to update product:', error)
-    alert('Error al actualizar el producto. Inténtalo de nuevo.')
+  alert(t('pages.pantry.messages.updateError'))
   } finally {
     productEditDialog.value = false
     productToEdit.value = null
@@ -1202,7 +1171,7 @@ const addQuantity = async (itemId) => {
     }
   } catch (error) {
     console.error('Failed to update item quantity:', error)
-    // Fallback: update locally
+    
     const index = pantryItems.value.findIndex(i => i.id === itemId)
     if (index > -1) {
       pantryItems.value[index] = updatedItem
@@ -1226,7 +1195,7 @@ const removeQuantity = async (itemId) => {
     }
   } catch (error) {
     console.error('Failed to update item quantity:', error)
-    // Fallback: update locally
+    
     const index = pantryItems.value.findIndex(i => i.id === itemId)
     if (index > -1) {
       pantryItems.value[index] = updatedItem
@@ -1239,11 +1208,11 @@ const saveItem = async (itemData) => {
   
   try {
     const newItem = await pantryStore.createItemRemote(selectedCategory.value.id, itemData)
-    // Refresh the entire list to ensure consistency
+    
     pantryItems.value = processItemsForDisplay(pantryStore.items)
   } catch (error) {
     console.error('Failed to create item:', error)
-    // Fallback: add locally
+    
     const newItem = {
       id: Date.now(),
       ...itemData,
@@ -1251,12 +1220,12 @@ const saveItem = async (itemData) => {
     }
     pantryStore.items.unshift(newItem)
     pantryStore.save()
-    // Refresh the entire list to ensure consistency
+    
     pantryItems.value = processItemsForDisplay(pantryStore.items)
   }
 }
 
-// Helper function to determine item status
+
 const getItemStatus = (item) => {
   if (!item.quantity || item.quantity <= 0) return 'expired'
   if (item.quantity <= 2) return 'low'
@@ -1273,7 +1242,7 @@ const getItemStatus = (item) => {
   return 'available'
 }
 
-// Filter and share functions
+
 const openFilterDialog = () => {
   filterDialog.value = true
 }
@@ -1315,25 +1284,25 @@ onMounted(async () => {
   }
   
   try {
-    // Initialize product store
+    
     await productStore.init()
   } catch (error) {
     console.log('Failed to initialize product store:', error)
   }
   
   try {
-    // Initialize category store
+    
     await categoryStore.init()
   } catch (error) {
     console.log('Failed to initialize category store:', error)
   }
   
-  // Initialize empty pantry if none exist
+  
   if (!pantryStore.pantries || pantryStore.pantries.length === 0) {
     pantryStore.seed([], [])
   }
   
-  // Load items for the first pantry (if any)
+  
   if (pantryStore.pantries.length > 0) {
     try {
       await pantryStore.fetchPantryItemsRemote(pantryStore.pantries[0].id)
@@ -1343,7 +1312,7 @@ onMounted(async () => {
   }
 })
 
-// Helper function to get user-specific storage key for categories
+
 const getCategoriesStorageKey = () => {
   try {
     const raw = localStorage.getItem('listio:user')
@@ -1356,7 +1325,7 @@ const getCategoriesStorageKey = () => {
   }
 }
 
-// Helper function to clear categories data for current user
+
 const clearCategoriesData = () => {
   try {
     const categoriesStorageKey = getCategoriesStorageKey()
@@ -1367,13 +1336,30 @@ const clearCategoriesData = () => {
   }
 }
 
-// Load categories on mount
+
 onMounted(() => {
-  // Load categories from localStorage or use default ones
+  
   const categoriesStorageKey = getCategoriesStorageKey()
   const savedCategories = localStorage.getItem(categoriesStorageKey)
   if (savedCategories) {
-    categories.value = JSON.parse(savedCategories)
+    try {
+      const parsed = JSON.parse(savedCategories)
+      // If storage contains only the old defaults (Limpieza/Bebidas), clear them
+      const legacyIds = new Set(['cat-cleaning', 'cat-beverages'])
+      const onlyLegacyDefaults = Array.isArray(parsed)
+        && parsed.length > 0
+        && parsed.every(c => legacyIds.has(c?.id))
+
+      if (onlyLegacyDefaults) {
+        localStorage.removeItem(categoriesStorageKey)
+        categories.value = []
+      } else {
+        categories.value = parsed
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved categories, starting empty')
+      categories.value = []
+    }
   }
 })
 
@@ -1426,7 +1412,7 @@ onMounted(() => {
   z-index: 10;
 }
 
-/* Custom menu styles for categories */
+
 .menu-button {
   background: none;
   border: none;
@@ -1588,7 +1574,7 @@ onMounted(() => {
   }
 }
 
-/* Product Selection Dialog Styles */
+
 .product-card {
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1619,7 +1605,7 @@ onMounted(() => {
   object-fit: cover;
 }
 
-/* Modal styles matching verification modal */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1703,7 +1689,7 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-/* Category modal specific styles */
+
 .category-modal {
   max-width: 500px;
   width: 90vw;
@@ -1760,13 +1746,13 @@ onMounted(() => {
   object-fit: cover;
 }
 
-/* Product edit modal specific styles */
+
 .product-edit-modal {
   max-width: 600px;
   width: 90vw;
 }
 
-/* Delete confirmation modal specific styles */
+
 .delete-confirmation-modal {
   max-width: 450px;
   width: 90vw;
@@ -1789,7 +1775,7 @@ onMounted(() => {
   font-weight: 600;
 }
 
-/* Product selection modal specific styles */
+
 .product-selection-modal {
   max-width: 800px;
   width: 90vw;
@@ -1881,29 +1867,7 @@ onMounted(() => {
   gap: 12px;
 }
 
-.product-image {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.product-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f5f5f5;
-  border: 1px dashed #e0e0e0;
-}
+/* Removed product image thumbnail styles */
 
 .product-info {
   flex: 1;
@@ -1918,15 +1882,7 @@ onMounted(() => {
   line-height: 1.2;
 }
 
-.product-description {
-  font-size: 0.85rem;
-  color: #666;
-  margin: 0;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* Removed product description styles */
 
 .selected-icon {
   flex-shrink: 0;
@@ -1973,7 +1929,7 @@ onMounted(() => {
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 0.9rem;
-  color: #424242; /* Mismo color que text-grey-darken-3 del título */
+  color: #424242; 
   transition: border-color 0.2s ease;
 }
 
@@ -1990,11 +1946,11 @@ onMounted(() => {
 }
 
 .form-input::placeholder {
-  color: #9e9e9e; /* Color más visible para el placeholder */
+  color: #9e9e9e; 
   opacity: 1;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .modal {
     margin: 20px;

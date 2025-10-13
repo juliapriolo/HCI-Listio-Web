@@ -1,7 +1,7 @@
-// Utility to map default categories to image paths placed under /public/images/categories
-// Usage: getDefaultCategoryImage('Bebidas') => '/images/categories/bebidas.jpg'
 
-// Normalize a category string: lowercase, no accents, spaces/delimiters to hyphens
+
+
+
 function slugify(value = '') {
   try {
     return String(value)
@@ -33,7 +33,7 @@ const DEFAULT_NAME_TO_SLUG = {
   'limpieza': 'limpieza',
 }
 
-// Map known default category IDs from the Category store to slugs
+
 const CATEGORY_ID_TO_SLUG = {
   'cat-fruits': 'frutas-y-verduras',
   'cat-beverages': 'bebidas',
@@ -42,7 +42,7 @@ const CATEGORY_ID_TO_SLUG = {
   'cat-pets': 'mascotas',
 }
 
-// Resolve a default image URL for a category by id or name. Returns a public path or empty string.
+
 export function getDefaultCategoryImage(categoryIdOrName) {
   if (!categoryIdOrName) return ''
 
@@ -74,7 +74,7 @@ export function getDefaultCategoryImageForItem(item) {
   return getDefaultCategoryImage(name || id)
 }
 
-// Small helper to document expected files
+
 export const CATEGORY_IMAGE_DOC = `
 Place your default category images in: public/images/categories
 

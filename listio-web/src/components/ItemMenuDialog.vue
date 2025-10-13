@@ -87,7 +87,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'update', 'delete', 'cancel'])
 
-// Opciones de unidad
+
 const unitOptions = [
   { title: 'Unidad', value: 'unidad' },
   { title: 'Kilogramo', value: 'kg' },
@@ -98,14 +98,14 @@ const unitOptions = [
   { title: 'Caja', value: 'caja' }
 ]
 
-// Copia local del item para no modificarlo directamente
+
 const localData = ref({ 
   quantity: 1,
   unit: 'g',
   ...props.item 
 })
 
-// Cuando cambie el item o se abra el modal, actualizamos la copia
+
 watch(() => props.item, (newItem) => {
   localData.value = { 
     quantity: 1,
@@ -131,19 +131,19 @@ const isFormValid = computed(() => {
          localData.value.unit?.trim()
 })
 
-// Guardar cambios
+
 const handleSubmit = () => {
   emit('update', { ...localData.value })
   emit('update:modelValue', false)
 }
 
-// Eliminar ítem
+
 const handleDelete = () => {
   emit('delete', props.item)
   emit('update:modelValue', false)
 }
 
-// Cancelar
+
 const handleCancel = () => {
   emit('cancel')
   emit('update:modelValue', false)

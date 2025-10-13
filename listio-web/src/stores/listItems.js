@@ -1,13 +1,13 @@
-// src/stores/listItems.js
+
 import { defineStore } from 'pinia'
 import listItemsApi from '@/api/listItems'
 
-const STORAGE_PREFIX = 'listio:list-items:' // key will be STORAGE_PREFIX + listId
+const STORAGE_PREFIX = 'listio:list-items:' 
 
 function mapListItem(data) {
   if (!data) return null
   
-  // Si el servidor devuelve el producto anidado, extraer el nombre y categoría
+  
   if (data.product && data.product.name) {
     return {
       id: data.id,
@@ -20,11 +20,11 @@ function mapListItem(data) {
       metadata: data.metadata || {},
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
-      product: data.product // Mantener referencia al producto completo
+      product: data.product 
     }
   }
   
-  // Si ya tiene el nombre directamente, devolverlo tal como está
+  
   return {
     id: data.id,
     name: data.name || 'Item sin nombre',
@@ -43,7 +43,7 @@ function mapListItem(data) {
 export const useListItemsStore = defineStore('listItems', {
   state: () => ({ listId: null, items: [], _listening: false, _boundStorageHandler: null, _outboxInterval: null }),
   actions: {
-    // Debounced storage event handler to avoid frequent reloads
+    
     _onStorageEventRaw(e) {
       if (!e.key) return
       if (!this.listId) return
@@ -65,7 +65,7 @@ export const useListItemsStore = defineStore('listItems', {
         timer = setTimeout(() => {
           this.items = payload || []
           timer = null
-        }, 250) // 250ms debounce window
+        }, 250) 
       }
     })(),
 
@@ -81,7 +81,7 @@ export const useListItemsStore = defineStore('listItems', {
       try {
         window.removeEventListener('storage', this._boundStorageHandler)
       } catch (e) {
-        // ignore
+        
       }
       this._boundStorageHandler = null
       this._listening = false
@@ -89,7 +89,7 @@ export const useListItemsStore = defineStore('listItems', {
     },
 
     load(listId) {
-      // stop listening for previous id
+      
       if (this._listening) this.stopListening()
 
       this.listId = listId || null
@@ -102,12 +102,12 @@ export const useListItemsStore = defineStore('listItems', {
         this.items = []
       }
 
-      // start cross-tab listening for this list key
+      
       this.startListening()
 
-      // begin processing outbox in background (non-blocking)
-      // Commented out to prevent constant API calls
-      // this._startOutboxProcessor()
+      
+      
+      
     },
 
     save() {
@@ -116,14 +116,14 @@ export const useListItemsStore = defineStore('listItems', {
       catch (e) { console.error('Failed to save list items', e) }
     },
 
-    // optimistic operations: update local state, persist, enqueue remote op
+    
     addItem(item, { remote = true } = {}) {
       const newItem = { id: Date.now(), ...item }
       this.items.unshift(newItem)
       this.save()
-      // Note: No need to record item creation in history - history is only for deleted items
-      // Commented out to prevent constant API calls
-      // if (remote && this.listId) this._enqueueOutbox({ op: 'create', listId: this.listId, payload: newItem })
+      
+      
+      
       return newItem
     },
 
@@ -132,22 +132,22 @@ export const useListItemsStore = defineStore('listItems', {
       if (idx > -1) {
         this.items[idx] = { ...this.items[idx], ...patch }
         this.save()
-        // Note: No need to record item updates in history - history is only for deleted items
-        // Commented out to prevent constant API calls
-        // if (remote && this.listId) this._enqueueOutbox({ op: 'update', listId: this.listId, itemId: id, payload: patch })
+        
+        
+        
       }
     },
 
     deleteItem(id, { remote = true } = {}) {
       const idx = this.items.findIndex(i => i.id === id)
       if (idx > -1) {
-        // Capture item data before deletion
+        
         const deletedItem = this.items[idx]
         
-        // Get list name synchronously
+        
         let listName = 'Lista desconocida'
         try {
-          // Dynamic import is async, but we can access the store if it's already loaded
+          
           const listsModule = require('@/stores/lists')
           if (listsModule && listsModule.useListsStore) {
             const listsStore = listsModule.useListsStore()
@@ -157,19 +157,19 @@ export const useListItemsStore = defineStore('listItems', {
             }
           }
         } catch (e) { 
-          // Fallback to async if sync fails
+          
           console.warn('Could not get list name synchronously')
         }
         
         this.items.splice(idx, 1)
         this.save()
         
-        // Record history event with complete item details
+        
         import('@/stores/history').then(mod => {
           try {
             const history = mod.useHistoryStore()
             
-            // If we didn't get the list name yet, try again
+            
             if (listName === 'Lista desconocida') {
               import('@/stores/lists').then(listsModule => {
                 const listsStore = listsModule.useListsStore()
@@ -185,7 +185,7 @@ export const useListItemsStore = defineStore('listItems', {
                   listId: this.listId
                 }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
               }).catch(() => {
-                // Last fallback
+                
                 history.recordEvent('listItem.delete', 'listItem', id, {
                   name: deletedItem.name || 'Producto sin nombre',
                   quantity: deletedItem.quantity,
@@ -196,7 +196,7 @@ export const useListItemsStore = defineStore('listItems', {
                 }, { listId: this.listId, meta: { source: remote ? 'outbox' : 'local' } })
               })
             } else {
-              // We have the list name, record immediately
+              
               history.recordEvent('listItem.delete', 'listItem', id, {
                 name: deletedItem.name || 'Producto sin nombre',
                 quantity: deletedItem.quantity,
@@ -210,8 +210,8 @@ export const useListItemsStore = defineStore('listItems', {
             console.warn('Error al registrar eliminación de item en historial:', e)
           }
         }).catch(() => {})
-        // Commented out to prevent constant API calls
-        // if (remote && this.listId) this._enqueueOutbox({ op: 'delete', listId: this.listId, itemId: id })
+        
+        
       }
     },
 
@@ -219,9 +219,7 @@ export const useListItemsStore = defineStore('listItems', {
 
     setItems(itemsArray) { this.items = itemsArray || []; this.save() },
 
-    /* Outbox (optimistic sync and offline queue)
-     * Stored under localStorage key 'listio:list-items-outbox' as an array of operations.
-     */
+    
     _outboxKey() { return 'listio:list-items-outbox' },
 
     _readOutbox() {
@@ -239,9 +237,9 @@ export const useListItemsStore = defineStore('listItems', {
     },
 
     _startOutboxProcessor() {
-      // spawn a background worker that processes the outbox every few seconds
+      
       if (this._outboxInterval) return
-      this._outboxInterval = setInterval(() => this.processOutbox().catch(err => { /* swallow */ }), 2000)
+      this._outboxInterval = setInterval(() => this.processOutbox().catch(err => {  }), 2000)
     },
 
     _stopOutboxProcessor() {
@@ -252,16 +250,16 @@ export const useListItemsStore = defineStore('listItems', {
       const out = this._readOutbox()
       if (!out || out.length === 0) return
 
-      // process sequentially; stop if any operation fails (will retry later)
+      
       while (out.length) {
         const entry = out[0]
         try {
           if (entry.op === 'create') {
-            // send create to server (server may return real id)
+            
             const serverItem = await listItemsApi.create(entry.listId, entry.payload)
-            // if server returned an id different than local, update local item id mapping
+            
             if (serverItem && serverItem.id && serverItem.id !== entry.payload.id) {
-              // replace local id in items
+              
               const idx = this.items.findIndex(i => i.id === entry.payload.id)
               if (idx > -1) this.items[idx] = { ...this.items[idx], ...serverItem }
               this.save()
@@ -272,28 +270,28 @@ export const useListItemsStore = defineStore('listItems', {
             await listItemsApi.delete(entry.listId, entry.itemId)
           }
 
-          // success -> remove processed entry and continue
+          
           out.shift()
           this._writeOutbox(out)
         } catch (e) {
-          // network error or server error: stop processing now and retry later
-          // leave outbox intact for next attempt
+          
+          
           console.warn('Outbox processing stopped due to error (will retry):', e.message || e)
           break
         }
       }
     },
 
-    // move item from one list to another with local updates and queued remote ops
+    
     async moveItem(fromListId, toListId, itemId) {
       if (!fromListId || !toListId || !itemId) throw new Error('fromListId, toListId and itemId required')
 
-      // load source and destination stores (use dynamic import to avoid cycles)
+      
       const { useListItemsStore } = await import('@/stores/listItems')
       const src = useListItemsStore()
       const dest = useListItemsStore()
 
-      // ensure both loaded
+      
       src.load(fromListId)
       dest.load(toListId)
 
@@ -305,24 +303,24 @@ export const useListItemsStore = defineStore('listItems', {
       dest.items.unshift(item)
       dest.save()
 
-      // enqueue remote ops: delete on source and create on dest
-      // Commented out to prevent constant API calls
-      // src._enqueueOutbox({ op: 'delete', listId: fromListId, itemId })
-      // dest._enqueueOutbox({ op: 'create', listId: toListId, payload: item })
+      
+      
+      
+      
 
       return true
     },
 
-    // Remote-aware methods
+    
     async fetchRemote(params) {
       if (!this.listId) throw new Error('listId required')
       const data = await listItemsApi.getAll(this.listId, params)
-      // expect array or envelope
+      
       const items = Array.isArray(data) ? data : data?.data || data?.items || []
       if (Array.isArray(items)) {
         const mappedItems = items.map(mapListItem).filter(Boolean)
         if (this.items && this.items.length > 0) {
-          // Merge por id, preservando elementos locales que aún no están en servidor
+          
           const byId = new Map(mappedItems.map(i => [i.id, i]))
           const merged = [
             ...this.items.filter(i => i && i.id && !byId.has(i.id)),
@@ -342,10 +340,10 @@ export const useListItemsStore = defineStore('listItems', {
       if (created && created.id) {
         const mappedItem = mapListItem(created)
         if (mappedItem) {
-          // Evitar duplicado si ya hay un ítem optimista con el mismo nombre/cantidad/unidad
+          
           const idx = this.items.findIndex(i => !i.product?.id && i.name === (mappedItem.name || mappedItem.product?.name) && i.quantity === mappedItem.quantity && i.unit === mappedItem.unit)
           if (idx > -1) {
-            // Reemplazar el optimista por el real
+            
             this.items[idx] = { ...mappedItem }
             this.save()
           } else {

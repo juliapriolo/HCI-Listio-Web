@@ -2,10 +2,10 @@
   <v-container fluid class="background">
       <div style="margin-top: 20px;" class="main">
         <div class="list-opt">
-          <!-- Nombre Lista -->
+          
           <h1 class="list-name">Mi Lista: Supermercado</h1>
 
-          <!-- Botones (Filtrar, compartir, buscar)-->
+          
           <div class="list-buttons"> 
             <v-icon @click="handleFiltrar" color="#009951" icon="mdi-filter-outline" size="50"></v-icon>
             <v-icon @click="handleCompartir" color="#009951" icon="mdi-export-variant" size="50"></v-icon>
@@ -14,7 +14,7 @@
         </div>
 
         <div style="display:flex; flex-direction: column; width: 75%; justify-content: center; align-items: center;">
-          <!-- Productos -->
+          
           <div class="list">
             <ul class="list-items">
               <li 
@@ -22,7 +22,7 @@
                 :key="item.name"
               >
                 <div class="list-row">
-                  <!-- Dynamic category icon -->
+                  
                   <v-avatar size="40" :color="getCategoryColor(item.categoryId)" class="mr-3">
                     <v-icon :color="isDarkColor(getCategoryColor(item.categoryId)) ? 'white' : 'black'">
                       {{ getCategoryIcon(item.categoryId) }}
@@ -30,19 +30,11 @@
                   </v-avatar>
                   <div>
                     <h3 class="item-descr">{{ item.name }}</h3>
-                    <!-- <h3 class="item-descr">{{ item.category }}</h3> -->
+                    
                   </div>
 
                   <div class="item-buttons">
-                    <!-- <v-btn 
-                    icon 
-                    variant="plain"
-                    @click="toggleCheck(item)"
-                    style="background-color: transparent;"
-                    >
-                        <v-icon v-if="!item.checked" color="black">mdi-checkbox-blank-outline</v-icon>
-                        <v-icon v-else color="black">mdi-checkbox-marked</v-icon>
-                    </v-btn> -->
+                    
                     <v-checkbox
                    
                     :ripple="false"
@@ -64,7 +56,7 @@
             </ul>
           </div>
 
-          <!-- Boton Agregar Producto -->
+          
           <div style="width: 90%">
             <v-btn
             color="#009951"
@@ -98,7 +90,7 @@ const items = [
   { name: "Manteca", category: "Lácteos", categoryId: "cat-dairy", checked: false },
 ];
 
-// Helper functions for category icons
+
 const getCategoryIcon = (categoryId) => {
   if (!categoryId) return 'mdi-package-variant'
   return categoryStore.getIconById(categoryId)
@@ -110,7 +102,7 @@ const getCategoryColor = (categoryId) => {
 }
 
 const isDarkColor = (hexColor) => {
-  // Convert hex to RGB and calculate luminance
+  
   const hex = hexColor.replace('#', '')
   const r = parseInt(hex.substr(0, 2), 16)
   const g = parseInt(hex.substr(2, 2), 16)

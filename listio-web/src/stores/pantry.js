@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import pantryApi from '@/api/pantry'
 
-// Dynamic storage key based on user ID
+
 function getStorageKey() {
   try {
     const raw = localStorage.getItem('listio:user')
@@ -16,9 +16,9 @@ function getStorageKey() {
 
 export const usePantryStore = defineStore('pantry', {
   state: () => ({
-    pantries: [], // Array of pantry objects
-    currentPantryId: null, // Currently selected pantry ID
-    items: [], // Items in the current pantry
+    pantries: [], 
+    currentPantryId: null, 
+    items: [], 
     loading: false,
     error: null,
     lastSync: null
@@ -115,7 +115,7 @@ export const usePantryStore = defineStore('pantry', {
       }
     },
 
-    // Remote API methods (commented until API is enabled)
+    
     async fetchPantriesRemote(params = {}) {
       this.loading = true
       this.error = null
@@ -130,7 +130,7 @@ export const usePantryStore = defineStore('pantry', {
       } catch (error) {
         this.error = error.message
         console.error('Failed to fetch pantries:', error)
-        // Fallback to localStorage on error
+        
         this.load()
       } finally {
         this.loading = false
@@ -152,7 +152,7 @@ export const usePantryStore = defineStore('pantry', {
       } catch (error) {
         this.error = error.message
         console.error('Failed to fetch pantry items:', error)
-        // Fallback to localStorage on error
+        
         this.load()
       } finally {
         this.loading = false
@@ -175,7 +175,7 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to create pantry:', error)
         
-        // Fallback: add locally with proper structure
+        
         const newPantry = {
           id: Date.now(),
           name: pantryData.name,
@@ -208,7 +208,7 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to update pantry:', error)
         
-        // Fallback: update locally
+        
         this.updatePantry(pantryId, patch)
         return patch
       } finally {
@@ -237,7 +237,7 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to delete pantry:', error)
         
-        // Fallback: delete locally
+        
         this.deletePantry(pantryId)
       } finally {
         this.loading = false
@@ -264,18 +264,18 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to create pantry item:', error)
         
-        // Don't create local fallback for 400 errors (bad request)
-        // Only create local fallback for network/server errors
+        
+        
         if (error.response && error.response.status === 400) {
           console.log('Bad request - not creating local fallback')
-          throw error // Re-throw to let the UI handle the error
+          throw error 
         }
         
-        // Fallback: add locally only for network/server errors
+        
         const newItem = {
           id: Date.now(),
           ...itemData,
-          quantity: parseInt(itemData.quantity), // Ensure quantity is a number
+          quantity: parseInt(itemData.quantity), 
           createdAt: new Date().toISOString()
         }
         this.addItem(newItem)
@@ -303,7 +303,7 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to update pantry item:', error)
         
-        // Fallback: update locally
+        
         this.updateItem(itemId, patch)
         return patch
       } finally {
@@ -328,7 +328,7 @@ export const usePantryStore = defineStore('pantry', {
         this.error = error.message
         console.error('Failed to delete pantry item:', error)
         
-        // Fallback: delete locally
+        
         this.deleteItem(itemId)
       } finally {
         this.loading = false
@@ -337,9 +337,9 @@ export const usePantryStore = defineStore('pantry', {
 
     async sharePantryRemote(pantryId, email) {
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.sharePantry(pantryId, { email })
-        // return response.data || response
+        
+        
+        
         
         console.log('Pantry share API - commented out until API is enabled')
         return { success: true, message: 'Pantry shared successfully' }
@@ -351,9 +351,9 @@ export const usePantryStore = defineStore('pantry', {
 
     async getPantrySharesRemote(pantryId) {
       try {
-        // TODO: Uncomment when API is enabled
-        // const response = await pantryApi.getPantryShares(pantryId)
-        // return response.data || response
+        
+        
+        
         
         console.log('Pantry shares API - commented out until API is enabled')
         return []
@@ -365,8 +365,8 @@ export const usePantryStore = defineStore('pantry', {
 
     async revokePantryShareRemote(pantryId, userId) {
       try {
-        // TODO: Uncomment when API is enabled
-        // await pantryApi.revokePantryShare(pantryId, userId)
+        
+        
         
         console.log('Pantry share revoke API - commented out until API is enabled')
         return { success: true, message: 'Access revoked successfully' }
@@ -376,7 +376,7 @@ export const usePantryStore = defineStore('pantry', {
       }
     },
 
-    // Sync method to refresh data from API
+    
     async sync() {
       await this.fetchPantriesRemote()
       if (this.currentPantryId) {
@@ -384,7 +384,7 @@ export const usePantryStore = defineStore('pantry', {
       }
     },
 
-    // Clear pantry data for current user (useful when logging out)
+    
     clearUserData() {
       this.pantries = []
       this.currentPantryId = null
@@ -393,7 +393,7 @@ export const usePantryStore = defineStore('pantry', {
       this.error = null
       this.lastSync = null
       
-      // Clear localStorage for current user
+      
       try {
         const storageKey = getStorageKey()
         localStorage.removeItem(storageKey)

@@ -1,29 +1,16 @@
 <template>
   <div class="history-page">
     <v-container>
-      <!-- Page Header -->
+      
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
-          Historial
+          {{ t('pages.history.title') }}
         </h1>
         
-        <div class="search-wrapper">
-          <v-text-field
-            v-model="filterText"
-            placeholder="Buscar eventos..."
-            density="compact"
-            variant="outlined"
-            clearable
-            prepend-inner-icon="mdi-magnify"
-            hide-details
-          />
-        </div>
-
-        <!-- Empty space to match the layout of listas.vue -->
-        <div class="ml-4"></div>
+        
       </div>
 
-      <!-- Back Button -->
+      
       <div class="mb-4">
         <v-btn
           icon="mdi-arrow-left"
@@ -36,24 +23,24 @@
         </v-btn>
       </div>
 
-      <!-- Tabs -->
+      
       <v-tabs v-model="activeTab" class="mb-4">
-        <v-tab value="lists">Listas</v-tab>
-        <v-tab value="items">Productos</v-tab>
+        <v-tab value="lists">{{ t('pages.history.tabs.lists') }}</v-tab>
+        <v-tab value="items">{{ t('pages.history.tabs.items') }}</v-tab>
       </v-tabs>
 
-      <!-- Lists Tab -->
+      
       <div v-if="activeTab === 'lists'">
-        <!-- Empty State -->
+        
         <div v-if="listEvents.length === 0" class="empty-state-container">
           <EmptyState
             icon="mdi-format-list-bulleted"
-            title="No hay listas en el historial"
-            description="Las listas eliminadas aparecerán aquí"
+            :title="t('pages.history.lists.empty.title')"
+            :description="t('pages.history.lists.empty.description')"
           />
         </div>
 
-        <!-- Lists Grid -->
+        
         <div v-else class="history-grid mb-8">
           <ListCard
             v-for="ev in listEvents"
@@ -65,17 +52,17 @@
         </div>
       </div>
 
-      <!-- Items Tab -->
+      
       <div v-if="activeTab === 'items'">
-        <!-- Empty State -->
+        
         <EmptyState
           v-if="itemEvents.length === 0"
           icon="mdi-cart-outline"
-          title="No hay productos en el historial"
-          description="Los productos de listas eliminadas aparecerán aquí"
+          :title="t('pages.history.items.empty.title')"
+          :description="t('pages.history.items.empty.description')"
         />
 
-        <!-- Items Grid -->
+        
         <div v-else class="history-grid mb-8">
           <v-card
             v-for="ev in itemEvents"
@@ -93,7 +80,7 @@
                   {{ ev.data?.name || 'Producto sin nombre' }}
                 </div>
                 <div class="text-body-2 text-grey-darken-1">
-                  Lista: {{ getListName(ev) }}
+                  {{ t('pages.history.listLabel', { name: getListName(ev) }) }}
                 </div>
                 <div class="text-caption text-grey mt-1">
                   {{ formatDate(ev.ts) }}
@@ -104,7 +91,7 @@
         </div>
       </div>
 
-      <!-- Clear History Action -->
+      
       <div v-if="listEvents.length > 0" class="text-center mt-6">
         <v-btn
           color="#f44336"
@@ -113,45 +100,45 @@
           min-width="100"
           @click="clearHistory"
         >
-          Limpiar historial
+          {{ t('pages.history.clear') }}
         </v-btn>
       </div>
     </v-container>
 
-    <!-- Dialog for List Items -->
+    
     <DeletedListItemsDialog
       v-model="showListDialog"
       :list-name="selectedListName"
       :items="selectedListItems"
     />
 
-    <!-- Confirm Clear History Dialog -->
+    
     <div v-if="showClearConfirm" class="modal-overlay">
       <div class="modal delete-confirmation-modal">
-        <h2>Confirmar acción</h2>
+  <h2>{{ t('pages.history.confirm.title') }}</h2>
         
         <div class="confirmation-content">
           <p class="confirmation-text">
-            ¿Está seguro que desea borrar todo el historial? Esta acción no se puede deshacer.
+            {{ t('pages.history.confirm.message') }}
           </p>
         </div>
         
         <div class="modal-actions">
           <button type="button" class="btn btn--cancel" @click="showClearConfirm = false">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button
             type="button"
             class="btn btn--danger"
             @click="confirmClearHistory"
           >
-            Borrar
+            {{ t('common.delete') }}
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Snackbar for notifications -->
+    
     <v-snackbar
       v-model="snackbar"
       :timeout="3000"
@@ -208,7 +195,7 @@ const allEvents = computed(() => history.events || [])
 const listEvents = computed(() => {
   let events = allEvents.value.filter(e => e.type === 'list.delete')
   
-  // Apply text filter if present
+  
   if (filterText.value) {
     const q = filterText.value.toLowerCase()
     events = events.filter(e => 
@@ -217,7 +204,7 @@ const listEvents = computed(() => {
     )
   }
   
-  // Deduplicate: Keep only the most recent event for each unique resourceId
+  
   const uniqueListsMap = new Map()
   for (const event of events) {
     const key = event.resourceId || event.id
@@ -226,14 +213,14 @@ const listEvents = computed(() => {
     }
   }
   
-  // Convert back to array and sort by timestamp (most recent first)
+  
   return Array.from(uniqueListsMap.values()).sort((a, b) => b.ts - a.ts)
 })
 
 const itemEvents = computed(() => {
   let events = allEvents.value.filter(e => e.type === 'listItem.delete')
   
-  // Apply text filter if present
+  
   if (filterText.value) {
     const q = filterText.value.toLowerCase()
     events = events.filter(e => 
@@ -242,7 +229,7 @@ const itemEvents = computed(() => {
     )
   }
   
-  // Deduplicate: Keep only the most recent event for each unique resourceId
+  
   const uniqueItemsMap = new Map()
   for (const event of events) {
     const key = event.resourceId || event.id
@@ -251,7 +238,7 @@ const itemEvents = computed(() => {
     }
   }
   
-  // Convert back to array and sort by timestamp (most recent first)
+  
   return Array.from(uniqueItemsMap.values()).sort((a, b) => b.ts - a.ts)
 })
 
@@ -264,42 +251,42 @@ function formatDate(ts) {
 }
 
 function mapEventToList(ev) {
-  // Map history event to list format for ListCard
+  
   return {
     id: ev.resourceId || ev.id,
-    name: ev.data?.name || 'Lista sin nombre',
+  name: ev.data?.name || t('pages.history.unnamedList'),
     description: ev.data?.description || '',
-    image: ev.data?.image || ev.data?.metadata?.image || 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop',
+    image: ev.data?.image || ev.data?.metadata?.image || '',
     itemCount: ev.data?.itemCount || 0,
     completedItems: 0,
     lastUpdated: new Date(ev.ts),
-    recurring: false, // Always false for deleted lists
-    isDeleted: true // Mark as deleted for visual indication
+    recurring: false, 
+    isDeleted: true 
   }
 }
 
 function getListName(ev) {
-  // Try to get list name from event metadata
+  
   if (ev.data?.listName) return ev.data.listName
   if (ev.meta?.listName) return ev.meta.listName
-  if (ev.listId) return `Lista #${ev.listId}`
-  return 'Lista desconocida'
+  if (ev.listId) return t('pages.history.listNumber', { num: ev.listId })
+  return t('pages.history.unknownList')
 }
 
 function openListHistory(ev) {
-  // Find all items that belonged to this list
+  
   const listId = ev.resourceId || ev.id
   const listName = ev.data?.name || 'Lista sin nombre'
   
-  // Filter items from the same list
+  
   const itemsFromList = allEvents.value.filter(e => 
     e.type === 'listItem.delete' && 
     e.listId === listId
   )
   
   if (itemsFromList.length === 0) {
-    // Always show dialog, even if no items found
-    // The dialog will show appropriate empty state
+    
+    
     selectedListName.value = listName
     selectedListItems.value = []
     showListDialog.value = true
@@ -317,7 +304,7 @@ function clearHistory() {
 function confirmClearHistory() {
   history.clear()
   showClearConfirm.value = false
-  snackbarText.value = 'Historial borrado exitosamente'
+  snackbarText.value = t('pages.history.cleared')
   snackbar.value = true
 }
 
@@ -373,7 +360,7 @@ function confirmClearHistory() {
   }
 }
 
-/* Modal styles */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -457,7 +444,7 @@ function confirmClearHistory() {
   cursor: not-allowed;
 }
 
-/* Delete confirmation modal specific styles */
+
 .delete-confirmation-modal {
   max-width: 550px;
 }

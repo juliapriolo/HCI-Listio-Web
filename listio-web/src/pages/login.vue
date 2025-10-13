@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="login-container">
-    <!-- Left side with green background -->
+    
     <div class="login-left">
       <div class="logo"><h1>LISTIO</h1></div>
       <div class="illustrations">
@@ -17,7 +17,7 @@
       </div>
     </div>
 
-    <!-- Right side with form -->
+    
     <div class="login-right">
       <LoginCard
         :loading="loading"
@@ -31,7 +31,7 @@
       />
     </div>
 
-    <!-- Forgot password modal -->
+    
     <div v-if="showForgotPassword" class="modal-overlay">
       <div class="modal">
         <h2>{{ t('login.forgotPasswordModal.title') }}</h2>
@@ -65,7 +65,7 @@
           </form>
         </div>
 
-        <!-- Step 2: Enter code and new password -->
+        
         <div v-else>
           <p>{{ t('login.forgotPasswordModal.step2Description') }}</p>
           <form @submit.prevent="resetPassword">
@@ -107,7 +107,7 @@
       </div>
     </div>
 
-    <!-- Account verification modal -->
+    
     <div v-if="showVerificationModal" class="modal-overlay">
       <div class="modal">
         <h2>{{ t('login.verifyModal.title') }}</h2>

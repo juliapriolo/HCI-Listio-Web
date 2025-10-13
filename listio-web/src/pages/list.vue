@@ -1,6 +1,6 @@
 <template>
   <div class="lists-page">
-    <!-- Page Header -->
+    
     <v-container>
       <div class="d-flex align-center justify-space-between mb-6">
         <div>
@@ -9,7 +9,7 @@
           </h1>
           <p v-if="isSharedWithMe" class="shared-by">
             <v-icon size="16" class="mr-1" color="#1976d2">mdi-account-multiple</v-icon>
-            Compartida por {{ ownerLabel }}
+            {{ t('pages.lists.sharedBy', { name: ownerLabel }) }}
           </p>
         </div>
         
@@ -32,7 +32,7 @@
           
           <div v-if="filterDialog" class="modal-overlay">
             <div class="modal">
-              <h2>Filtrar Items</h2>
+              <h2>{{ t('pages.list.filters.title') }}</h2>
 
               <form @submit.prevent="applyFilters">
                 <div class="form-row">
@@ -43,57 +43,57 @@
                       v-model="filterCategoryDialog"
                       class="form-input"
                     >
-                      <option value="">Seleccione una categoría</option>
+                      <option value="">{{ t('common.selectCategory') }}</option>
                       <option
                         v-for="category in categoryStore.categories"
                         :key="category.id"
                         :value="category.id"
                       >
-                        {{ category.name }}
+                        {{ getCategoryDisplayName(category) }}
                       </option>
                     </select>
                   </div>
 
                   <div class="form-group">
-                    <label for="filterPurchasedDialog">Comprados</label>
+                    <label for="filterPurchasedDialog">{{ t('pages.list.filters.purchased') }}</label>
                     <select id="filterPurchasedDialog" v-model="filterPurchasedDialog" class="form-input">
-                      <option :value="true">Si</option>
-                      <option :value="false">No</option>
-                      <option :value="''">Todos</option>
+                      <option :value="true">{{ t('pages.list.filters.options.yes') }}</option>
+                      <option :value="false">{{ t('pages.list.filters.options.no') }}</option>
+                      <option :value="''">{{ t('pages.list.filters.options.all') }}</option>
                     </select>
                   </div>
                 </div>
 
                 <div class="modal-actions">
                   <button type="button" class="btn btn--cancel" @click="filterDialog = false">
-                    Cancelar
+                    {{ t('common.cancel') }}
                   </button>
                   <button type="button" class="btn btn--cancel" @click="resetFilters">
-                    Limpiar
+                    {{ t('pages.lists.filters.clear') || 'Limpiar' }}
                   </button>
                   <button
                     type="submit"
                     class="btn btn--primary"
                   >
-                    Guardar
+                    {{ t('common.save') }}
                   </button>
                 </div>
               </form>
             </div>
           </div>
 
-          <!-- Pantry Selection Dialog -->
+          
           <div v-if="pantrySelectionDialog" class="modal-overlay">
             <div class="modal pantry-selection-modal">
-              <h2>Agregar productos a la despensa</h2>
+              <h2>{{ t('pages.list.pantrySelection.title') }}</h2>
               
               <div class="pantry-selection-content">
                 <p class="pantry-selection-description">
-                  Selecciona los productos que quieres agregar a tu despensa para tener un registro de lo que tienes en casa.
+                  {{ t('pages.list.pantrySelection.description') }}
                 </p>
                 
                 <div class="pantry-selection">
-                  <h4>Productos comprados:</h4>
+                  <h4>{{ t('pages.list.pantrySelection.purchasedTitle') }}</h4>
                   <div class="products-selection">
                     <div
                       v-for="item in purchasedItems"
@@ -110,7 +110,7 @@
                         </v-avatar>
                         <div>
                           <span class="product-name">{{ item.name }}</span>
-                          <span class="product-quantity">{{ item.quantity || 1 }} {{ item.unit || 'g' }}</span>
+                          <span class="product-quantity">{{ item.quantity || 1 }} {{ unitLabel(item.unit) }}</span>
                         </div>
                       </div>
                       <v-checkbox
@@ -124,9 +124,9 @@
                   </div>
                   
                   <div v-if="selectedForPantry.length > 0" class="pantry-category-selection">
-                    <h4>Seleccionar categoría de despensa:</h4>
+                    <h4>{{ t('pages.list.pantrySelection.selectCategoryTitle') }}</h4>
                     <select v-model="selectedPantryCategory" class="form-input">
-                      <option value="">Seleccionar categoría...</option>
+                      <option value="">{{ t('pages.list.pantrySelection.categoryPlaceholder') }}</option>
                       <option
                         v-for="category in pantryCategories"
                         :key="category.id"
@@ -141,7 +141,7 @@
               
               <div class="modal-actions">
                 <button type="button" class="btn btn--cancel" @click="pantrySelectionDialog = false">
-                  Cancelar
+                  {{ t('common.cancel') }}
                 </button>
                 <button
                   type="button"
@@ -149,7 +149,7 @@
                   @click="confirmPantrySelection"
                   :disabled="selectedForPantry.length > 0 && !selectedPantryCategory"
                 >
-                  Agregar a despensa
+                  {{ t('pages.list.pantrySelection.addToPantry') }}
                 </button>
               </div>
             </div>
@@ -168,7 +168,7 @@
         </div>
       </div>
 
-      <!-- Back Button -->
+      
       <div class="mb-4">
         <v-btn
           icon="mdi-arrow-left"
@@ -181,14 +181,14 @@
         </v-btn>
       </div>
 
-      <!-- All Purchased Message -->
+      
       <div v-if="allItemsPurchased && items.length > 0" class="all-purchased-message mb-4">
         <div class="purchased-card">
           <div class="purchased-content">
             <v-icon color="success" size="32" class="success-icon">mdi-check-circle</v-icon>
             <div class="purchased-text">
-              <h3>¡Lista completada!</h3>
-              <p>Todos los productos han sido marcados como comprados.</p>
+              <h3>{{ t('pages.list.allPurchased.title') }}</h3>
+              <p>{{ t('pages.list.allPurchased.description') }}</p>
             </div>
           </div>
           <v-btn
@@ -198,12 +198,12 @@
             class="add-to-pantry-btn"
           >
             <v-icon left>mdi-plus</v-icon>
-            Agregar a despensa
+            {{ t('pages.list.allPurchased.addToPantry') }}
           </v-btn>
         </div>
       </div>
 
-      <!-- Shopping List -->
+      
       <div class="lists-grid mb-8">
         <div class="list">
           <ul class="list-items">
@@ -211,7 +211,7 @@
               <div 
                 class="list-row" 
                 >
-                <!-- Dynamic category icon -->
+                
                 <v-avatar size="40" :color="getCategoryColor(item.categoryId)" class="mr-3">
                   <v-icon :color="isDarkColor(getCategoryColor(item.categoryId)) ? 'white' : 'black'">
                     {{ getCategoryIcon(item.categoryId) }}
@@ -220,7 +220,7 @@
 
                 <div>
                   <h3 class="item-descr">{{ item.name }}</h3>
-                  <p class="text-caption text-grey-darken-2">{{ item.quantity || 1 }} {{ item.unit || 'g' }}</p>
+                  <p class="text-caption text-grey-darken-2">{{ item.quantity || 1 }} {{ unitLabel(item.unit) }}</p>
                 </div>
 
                 <div class="item-buttons">
@@ -251,7 +251,7 @@
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                         </svg>
-                        <span>Editar</span>
+                        <span>{{ t('common.edit') }}</span>
                       </div>
                       <div class="menu-item delete-item" @click="deleteItem(item)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f44336" stroke-width="2">
@@ -260,7 +260,7 @@
                           <line x1="10" y1="11" x2="10" y2="17"/>
                           <line x1="14" y1="11" x2="14" y2="17"/>
                         </svg>
-                        <span>Eliminar</span>
+                        <span>{{ t('common.delete') }}</span>
                       </div>
                     </div>
                   </div>
@@ -272,7 +272,7 @@
         </div>
       </div>
 
-      <!-- Empty States -->
+      
       <EmptyState
         v-if="filteredItems.length === 0 && !searchQuery"
         icon="mdi-format-list-bulleted"
@@ -288,7 +288,7 @@
       />
     </v-container>
 
-    <!-- Floating Action Button -->
+    
     <v-btn
       color="success"
       size="large"
@@ -300,7 +300,7 @@
       <v-icon size="24">mdi-plus</v-icon>
     </v-btn>
 
-    <!-- Dialogs -->
+    
     <NewItemDialog
       v-model="newItemDialog"
       v-model:form-data="newItemForm"
@@ -312,12 +312,12 @@
       @cancel="newItemDialog = false"
     />
 
-    <!-- Item Edit Dialog -->
+    
     <div v-if="itemMenuDialog" class="modal-overlay">
       <div class="modal item-edit-modal">
-        <h2>Editar Producto</h2>
+        <h2>{{ t('pages.products.modals.edit.title') }}</h2>
         
-        <!-- Mostrar información del producto (solo lectura) -->
+        
         <div v-if="selectedItem" class="product-info">
           <h3>{{ selectedItem.name }}</h3>
           <p v-if="selectedItem.product?.metadata?.description">{{ selectedItem.product.metadata.description }}</p>
@@ -326,7 +326,7 @@
         <form @submit.prevent="saveItemEdit">
           <div class="form-row">
             <div class="form-group">
-              <label for="editItemQuantity">Cantidad</label>
+              <label for="editItemQuantity">{{ t('pages.pantry.editProduct.quantityLabel') }}</label>
               <input
                 id="editItemQuantity"
                 v-model="editItemQuantity"
@@ -337,35 +337,35 @@
               />
             </div>
             <div class="form-group">
-              <label for="editItemUnit">Unidad</label>
+              <label for="editItemUnit">{{ t('pages.pantry.editProduct.unitLabel') }}</label>
               <select id="editItemUnit" v-model="editItemUnit" class="form-input">
-                <option value="unidad">Unidad</option>
-                <option value="kg">Kilogramo</option>
-                <option value="g">Gramo</option>
-                <option value="l">Litro</option>
-                <option value="ml">Mililitro</option>
-                <option value="paquete">Paquete</option>
-                <option value="caja">Caja</option>
+                <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
+                <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
+                <option value="g">{{ t('pages.pantry.units.g') }}</option>
+                <option value="l">{{ t('pages.pantry.units.l') }}</option>
+                <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
+                <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
+                <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
               </select>
             </div>
           </div>
           
           <div class="modal-actions">
             <button type="button" class="btn btn--cancel" @click="itemMenuDialog = false">
-              Cancelar
+              {{ t('common.cancel') }}
             </button>
             <button
               type="submit"
               class="btn btn--primary"
             >
-              Guardar
+              {{ t('common.save') }}
             </button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Share List Dialog -->
+    
     <div v-if="shareListDialog" class="modal-overlay">
       <div class="modal list-modal">
         <h2>{{ t('pages.lists.share.title') || 'Compartir lista' }}</h2>
@@ -398,7 +398,7 @@
           </div>
         </form>
 
-        <!-- Current shared users -->
+        
         <div class="shared-users-section">
           <h3 class="section-title">{{ t('pages.lists.share.currentAccess') || 'Acceso actual' }}</h3>
           <div v-if="isLoadingSharedUsers" class="text-center py-4">
@@ -422,12 +422,12 @@
       </div>
     </div>
 
-    <!-- Product Selection Dialog -->
+    
     <div v-if="productSelectionDialog" class="modal-overlay">
       <div class="modal product-selection-modal">
   <h2>{{ t('pages.pantry.productSelection.title') || t('pages.list.productSelection.title') }}</h2>
 
-        <!-- Search and quick create toggle -->
+        
         <div class="form-row" style="align-items: end; margin-bottom: 12px;">
           <div class="form-group" style="flex:2">
             <label for="productSearch">{{ t('pages.list.productSelection.searchLabel') }}</label>
@@ -439,7 +439,7 @@
           </div>
         </div>
 
-        <!-- Products list or empty state -->
+        
         <div v-if="!creatingNewProduct">
           <div v-if="filteredAvailableProducts.length === 0" class="empty-state">
             <div class="empty-icon">
@@ -505,20 +505,20 @@
               <div class="form-group">
                 <label for="productUnit">{{ t('pages.list.productSelection.createForm.unitLabel') || 'Unidad' }}</label>
                 <select id="productUnit" v-model="productUnit" class="form-input">
-                  <option value="unidad">Unidad</option>
-                  <option value="kg">Kilogramo</option>
-                  <option value="g">Gramo</option>
-                  <option value="l">Litro</option>
-                  <option value="ml">Mililitro</option>
-                  <option value="paquete">Paquete</option>
-                  <option value="caja">Caja</option>
+                  <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
+                  <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
+                  <option value="g">{{ t('pages.pantry.units.g') }}</option>
+                  <option value="l">{{ t('pages.pantry.units.l') }}</option>
+                  <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
+                  <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
+                  <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
                 </select>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Create new product form -->
+        
         <div v-else class="product-details">
           <div class="divider"></div>
           <h4 class="details-title">{{ t('pages.list.productSelection.createForm.title') }}</h4>
@@ -552,13 +552,13 @@
               <div class="form-group">
                 <label for="newProdUnit">{{ t('pages.list.productSelection.createForm.unitLabel') }}</label>
                 <select id="newProdUnit" v-model="productUnit" class="form-input">
-                  <option value="unidad">Unidad</option>
-                  <option value="kg">Kilogramo</option>
-                  <option value="g">Gramo</option>
-                  <option value="l">Litro</option>
-                  <option value="ml">Mililitro</option>
-                  <option value="paquete">Paquete</option>
-                  <option value="caja">Caja</option>
+                  <option value="unidad">{{ t('pages.pantry.units.unidad') }}</option>
+                  <option value="kg">{{ t('pages.pantry.units.kg') }}</option>
+                  <option value="g">{{ t('pages.pantry.units.g') }}</option>
+                  <option value="l">{{ t('pages.pantry.units.l') }}</option>
+                  <option value="ml">{{ t('pages.pantry.units.ml') }}</option>
+                  <option value="paquete">{{ t('pages.pantry.units.paquete') }}</option>
+                  <option value="caja">{{ t('pages.pantry.units.caja') }}</option>
                 </select>
               </div>
             </div>
@@ -608,16 +608,18 @@ import SearchBar from '@/components/SearchBar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import NewItemDialog from '@/components/NewItemDialog.vue'
 import { useUserStore } from '@/stores/user'
+import { useCategoryI18n } from '@/composables/useCategoryI18n'
 
 const { t } = useLanguage()
-// Use listItems store for per-list persistence
+const { getCategoryDisplayName } = useCategoryI18n()
+
 const route = useRoute()
 const listItemsStore = useListItemsStore()
 const listsStore = useListsStore()
 const productStore = useProductStore()
 const categoryStore = useCategoryStore()
 
-// Bulk purchase functionality
+
 const pantrySelectionDialog = ref(false)
 const selectedForPantry = ref([])
 const selectedPantryCategory = ref('')
@@ -663,13 +665,13 @@ const currentListName = computed(() => {
   const id = route.query.id || null
   const listId = id ? (Number(id) || id) : null
   const list = listId ? listsStore.getById(listId) : null
-  return list ? `Lista: ${list.name}` : 'My List'
+  return list ? t('pages.lists.detailTitle', { name: list.name }) : 'List'
 })
 
 onMounted(async () => await loadForRoute())
 watch(() => route.fullPath, async () => await loadForRoute())
 onBeforeUnmount(() => {
-  // stop storage event listening when component unmounts
+  
   try { listItemsStore.stopListening() } catch (e) {}
 })
 
@@ -683,7 +685,7 @@ const selectedProduct = ref(null)
 const productQuantity = ref(1)
 const productUnit = ref('g')
 const activeItemMenu = ref(null)
-// Product selection helpers
+
 const productSearchQuery = ref('')
 const creatingNewProduct = ref(false)
 const creatingNewProductLoading = ref(false)
@@ -693,7 +695,7 @@ const newProductForm = ref({ name: '', description: '', category: '', newCategor
 const editItemQuantity = ref(1)
 const editItemUnit = ref('unidad')
 
-// Share modal state
+
 const shareEmail = ref('')
 const sharedUsers = ref([])
 const isLoadingSharedUsers = ref(false)
@@ -746,14 +748,14 @@ const ownerLabel = computed(() => {
   const inviter = getSharedByInfo(l)
   if (inviter) {
     const name = [inviter.name, inviter.surname].filter(Boolean).join(' ').trim()
-    return name || inviter.email || inviter.username || 'alguien'
+    return name || inviter.email || inviter.username || t('pages.lists.ownerFallback')
   }
   const info = getOwnerInfo(l)
   if (info) {
     const name = [info.name, info.surname].filter(Boolean).join(' ').trim()
-    return name || info.email || info.username || 'el propietario'
+    return name || info.email || info.username || t('pages.lists.theOwner')
   }
-  return 'el propietario'
+  return t('pages.lists.theOwner')
 })
 
 const newItemForm = ref({
@@ -789,18 +791,18 @@ const isShareEmailValid = computed(() => {
   return emailRegex.test(shareEmail.value.trim())
 })
 
-// Computed
+
 const filteredItems = computed(() => {
   let list = items.value || []
   console.log('Filtros',filters)
 
-  //Filtro por categoría
+  
   if (filters.value.categoryId) {
     const wantedId = Number(filters.value.categoryId)
     list = list.filter(i => Number(i?.product?.category?.id) === wantedId)
   }
 
-  //Filtro por estado "purchased"
+  
   if (filters.value.onlyPurchased === true) {
     list = list.filter(i => i.purchased === true)
   } else if (filters.value.onlyPurchased === false) {
@@ -811,7 +813,7 @@ const filteredItems = computed(() => {
   return list
 })
 
-// Helper functions for category icons
+
 const getCategoryIcon = (categoryId) => {
   if (!categoryId) return 'mdi-package-variant'
   return categoryStore.getIconById(categoryId)
@@ -823,7 +825,7 @@ const getCategoryColor = (categoryId) => {
 }
 
 const isDarkColor = (hexColor) => {
-  // Convert hex to RGB and calculate luminance
+  
   const hex = hexColor.replace('#', '')
   const r = parseInt(hex.substr(0, 2), 16)
   const g = parseInt(hex.substr(2, 2), 16)
@@ -832,7 +834,30 @@ const isDarkColor = (hexColor) => {
   return luminance < 0.5
 }
 
-// Métodos
+// Localize unit labels
+const unitLabel = (unit) => {
+  const key = (unit || '').toString().toLowerCase()
+  switch (key) {
+    case 'unidad':
+      return t('pages.pantry.units.unidad')
+    case 'kg':
+      return t('pages.pantry.units.kg')
+    case 'g':
+      return t('pages.pantry.units.g')
+    case 'l':
+      return t('pages.pantry.units.l')
+    case 'ml':
+      return t('pages.pantry.units.ml')
+    case 'paquete':
+      return t('pages.pantry.units.paquete')
+    case 'caja':
+      return t('pages.pantry.units.caja')
+    default:
+      return unit || t('pages.pantry.units.unidad')
+  }
+}
+
+
 const openNewItemDialog = () => {
   newItemForm.value = { name: '', description: '' }
   newItemDialog.value = true
@@ -878,19 +903,19 @@ const saveItemEdit = async () => {
   if (!selectedItem.value) return
   
   try {
-    // Crear payload según el formato requerido
+    
     const payload = {
       quantity: parseInt(editItemQuantity.value),
       unit: editItemUnit.value,
       metadata: {}
     }
     
-    // Actualizar en el servidor usando el endpoint correcto
+    
     await listItemsStore.updateRemote(selectedItem.value.id, payload)
     console.log('Item actualizado en el servidor:', selectedItem.value.name)
   } catch (error) {
     console.error('Error al actualizar item en el servidor:', error)
-    // Fallback: actualizar localmente si falla el servidor (sin cambiar el nombre)
+    
     const updatedItem = {
       ...selectedItem.value,
       quantity: parseInt(editItemQuantity.value),
@@ -903,19 +928,19 @@ const saveItemEdit = async () => {
 
 const updateItem = async (updated) => {
   try {
-    // Crear payload según el formato requerido
+    
     const payload = {
       quantity: parseInt(updated.quantity) || 1,
       unit: updated.unit || 'unidad',
       metadata: {}
     }
     
-    // Actualizar en el servidor usando el endpoint correcto
+    
     await listItemsStore.updateRemote(updated.id, payload)
     console.log('Item actualizado en el servidor:', updated.name)
   } catch (error) {
     console.error('Error al actualizar item en el servidor:', error)
-    // Fallback: actualizar localmente si falla el servidor
+    
     listItemsStore.updateItem(updated.id, updated)
   }
   itemMenuDialog.value = false
@@ -923,12 +948,12 @@ const updateItem = async (updated) => {
 
 const deleteItem = async (item) => {
   try {
-    // Eliminar del servidor usando el endpoint correcto
+    
     await listItemsStore.deleteRemote(item.id)
     console.log('Item eliminado del servidor:', item.name)
   } catch (error) {
     console.error('Error al eliminar item del servidor:', error)
-    // Fallback: eliminar localmente si falla el servidor
+    
     listItemsStore.deleteItem(item.id)
   }
   itemMenuDialog.value = false
@@ -960,7 +985,7 @@ const shareListWithEmail = async () => {
     if (error?.status === 404 || code === 'user_not_found' || /user.*not.*found|usuario.*no.*existe/i.test(message)) {
       shareEmailServerError.value = t('pages.lists.share.userNotFound') || 'Ese email no pertenece a un usuario registrado'
     } else {
-      // Generic error fallback
+      
       shareEmailServerError.value = t('pages.lists.share.error') || 'No se pudo compartir la lista'
     }
   } finally {
@@ -1023,9 +1048,9 @@ const openProductSelectionDialog = async () => {
       
       // Only fetch categories if needed, don't call init() to avoid re-creating defaults
       if (needsCategories) {
-        // First try to load from localStorage
+        
         categoryStore.load()
-        // If still empty or only has local defaults, fetch from server
+        
         if (!categoryStore.categories?.length || 
             categoryStore.categories.every(c => typeof c.id === 'string')) {
           promises.push(categoryStore.fetchRemote())
@@ -1040,8 +1065,8 @@ const openProductSelectionDialog = async () => {
       console.error('Error al cargar productos o categorías:', error)
     }
   } else {
-    // 🔹 Refresca productos sin bloquear el diálogo
-    // Don't refresh categories here to avoid unnecessary API calls
+    
+    
     Promise.allSettled([
       productStore.fetchRemote(),
     ])
@@ -1059,7 +1084,7 @@ const addSelectedProductToList = async () => {
   }
   
   try {
-    // Crear payload según el nuevo formato requerido
+    
     const payload = {
       product: {
         id: selectedProduct.value.id
@@ -1069,10 +1094,10 @@ const addSelectedProductToList = async () => {
       metadata: {}
     }
     
-    // Usar el store de listItems para agregar el producto
+    
     await listItemsStore.createRemote(payload)
     
-    // Refrescar la lista para mostrar el nuevo producto inmediatamente
+    
     await listItemsStore.fetchRemote()
     
     productSelectionDialog.value = false
@@ -1085,26 +1110,26 @@ const addSelectedProductToList = async () => {
   }
 }
 
-// Start create-new flow and prefill name from current search
+
 const startCreateNewProduct = () => {
   creatingNewProduct.value = true
   if (!newProductForm.value.name && productSearchQuery.value) {
     newProductForm.value.name = productSearchQuery.value.trim()
   }
-  // focus name input on next tick
+  
   nextTick(() => {
     const el = document.getElementById('newProductName')
     if (el) el.focus()
   })
 }
 
-// Item menu functions
+
 const toggleItemMenu = (itemId, event) => {
   if (activeItemMenu.value === itemId) {
     activeItemMenu.value = null
   } else {
     activeItemMenu.value = itemId
-    // Calculate position for fixed dropdown
+    
     nextTick(() => {
       const button = event.target.closest('.menu-button')
       const dropdown = document.querySelector('.menu-dropdown')
@@ -1123,7 +1148,7 @@ const hideItemMenu = () => {
   }, 150)
 }
 
-// Filter available products by search query
+
 const filteredAvailableProducts = computed(() => {
   const list = availableProducts.value || []
   const q = (productSearchQuery.value || '').trim().toLowerCase()
@@ -1154,20 +1179,20 @@ const createAndAddNewProduct = async () => {
       metadata: {}
     }
     listItemsStore.addItem(optimisticItem, { remote: false })
-    // Close dialog right away for perceived performance
+    
     productSelectionDialog.value = false
 
-    // Ensure categories are available - load from localStorage or server
+    
     if (!categoryStore.categories || categoryStore.categories.length === 0) {
       categoryStore.load()
-      // If still empty or only local defaults, fetch from server
+      
       if (!categoryStore.categories?.length || 
           categoryStore.categories.every(c => typeof c.id === 'string')) {
-        try { await categoryStore.fetchRemote() } catch (e) { /* ignore */ }
+        try { await categoryStore.fetchRemote() } catch (e) {  }
       }
     }
 
-    // Create category if needed
+    
     let categoryToUse = newProductForm.value.category
     if (categoryToUse === '__new__') {
       const name = (newProductForm.value.newCategoryName || '').trim()
@@ -1199,15 +1224,15 @@ const createAndAddNewProduct = async () => {
       try {
         await listItemsStore.createRemote(liPayload)
       } catch (e) {
-        // If server add fails, remove optimistic item and rethrow
+        
         listItemsStore.deleteItem(tempId, { remote: false })
         throw e
       }
-      // Refresh from server to reconcile ids and product info
+      
       await listItemsStore.fetchRemote()
     }
 
-    // 3) Reset local state
+    
     creatingNewProduct.value = false
     newProductForm.value = { name: '', description: '', category: '', newCategoryName: '' }
     selectedProduct.value = null
@@ -1215,19 +1240,19 @@ const createAndAddNewProduct = async () => {
     productUnit.value = 'unidad'
   } catch (e) {
     console.error('Error creando y agregando producto:', e)
-    // Rollback optimistic add if still present
+    
     try {
-      // If item with tempId exists, remove it
+      
       const exists = (listItemsStore.items || []).some(i => i.id === tempId)
       if (exists) listItemsStore.deleteItem(tempId, { remote: false })
-    } catch (er) { /* ignore */ }
+    } catch (er) {  }
   } finally {
     creatingNewProductLoading.value = false
   }
 }
 
 const goBackToLists = () => {
-  // Navigate back to the lists page
+  
   window.history.back()
 }
 
@@ -1274,7 +1299,7 @@ const openPantrySelectionDialog = async () => {
     pantryCategories.value = []
   }
   
-  // Reset selections
+  
   selectedForPantry.value = []
   selectedPantryCategory.value = ''
   pantrySelectionDialog.value = true
@@ -1301,7 +1326,7 @@ const confirmPantrySelection = async () => {
     
   } catch (error) {
     console.error('Error al agregar productos a la despensa:', error)
-    alert('Error al agregar productos a la despensa. Inténtalo de nuevo.')
+    alert(t('pages.pantry.messages.updateError'))
   }
 }
 
@@ -1335,7 +1360,7 @@ const addSelectedItemsToPantry = async () => {
     
   } catch (error) {
     console.error('Error al agregar productos a la despensa:', error)
-    throw error // Re-throw to be handled by the calling function
+    throw error 
   }
 }
 </script>
@@ -1419,7 +1444,7 @@ const addSelectedItemsToPantry = async () => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  flex: 1; /* Ocupar todo el espacio restante */
+  flex: 1; 
   gap: 8px;
 }
 .action-btn {
@@ -1458,7 +1483,7 @@ const addSelectedItemsToPantry = async () => {
   }
 }
 
-/* Minimal modal styles reused from listas page */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1532,7 +1557,7 @@ const addSelectedItemsToPantry = async () => {
 .user-email { color: #555; }
 .revoke-btn { flex: 0 0 auto; padding: 6px 12px; }
 
-/* Product Selection Dialog Styles */
+
 .product-selection-modal {
   max-width: 800px;
   max-height: 80vh;
@@ -1702,7 +1727,7 @@ const addSelectedItemsToPantry = async () => {
   cursor: pointer;
 }
 
-/* Item menu styles */
+
 .item-menu {
   position: relative;
   z-index: 1000;
@@ -1771,7 +1796,7 @@ const addSelectedItemsToPantry = async () => {
   flex: 1;
 }
 
-/* Modal styles */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -1838,12 +1863,12 @@ const addSelectedItemsToPantry = async () => {
   background: #45a049;
 }
 
-/* Back button styles */
+
 .back-btn {
   margin-bottom: 16px;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .products-grid {
     grid-template-columns: 1fr;
@@ -1861,7 +1886,7 @@ const addSelectedItemsToPantry = async () => {
   color: black;
 }
 
-/* All purchased message styles */
+
 .all-purchased-message {
   display: flex;
   justify-content: center;
@@ -1995,7 +2020,7 @@ const addSelectedItemsToPantry = async () => {
   margin: 0 0 12px 0;
 }
 
-/* Responsive adjustments for pantry selection */
+
 @media (max-width: 768px) {
   .purchased-card {
     flex-direction: column;

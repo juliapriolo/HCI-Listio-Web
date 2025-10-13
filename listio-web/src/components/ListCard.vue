@@ -5,7 +5,7 @@
     elevation="2"
   >
     <div class="list-content" @click="$emit('click')">
-      <!-- Recurring indicator -->
+      
       <div v-if="list.recurring" class="recurring-indicator">
         <v-icon size="20" color="#4CAF50">mdi-heart</v-icon>
       </div>
@@ -22,25 +22,25 @@
       </div>
       <div class="list-info">
         <h3 class="list-title">{{ list.name }}</h3>
-        <!-- Shared indicator -->
+        
         <p v-if="isSharedWithMe" class="shared-by">
           <v-icon size="16" class="mr-1" color="#1976d2">mdi-account-multiple</v-icon>
-          Compartida por {{ ownerLabel }}
+          {{ t('pages.lists.sharedBy', { name: ownerLabel }) }}
         </p>
         <p v-if="list.description" class="list-description">{{ list.description }}</p>
         <div class="list-details">
-          <span class="item-count">{{ list.itemCount || 0 }} productos</span>
+          <span class="item-count">{{ t('pages.lists.card.items', { count: list.itemCount || 0 }) }}</span>
           <span v-if="list.completedItems && list.itemCount" class="progress-info">
-            {{ Math.round((list.completedItems / list.itemCount) * 100) }}% completado
+            {{ t('pages.lists.card.completed', { percent: Math.round((list.completedItems / list.itemCount) * 100) }) }}
           </span>
         </div>
         <p v-if="list.lastUpdated" class="last-updated">
-          Actualizada {{ formatDate(list.lastUpdated) }}
+          {{ t('pages.lists.card.updated', { when: formatRelative(list.lastUpdated) }) }}
         </p>
       </div>
     </div>
     
-    <!-- Menu Button -->
+    
     <div v-if="!hideActions" class="list-menu">
       <button 
         class="menu-button"
@@ -100,7 +100,7 @@ const props = defineProps({
     type: Object,
     required: true,
     validator: (list) => {
-      // Require a name and id; image is optional
+      
       return !!(list && list.name && (list.id !== undefined && list.id !== null))
     }
   },
@@ -117,7 +117,7 @@ const userStore = useUserStore()
 
 const showMenu = ref(false)
 
-// Get image from metadata.image or fallback to list.image
+
 const listImage = computed(() => {
   return props.list.metadata?.image || props.list.image || ''
 })
@@ -142,7 +142,7 @@ const handleMenuAction = (action, listId) => {
     if (action === 'edit') {
       emit('edit', listId)
     } else if (action === 'delete') {
-      // Always notify parent; parent decides whether to show snackbar or dialog
+      
       emit('delete', listId)
     } else if (action === 'share') {
       emit('share', listId)
@@ -150,35 +150,30 @@ const handleMenuAction = (action, listId) => {
   })
 }
 
-const formatDate = (date) => {
+const formatRelative = (date) => {
   if (!date) return ''
-  
   const now = new Date()
   const listDate = new Date(date)
   const diffDays = Math.floor((now - listDate) / (1000 * 60 * 60 * 24))
+  if (diffDays === 0) return t('pages.lists.card.relative.today')
+  if (diffDays === 1) return t('pages.lists.card.relative.yesterday')
+  if (diffDays < 7) return t('pages.lists.card.relative.daysAgo', { days: diffDays })
   
-  if (diffDays === 0) return 'hoy'
-  if (diffDays === 1) return 'ayer'
-  if (diffDays < 7) return `hace ${diffDays} días`
-  
-  return listDate.toLocaleDateString('es-ES', { 
-    day: 'numeric', 
-    month: 'short' 
-  })
+  return listDate.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
 }
 
-// --- Shared ownership helpers ---
+
 const currentUserId = computed(() => userStore?.profile?.id || null)
 
 function getOwnerId(l) {
-  // Try common owner fields
+  
   return (
     l?.ownerId ?? l?.owner_id ?? l?.owner?.id ?? l?.createdBy?.id ?? l?.created_by?.id ?? null
   )
 }
 
 function getSharedByInfo(l) {
-  // Prefer the inviter if present
+  
   return l?.sharedBy || l?.shared_by || null
 }
 
@@ -197,19 +192,19 @@ const isSharedWithMe = computed(() => {
 })
 
 const ownerLabel = computed(() => {
-  // Prefer showing who shared it with me
+  
   const inviter = getSharedByInfo(props.list)
   if (inviter) {
     const name = [inviter.name, inviter.surname].filter(Boolean).join(' ').trim()
     return name || inviter.email || inviter.username || 'alguien'
   }
-  // Fallback to list owner
+  
   const info = getOwnerInfo(props.list)
   if (info) {
     const name = [info.name, info.surname].filter(Boolean).join(' ').trim()
     return name || info.email || info.username || 'el propietario'
   }
-  // If we only know it's shared but lack details
+  
   return 'el propietario'
 })
 </script>
@@ -223,7 +218,7 @@ const ownerLabel = computed(() => {
   background-color: white;
   border: 0.5px solid #9e9e9e;
   box-shadow: none;
-  overflow: visible; /* ensure dropdown menu is not clipped by card */
+  overflow: visible; 
   z-index: 1;
 }
 
@@ -263,7 +258,7 @@ const ownerLabel = computed(() => {
   z-index: 10000;
 }
 
-/* Custom menu styles for lists */
+
 .menu-button {
   background: white;
   border: none;

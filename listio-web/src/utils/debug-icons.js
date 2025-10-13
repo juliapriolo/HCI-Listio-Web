@@ -1,14 +1,9 @@
-/**
- * Script de debug para diagnóstico de iconos
- * 
- * Ejecutar en la consola del navegador:
- * import('/src/utils/debug-icons.js').then(m => m.debugIcons())
- */
+
 
 export function debugIcons() {
   console.log('🔍 === DEBUG DE ICONOS ===\n')
   
-  // 1. Estado del localStorage
+  
   console.log('📦 1. LOCALSTORAGE')
   console.log('   Bandera defaults:', localStorage.getItem('listio:defaults-created:v1'))
   
@@ -26,9 +21,9 @@ export function debugIcons() {
     console.log('   ❌ No hay categorías en localStorage')
   }
   
-  // 2. Estado del Pinia Store
+  
   console.log('\n🏪 2. PINIA STORE')
-  // Acceder al store usando el patrón de Pinia
+  
   const app = document.querySelector('#app').__VUE_APP__
   if (app) {
     const pinia = app.config.globalProperties.$pinia
@@ -47,7 +42,7 @@ export function debugIcons() {
         })))
       }
       
-      // Test getter
+      
       console.log('\n   🧪 Test de getters:')
       const testIds = [1, 2, 'cat-fruits', 123]
       testIds.forEach(id => {
@@ -59,7 +54,7 @@ export function debugIcons() {
       console.log('   ❌ No se encontró categoryStore')
     }
     
-    // Check list items
+    
     const listItemsStore = Array.from(stores.values()).find(s => s.$id === 'listItems')
     if (listItemsStore && listItemsStore.items?.length > 0) {
       console.log(`\n📝 3. ITEMS DE LISTA (primeros 5)`)
@@ -74,7 +69,7 @@ export function debugIcons() {
     console.log('   ❌ No se pudo acceder a la app Vue')
   }
   
-  // 3. Verificar productos
+  
   console.log('\n📦 4. PRODUCTOS (si hay)')
   const productsRaw = localStorage.getItem('listio:products')
   if (productsRaw) {
@@ -95,7 +90,7 @@ export function debugIcons() {
   console.log('   ese es el problema. Las categorías deben tener IDs numéricos del servidor.')
 }
 
-// Exportar también versión async
+
 export async function debugIconsAsync() {
   await new Promise(resolve => setTimeout(resolve, 100))
   debugIcons()

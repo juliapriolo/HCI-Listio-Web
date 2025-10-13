@@ -93,6 +93,8 @@
 <script setup>
 import { useLanguage } from '@/composables/useLanguage'
 const { t } = useLanguage()
+import { useCategoryI18n } from '@/composables/useCategoryI18n'
+const { getCategoryDisplayName } = useCategoryI18n()
 import { computed, ref } from 'vue'
 import { getDefaultCategoryImageForProduct } from '@/utils/category-images'
 
@@ -134,19 +136,17 @@ const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000
 
 const imageSrc = computed(() => {
   const p = props.product || {}
-  // 1) product own image
+  
   const direct = p.image || p.metadata?.image || p.metadata?.imageUrl
   if (direct) return direct
-  // 2) category default image
+  
   const categoryImg = getDefaultCategoryImageForProduct(p)
   if (categoryImg) return categoryImg
-  // 3) final fallback svg
+  
   return defaultImage
 })
 
-const categoryName = computed(() => {
-  return props.product?.category?.name || t('common.noCategory')
-})
+const categoryName = computed(() => getCategoryDisplayName(props.product?.category))
 
 const getStockColor = (stock) => {
   if (stock === 0) return 'error'
@@ -169,7 +169,7 @@ const getStockText = (stock) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  position: relative; /* allow z-index to work */
+  position: relative; 
   z-index: 1;
 }
 
@@ -179,7 +179,7 @@ const getStockText = (stock) => {
 }
 
 .product-card.menu-open {
-  z-index: 1000; /* ensure dropdown stays above neighbor cards */
+  z-index: 1000; 
 }
 
 .category-chip {
@@ -188,7 +188,7 @@ const getStockText = (stock) => {
   left: 8px;
 }
 
-/* Custom menu styles */
+
 .actions-menu {
   position: relative;
   z-index: 100;

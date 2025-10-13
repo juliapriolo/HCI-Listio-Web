@@ -3,7 +3,7 @@ import api from './index'
 const PRODUCTS_BASE = '/api/products'
 
 export const productsApi = {
-  // Crear producto
+  
   add(data) {
     if (!data.category?.id) {
       throw new Error('El producto debe tener una categoría con id definido.')
@@ -16,7 +16,7 @@ export const productsApi = {
     return api.post(PRODUCTS_BASE, data).then(res => res.data)
   },
 
-  // Obtener todos los productos
+  
   getAll(params = {}) {
     if (params && Object.keys(params).length > 0) {
       const qs = new URLSearchParams()
@@ -31,12 +31,12 @@ export const productsApi = {
     return api.get(PRODUCTS_BASE)
   },
 
-  // Obtener por ID
+  
   getById(id) {
     return api.get(`${PRODUCTS_BASE}/${id}`)
   },
 
-  // Actualizar producto
+  
   update(id, data) {
     if (!data.category?.id) {
       throw new Error('El producto debe tener una categoría con id definido.')
@@ -49,12 +49,12 @@ export const productsApi = {
     return api.put(`${PRODUCTS_BASE}/${id}`, data).then(res => res.data)
   },
 
-  // Eliminar producto
+  
   remove(id) {
     return api.delete(`${PRODUCTS_BASE}/${id}`)
   },
 
-  // Buscar productos
+  
   search(query, params = {}) {
     const searchParams = {
       ...params,

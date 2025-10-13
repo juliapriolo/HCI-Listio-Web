@@ -45,7 +45,7 @@ export const useHistoryStore = defineStore('history', {
         window.addEventListener('storage', (ev) => {
           if (!ev.key) return
           if (ev.key === STORAGE_KEY) {
-            try { this.events = ev.newValue ? JSON.parse(ev.newValue) : [] } catch (e) { /* ignore */ }
+            try { this.events = ev.newValue ? JSON.parse(ev.newValue) : [] } catch (e) {  }
           }
         })
       }
@@ -66,20 +66,20 @@ export const useHistoryStore = defineStore('history', {
     },
 
     recordEvent(type, resource, resourceId = null, data = null, opts = {}) {
-      // Deduplication: Check if a similar event was recorded recently (within last 5 seconds)
+      
       const now = Date.now()
-      const recentDuplicateThreshold = 5000 // 5 seconds
+      const recentDuplicateThreshold = 5000 
       
       const isDuplicate = this.events.some(ev => {
-        // Check if event is recent
+        
         if (now - ev.ts > recentDuplicateThreshold) return false
         
-        // Check if it's the same type and resource
+        
         if (ev.type !== String(type)) return false
         if (ev.resource !== resource) return false
         if (String(ev.resourceId) !== String(resourceId)) return false
         
-        // For list deletes, also check the name to be extra sure
+        
         if (type === 'list.delete' && ev.data?.name !== data?.name) return false
         
         return true
@@ -155,7 +155,7 @@ export const useHistoryStore = defineStore('history', {
     },
 
     async syncToServer() {
-      // Placeholder: no backend endpoint yet for history sync.
+      
       return { ok: false, reason: 'not_implemented' }
     }
   }

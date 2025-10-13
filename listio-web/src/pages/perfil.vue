@@ -35,18 +35,18 @@ const handleLanguageChange = () => {
 }
 
 onMounted(async () => {
-  // Asegurar que los datos del usuario se carguen del localStorage
+  
   if (!userStore.token) {
     userStore.load()
   }
   
-  // Verificar nuevamente después de cargar
+  
   if (!userStore.token) {
     redirectToLogin()
     return
   }
 
-  // Si no tenemos perfil, intentar cargarlo
+  
   if (!userStore.profile) {
     try {
       await userStore.fetchProfile()
@@ -61,7 +61,7 @@ onMounted(async () => {
 <template>
   <main class="profile">
     <v-container>
-      <!-- Page Header -->
+      
       <div class="d-flex align-center justify-space-between mb-6">
         <h1 class="text-h4 font-weight-bold text-grey-darken-3">
           {{ t('profile.title') }}
@@ -207,7 +207,7 @@ onMounted(async () => {
   border-radius: 12px;
 }
 
-/* Botones grises por defecto con colores en hover */
+
 .profile__action-btn--edit {
   background-color: #f5f5f5 !important;
   color: #4CAF50 !important;

@@ -140,18 +140,18 @@ const changePassword = async () => {
 }
 
 onMounted(async () => {
-  // Asegurar que los datos del usuario se carguen del localStorage
+  
   if (!userStore.token) {
     userStore.load()
   }
   
-  // Verificar nuevamente después de cargar
+  
   if (!userStore.token) {
     redirectToLogin()
     return
   }
 
-  // Si no tenemos perfil, intentar cargarlo
+  
   if (!profile.value) {
     try {
       await userStore.fetchProfile()
@@ -165,7 +165,7 @@ onMounted(async () => {
 
 <template>
   <main class="edit-profile">
-    <!-- Header con flecha y título alineados -->
+    
     <div class="page-header">
       <v-btn
         icon="mdi-arrow-left"
@@ -180,7 +180,7 @@ onMounted(async () => {
       <div class="spacer"></div>
     </div>
 
-    <!-- Mensaje de éxito -->
+    
     <div v-if="showSuccessMessage" class="success-message">
       <div class="success-content">
         <div class="success-icon">✓</div>
@@ -193,7 +193,7 @@ onMounted(async () => {
 
     <form class="edit-profile__form" @submit.prevent="submitForm">
       <div class="form-container">
-        <!-- Foto de perfil centrada -->
+        
         <div class="avatar-section">
           <div class="avatar-container" @click="showAvatarModal = true">
             <img 
@@ -239,12 +239,12 @@ onMounted(async () => {
       </div>
     </form>
 
-    <!-- Modal de cambio de contraseña -->
+    
     <div v-if="showPasswordModal" class="modal-overlay">
       <div class="modal">
         <h2>{{ t('profile.changePassword') }}</h2>
         
-        <!-- Mensaje de éxito -->
+        
         <div v-if="showPasswordSuccessMessage" class="password-success-message">
           <div class="success-content">
             <div class="success-icon">✓</div>
@@ -255,7 +255,7 @@ onMounted(async () => {
           </div>
         </div>
         
-        <!-- Mensaje de error -->
+        
         <div v-if="showPasswordErrorMessage" class="password-error-text">
           {{ passwordErrorMessage }}
         </div>
@@ -277,7 +277,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Modal de cambio de avatar -->
+    
     <div v-if="showAvatarModal" class="modal-overlay">
       <div class="modal">
         <h2>{{ t('profile.changePhoto') }}</h2>
@@ -356,7 +356,7 @@ onMounted(async () => {
   box-shadow: none;
 }
 
-/* Header alineado */
+
 .page-header {
   display: flex;
   align-items: center;
@@ -366,7 +366,7 @@ onMounted(async () => {
 }
 
 .spacer {
-  width: 48px; /* Mismo ancho que el v-btn icon */
+  width: 48px; 
 }
 
 .back-btn {
@@ -382,7 +382,7 @@ onMounted(async () => {
   flex: 1;
 }
 
-/* Layout del formulario */
+
 .edit-profile__form {
   display: flex;
   justify-content: center;
@@ -407,7 +407,7 @@ onMounted(async () => {
   margin-bottom: 20px;
 }
 
-/* Sección de Avatar */
+
 .avatar-section {
   display: flex;
   flex-direction: column;
@@ -554,7 +554,7 @@ onMounted(async () => {
   background: #45A049;
 }
 
-/* Mensaje de éxito */
+
 .success-message {
   position: fixed;
   top: 20px;
@@ -610,7 +610,7 @@ onMounted(async () => {
   }
 }
 
-/* Estilos del modal de avatar */
+
 .avatar-modal-content {
   display: flex;
   flex-direction: column;
@@ -655,7 +655,7 @@ onMounted(async () => {
   justify-content: center;
 }
 
-/* File input styles consistent with other sections */
+
 .file-input {
   padding: 6px 12px;
   background-color: #f8f9fa;
@@ -704,7 +704,7 @@ onMounted(async () => {
   background: #45A049;
 }
 
-/* Image preview styles consistent with other sections */
+
 .image-preview {
   margin-top: 12px;
   display: flex;
@@ -720,7 +720,7 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Mensajes de contraseña */
+
 .password-success-message {
   margin-bottom: 20px;
 }
@@ -767,7 +767,7 @@ onMounted(async () => {
   text-align: center;
 }
 
-/* Responsive */
+
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;

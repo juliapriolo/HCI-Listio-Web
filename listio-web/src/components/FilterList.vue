@@ -10,14 +10,14 @@
       </v-card-title>
       
       <v-card-text>
-        <!-- Filtrar por nombre -->
+        
         <v-text-field
           :label="t('pages.lists.filters.name')"
           variant="outlined"
           v-model="localFilters.name"
         />
 
-        <!-- Filtrar por categoría -->
+        
         <v-select
           :label="t('pages.lists.filters.category')"
           variant="outlined"
@@ -68,21 +68,21 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'apply', 'cancel'])
 
-// Copia local de los filtros para no modificar los props directamente
+
 const localFilters = ref({ ...props.filters })
 
-// Mantener sincronizado al abrir el diálogo
+
 watch(() => props.modelValue, (open) => {
   if (open) localFilters.value = { ...props.filters }
 })
 
-// Aplicar filtros
+
 const handleApply = () => {
   emit('apply', { ...localFilters.value })
   emit('update:modelValue', false)
 }
 
-// Limpiar filtros
+
 const handleClear = () => {
   localFilters.value = { name: '', category: '' }
 }

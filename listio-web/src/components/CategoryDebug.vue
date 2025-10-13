@@ -174,7 +174,7 @@ const defaults = [
 const issues = computed(() => {
   const problems = []
   
-  // Comparar defaults con store
+  
   defaults.forEach(def => {
     const inStore = categoryStore.categories.find(c => 
       c.name?.toLowerCase() === def.name?.toLowerCase()
@@ -205,7 +205,7 @@ const issues = computed(() => {
     }
   })
   
-  // Comparar defaults con servidor
+  
   defaults.forEach(def => {
     const inServer = serverCategories.value.find(c => 
       c.name?.toLowerCase() === def.name?.toLowerCase()
@@ -250,7 +250,7 @@ async function runDiagnostic() {
   console.log('🔍 Ejecutando diagnóstico...')
   
   try {
-    // Fetch from server
+    
     const response = await categoriesApi.getAll()
     serverCategories.value = response.items || []
     

@@ -32,7 +32,7 @@
             Productos que estaban en esta lista ({{ items.length }}):
           </div>
 
-          <!-- Lista de productos con el mismo diseño que list.vue -->
+          
           <div class="list">
             <ul class="list-items">
               <li v-for="item in items" :key="item.id">

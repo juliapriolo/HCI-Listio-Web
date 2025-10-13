@@ -10,9 +10,9 @@
       </v-card-title>
       
       <v-card-text>
-        <!-- Dynamic Form Fields -->
+        
         <div v-for="field in fields" :key="field.key" class="mb-3">
-          <!-- Text Field -->
+          
           <v-text-field
             v-if="field.type === 'text' || field.type === 'number'"
             :model-value="formData[field.key]"
@@ -25,7 +25,7 @@
             @keyup.enter="handleSubmit"
           />
           
-          <!-- Date Field -->
+          
           <v-text-field
             v-else-if="field.type === 'date'"
             :model-value="formData[field.key]"
@@ -36,7 +36,7 @@
             :required="field.required"
           />
           
-          <!-- Select Field -->
+          
           <v-select
             v-else-if="field.type === 'select'"
             :model-value="formData[field.key]"
@@ -47,7 +47,7 @@
             :required="field.required"
           />
           
-          <!-- Textarea Field -->
+          
           <v-textarea
             v-else-if="field.type === 'textarea'"
             :model-value="formData[field.key]"
@@ -58,7 +58,7 @@
             rows="3"
           />
           
-          <!-- File Field -->
+          
           <div v-else-if="field.type === 'file'">
             <v-file-input
               :model-value="formData[field.key]"
@@ -165,10 +165,10 @@ const handleCancel = () => {
   emit('update:modelValue', false)
 }
 
-// Reset form when dialog closes
+
 watch(() => props.modelValue, (newValue) => {
   if (!newValue) {
-    // Optionally reset form data here
+    
     const resetData = {}
     props.fields.forEach(field => {
       resetData[field.key] = field.default || ''
@@ -179,5 +179,5 @@ watch(() => props.modelValue, (newValue) => {
 </script>
 
 <style scoped>
-/* Dialog-specific styles */
+
 </style>

@@ -194,10 +194,10 @@ const handleRegister = async () => {
     return
   }
 
-  // Client-side validation: password min length
+  
   if (!payload.password || payload.password.length < 6) {
     errors.value.password = t('register.passwordTooShort')
-    // Focus password field to help the user
+    
     try { document.getElementById('password')?.focus() } catch (e) {}
     return
   }
@@ -217,7 +217,7 @@ const handleRegister = async () => {
     }
     setRegisterFeedback('error', t('register.genericError'))
   } finally {
-    // Mantener loading si estamos redirigiendo; lo apagamos solo en error
+    
     if (router.currentRoute.value.path !== '/login') {
       registerLoading.value = false
     }
@@ -386,7 +386,7 @@ const handleRegister = async () => {
 }
 
 .error-slot {
-  min-height: 18px; /* reserva espacio para evitar saltos al mostrar errores */
+  min-height: 18px; 
 }
 
 .form-input:focus {
@@ -456,12 +456,12 @@ const handleRegister = async () => {
   .register-left {
     display: none;
   }
-/* Placeholders legibility */
+
 ::placeholder {
   color: #9aa0a6;
 }
 
-/* Align two-col fields better */
+
 .two-col .form-group {
   margin-bottom: 0;
 }
@@ -471,7 +471,7 @@ const handleRegister = async () => {
   }
 }
 
-/* Layout helpers */
+
 .form-row {
   display: flex;
   gap: 12px;

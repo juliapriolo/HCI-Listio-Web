@@ -1,5 +1,5 @@
 <template>
-  <!-- Dual-button selector for clarity: clicking ES sets Spanish, EN sets English -->
+  
   <div v-if="variant === 'button'" class="lang-toggle">
     <v-btn
       :variant="'text'"
@@ -21,7 +21,7 @@
     </v-btn>
   </div>
 
-  <!-- Compact custom variant keeps single-click toggle behavior -->
+  
   <button
     v-else
     :class="['language-switcher', customClass]"
@@ -74,7 +74,7 @@ const tooltip = computed(() =>
     : t('languageSwitcher.switchToSpanish')
 )
 
-// no icon to maximize legibility on colored backgrounds
+
 </script>
 
 <style scoped>
@@ -100,7 +100,7 @@ const tooltip = computed(() =>
   box-shadow: none !important;
 }
 .lang-btn.is-active {
-  background: rgba(0, 0, 0, 0.18) !important; /* subtle dark to avoid white blocks */
+  background: rgba(0, 0, 0, 0.18) !important; 
 }
 .lang-btn:hover:not(.is-active) {
   background: rgba(255, 255, 255, 0.16) !important;

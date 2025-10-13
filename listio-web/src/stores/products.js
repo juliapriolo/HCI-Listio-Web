@@ -29,17 +29,17 @@ function mapProduct(data) {
 export const useProductStore = defineStore('product', {
   state: () => ({
     products: [],
-    deletedProducts: [], // Productos ocultos/eliminados
+    deletedProducts: [], 
   }),
 
   getters: {
     getById: (state) => (id) => state.products.find((p) => p.id === id),
-    // Buscar también en productos eliminados
+    
     getByIdIncludingDeleted: (state) => (id) => {
       return state.products.find((p) => p.id === id) || 
              state.deletedProducts.find((p) => p.id === id)
     },
-    // Buscar por nombre (case insensitive)
+    
     getByName: (state) => (name) => {
       const lowerName = name.toLowerCase()
       return state.products.find((p) => p.name.toLowerCase() === lowerName) ||
@@ -48,13 +48,13 @@ export const useProductStore = defineStore('product', {
   },
 
   actions: {
-    // --- LOCAL ---
+    
     load() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY)
         const data = raw ? JSON.parse(raw) : { products: [], deletedProducts: [] }
         
-        // Soporte para formato antiguo (solo array)
+        
         if (Array.isArray(data)) {
           this.products = data
           this.deletedProducts = []
@@ -96,14 +96,14 @@ export const useProductStore = defineStore('product', {
     deleteLocal(id) {
       const idx = this.products.findIndex((p) => p.id === id)
       if (idx > -1) {
-        // Mover a deletedProducts en lugar de eliminar completamente
+        
         const product = this.products.splice(idx, 1)[0]
         this.deletedProducts.push(product)
         this.save()
       }
     },
 
-    // Restaurar producto eliminado (cuando se "crea" nuevamente)
+    
     restoreProduct(id) {
       const idx = this.deletedProducts.findIndex((p) => p.id === id)
       if (idx > -1) {
@@ -115,13 +115,13 @@ export const useProductStore = defineStore('product', {
       return null
     },
 
-    // Eliminar permanentemente productos que no tienen referencias
+    
     async cleanupDeletedProducts() {
       try {
         const { useHistoryStore } = await import('@/stores/history')
         const history = useHistoryStore()
         
-        // Filtrar productos que no tienen referencias en el historial
+        
         this.deletedProducts = this.deletedProducts.filter(product => {
           const hasReferences = history.events.some(ev => 
             ev.data?.productId === product.id || 
@@ -201,7 +201,7 @@ export const useProductStore = defineStore('product', {
             
             console.log('Producto ya existe en el servidor, intentando recuperarlo...')
             
-            // Primero intentar buscar en todos los productos (con includeDeleted si está disponible)
+            
             try {
               const allProductsResponse = await productsApi.getAll({ includeDeleted: true })
               const allProducts = Array.isArray(allProductsResponse.data) ? allProductsResponse.data : []
@@ -212,16 +212,16 @@ export const useProductStore = defineStore('product', {
               
               if (existingProduct) {
                 console.log('Producto encontrado:', existingProduct)
-                // Agregar a productos locales si no está
+                
                 if (!this.getById(existingProduct.id)) {
                   this.addLocal(existingProduct)
                 }
                 
-                // Actualizar con los nuevos datos
+                
                 try {
                   return await this.updateRemote(existingProduct.id, payload)
                 } catch (updateError) {
-                  // Si no se puede actualizar, devolver el existente
+                  
                   console.warn('No se pudo actualizar el producto existente:', updateError)
                   return existingProduct
                 }
@@ -230,7 +230,7 @@ export const useProductStore = defineStore('product', {
               console.warn('Error al buscar productos con includeDeleted:', searchError)
             }
             
-            // Si no se encontró, buscar sin includeDeleted
+            
             try {
               const searchResults = await this.searchRemote(payload.name)
               const existingProduct = searchResults.find(p => 
@@ -254,8 +254,8 @@ export const useProductStore = defineStore('product', {
               console.warn('Error al buscar producto:', searchError)
             }
             
-            // Si llegamos aquí, el producto existe pero está eliminado en el backend
-            // y no podemos accederlo. Crear un error más descriptivo.
+            
+            
             const error = new Error(
               `El producto "${payload.name}" ya existe en el sistema pero está eliminado. ` +
               `Por favor, use un nombre diferente o contacte al administrador para restaurar el producto.`
@@ -264,7 +264,7 @@ export const useProductStore = defineStore('product', {
             throw error
           }
           
-          // Si no es el error de duplicado, relanzar el error original
+          
           throw apiError
         }
       } catch (e) {
@@ -278,7 +278,7 @@ export const useProductStore = defineStore('product', {
         const updated = await productsApi.update(id, patch)
         if (updated && updated.id) {
           this.updateLocal(id, mapProduct(updated))
-          // Note: No need to record product updates in history - history is only for deleted items
+          
         }
         return updated
       } catch (e) {
@@ -289,17 +289,17 @@ export const useProductStore = defineStore('product', {
 
     async deleteRemote(id) {
       try {
-        // Obtener información del producto antes de eliminarlo
+        
         const product = this.getById(id)
         
         if (!product) {
           throw new Error('Producto no encontrado')
         }
         
-        // Verificar referencias en listItems
+        
         const references = await this.getProductReferences(id)
         
-        // Retornar información sobre las referencias para que la UI maneje la confirmación
+        
         return {
           product,
           references,
@@ -311,7 +311,7 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // Obtener todas las referencias a un producto en listas
+    
     async getProductReferences(productId) {
       try {
         const { useListsStore } = await import('@/stores/lists')
@@ -320,7 +320,7 @@ export const useProductStore = defineStore('product', {
         const listsStore = useListsStore()
         const references = []
         
-        // Revisar cada lista para encontrar items que referencien este producto
+        
         for (const list of listsStore.lists) {
           const listItemsStore = useListItemsStore()
           await listItemsStore.load(list.id)
@@ -346,7 +346,7 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // Eliminar producto y sus referencias
+    
     async forceDeleteRemote(id, deleteReferences = false) {
       try {
         const product = this.getById(id)
@@ -357,7 +357,7 @@ export const useProductStore = defineStore('product', {
         
         console.log(`🗑️ Eliminando producto ${product.name} (ID: ${id})`, { deleteReferences })
         
-        // Si se deben eliminar las referencias, hacerlo primero
+        
         if (deleteReferences) {
           const { useListItemsStore } = await import('@/stores/listItems')
           const references = await this.getProductReferences(id)
@@ -370,7 +370,7 @@ export const useProductStore = defineStore('product', {
             
             console.log(`  - Lista "${ref.listName}": ${ref.items.length} ítems`)
             
-            // Eliminar cada item que referencia este producto
+            
             for (const item of ref.items) {
               console.log(`    ✓ Eliminando ítem: ${item.name}`)
               listItemsStore.deleteItem(item.id, { remote: false })
@@ -378,12 +378,12 @@ export const useProductStore = defineStore('product', {
           }
         }
         
-        // Ahora eliminar el producto del backend
+        
         console.log(`🌐 Llamando a API para eliminar producto ${id}`)
         await productsApi.remove(id)
         console.log(`✅ Producto eliminado del backend`)
         
-        // Eliminar localmente
+        
         const idx = this.products.findIndex((p) => p.id === id)
         if (idx > -1) {
           this.products.splice(idx, 1)
@@ -391,7 +391,7 @@ export const useProductStore = defineStore('product', {
           console.log(`✅ Producto eliminado localmente`)
         }
         
-        // Registrar en historial
+        
         try {
           const { useHistoryStore } = await import('@/stores/history')
           const history = useHistoryStore()
@@ -413,7 +413,7 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // DEBUG ONLY: Eliminar todos los productos
+    
     async deleteAllProductsDebug() {
       try {
         console.log('🚨 DEBUG: Iniciando eliminación de TODOS los productos')
@@ -451,7 +451,7 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // Buscar productos
+    
     async searchRemote(query, params = {}) {
       try {
         const res = await productsApi.search(query, params)
@@ -463,15 +463,15 @@ export const useProductStore = defineStore('product', {
       }
     },
 
-    // --- INIT ---
+    
     async init() {
       this.load()
       try {
-        // Intentar cargar desde el servidor
+        
         await this.fetchRemote()
       } catch (e) {
         console.warn('No se pudo conectar con el servidor, usando datos locales')
-        // Si no hay productos locales, crear algunos de ejemplo
+        
         if (this.products.length === 0) {
           this.products = []
         }

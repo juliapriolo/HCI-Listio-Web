@@ -1,7 +1,7 @@
 <template>
   <div v-if="modelValue" class="modal-overlay">
     <div class="modal product-modal">
-      <h2 style="color: black;">Editar Producto</h2>
+  <h2 style="color: black;">{{ t('pages.products.modals.edit.title') }}</h2>
 
       <form @submit.prevent="handleSubmit">
         <div class="form-group">
@@ -11,7 +11,7 @@
             v-model="localData.name"
             type="text"
             class="form-input"
-            placeholder="Ingrese el nombre del producto"
+            :placeholder="t('pages.products.modals.common.namePlaceholder')"
             required
             autofocus
           />
@@ -26,24 +26,24 @@
               class="form-input"
               required
             >
-              <option value="">Seleccione una categoría</option>
+              <option value="">{{ t('pages.products.modals.common.categoryPlaceholder') }}</option>
               <option
                 v-for="category in categories"
                 :key="category.id"
                 :value="category"
               >
-                {{ category.name }}
+                {{ getCategoryDisplayName(category) }}
               </option>
-              <option value="__new__">+ Crear nueva categoría</option>
+              <option value="__new__">{{ t('pages.products.modals.common.newCategoryOption') }}</option>
             </select>
             
-            <!-- Campo para nueva categoría -->
+            
             <div v-if="localData.category === '__new__'" class="new-category-field">
               <input
                 v-model="localData.newCategoryName"
                 type="text"
                 class="form-input"
-                placeholder="Nombre de la nueva categoría"
+                :placeholder="t('pages.products.modals.common.newCategoryNamePlaceholder')"
                 required
               />
             </div>
@@ -51,12 +51,12 @@
         </div>
 
         <div class="form-group">
-          <label for="productDescription">Descripción (opcional)</label>
+          <label for="productDescription">{{ t('pages.products.modals.common.descriptionLabel') }}</label>
           <textarea
             id="productDescription"
             v-model="localData.description"
             class="form-input"
-            placeholder="Ingrese una descripción para el producto"
+            :placeholder="t('pages.products.modals.common.descriptionPlaceholder')"
             rows="3"
           ></textarea>
         </div>
@@ -82,7 +82,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useLanguage } from '@/composables/useLanguage'
+import { useCategoryI18n } from '@/composables/useCategoryI18n'
 const { t } = useLanguage()
+const { getCategoryDisplayName } = useCategoryI18n()
 
 const props = defineProps({
   modelValue: Boolean,
@@ -197,7 +199,7 @@ const handleCancel = () => {
 .btn--success { background: #4caf50; color: #fff; }
 .btn--error { background: #f44336; color: #fff; }
 
-/* Category input group styles */
+
 .category-input-group {
   display: flex;
   flex-direction: column;
