@@ -354,9 +354,6 @@
             </p>
           </div>
           
-          <p v-if="productReferences.length === 0" class="info-text">
-            Este producto no está en ninguna lista y se eliminará permanentemente.
-          </p>
         </div>
         
         <div class="modal-actions">
@@ -657,14 +654,21 @@ const updateProduct = async (updatedData) => {
 
 const deleteProduct = async (product, forceDelete = false) => {
   try {
+    // Siempre mostrar diálogo de confirmación primero
+    if (!forceDelete) {
+      productToDelete.value = product
+      productReferences.value = []
+      deleteConfirmDialog.value = true
+      return
+    }
+    
+    // Si se confirma la eliminación, proceder
     // Primero verificar referencias
     const result = await productStore.deleteRemote(product.id)
     
-    if (result.needsConfirmation && !forceDelete) {
-      // Hay referencias, mostrar dialog con información
-      productToDelete.value = result.product
+    if (result.needsConfirmation) {
+      // Hay referencias, actualizar el diálogo con la información
       productReferences.value = result.references
-      deleteConfirmDialog.value = true
       return
     }
     
@@ -694,8 +698,16 @@ const confirmDeleteProduct = async (product) => {
 const executeDelete = async () => {
   if (productToDelete.value) {
     try {
-      // Eliminar forzadamente, incluyendo referencias
-      await productStore.forceDeleteRemote(productToDelete.value.id, true)
+      // Verificar si hay referencias antes de eliminar
+      const result = await productStore.deleteRemote(productToDelete.value.id)
+      
+      if (result.needsConfirmation) {
+        // Hay referencias, eliminar forzadamente incluyendo referencias
+        await productStore.forceDeleteRemote(productToDelete.value.id, true)
+      } else {
+        // No hay referencias, eliminar normalmente
+        await productStore.forceDeleteRemote(productToDelete.value.id, false)
+      }
       
       // Refrescar la lista
       await productStore.fetchRemote()
