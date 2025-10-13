@@ -131,6 +131,7 @@ const handleMenuAction = (action, itemId) => {
   }
 }
 
+const defaultImage = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect fill='%23eeeeee' width='100%' height='100%'/></svg>"
 
 const imageSrc = computed(() => {
   const item = props.item || {}

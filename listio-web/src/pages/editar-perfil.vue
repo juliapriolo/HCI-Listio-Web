@@ -211,12 +211,12 @@ onMounted(async () => {
 
         <div class="form-row">
           <div class="form-group">
-            <label for="name">{{ t('common.name') }}</label>
+            <label for="name">{{ t('common.firstName') }}</label>
             <input v-model="form.name" id="name" type="text" style="color:black;" required />
           </div>
 
           <div class="form-group">
-            <label for="surname">{{ t('common.surname') }}</label>
+            <label for="surname">{{ t('common.lastName') }}</label>
             <input v-model="form.surname" id="surname" type="text" style="color:black;" />
           </div>
         </div>
